@@ -7,7 +7,7 @@
 </head>
 <body>
   <h2>LINE Check-in</h2>
-  <div id="status">กำลังเตรียมระบบ...</div>
+  <div id="status">(v.0.3)กำลังเตรียมระบบ...</div>
   <button id="btnCheckin">✅ Check-in</button>
  
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -17,7 +17,7 @@
  
     async function main() {
       await liff.init({ liffId: liffId });
-      document.getElementById('status').innerText = 'พร้อมใช้งาน';
+      document.getElementById('status').innerText = '(v.0.3)พร้อมใช้งาน';
       if (!liff.isLoggedIn()) {
         try { liff.login(); } catch(e) { console.log(e) }
       }
