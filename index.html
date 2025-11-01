@@ -17,7 +17,7 @@
  
     async function main() {
       await liff.init({ liffId: liffId });
-      document.getElementById('status').innerText = 'พร้อมใช้งาน';
+      document.getElementById('status').innerText = '(v1.1)พร้อมใช้งาน';
       // ถ้าผู้ใช้ยังไม่ login เข้าระบบ LINE
       if (!liff.isLoggedIn()) {
         try { liff.login(); } catch(e) { console.log(e) }
