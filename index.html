@@ -9,54 +9,73 @@
   <h2>LINE Check-in</h2>
   <div id="status">กำลังเตรียมระบบ...</div>
   <button id="btnCheckin">✅ Check-in</button>
-
+ 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
-    const liffId = "PUT_YOUR_LIFF_ID_HERE";
-    const GAS_URL = "PUT_YOUR_GAS_WEBAPP_URL_HERE";
-
+    const liffId = "2008403464-kaXOK95X"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyQ1q9rjOz9V8Y3PWyKQRoIySkSyaoJKM5Q9F2oFNQGa9RDkEGY3ljfiDdG0MUXAHXtrQ/exec";
+ 
     async function main() {
       await liff.init({ liffId: liffId });
       document.getElementById('status').innerText = 'พร้อมใช้งาน';
+      // ถ้าผู้ใช้ยังไม่ login เข้าระบบ LINE
       if (!liff.isLoggedIn()) {
-        liff.login();
+        try { liff.login(); } catch(e) { console.log(e) }
       }
     }
-
+ 
     async function doCheckin() {
       document.getElementById('status').innerText = 'กำลังอ่านพิกัด...';
       if (!navigator.geolocation) {
         alert('อุปกรณ์ของคุณไม่รองรับ Geolocation');
         return;
       }
+
       navigator.geolocation.getCurrentPosition(async function (pos) {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        let profile = await liff.getProfile();
-        const payload = {
-          userId: profile.userId,
-          displayName: profile.displayName,
-          lat: lat,
-          lon: lon
-        };
-        const resp = await fetch(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const json = await resp.json();
-        if (json.status === 'ok') {
-          document.getElementById('status').innerText = 'เช็คอินสำเร็จ ✅';
-          alert('เช็คอินสำเร็จ!');
-          liff.closeWindow();
-        } else {
-          alert('เกิดข้อผิดพลาด: ' + JSON.stringify(json));
+        let profile = {};
+
+        try {
+          profile = await liff.getProfile();
+        } catch (e) {
+          profile = { userId: '', displayName: '' };
         }
-      }, function(error) {
+
+        const payload = {
+          userId: profile.userId || '',
+          displayName: profile.displayName || '',
+          lat: lat,
+          lon: lon,
+          liffId: liff.getContext ? liff.getContext().liffId : ''
+        };
+
+        // ส่งข้อมูลไปยัง Google Apps Script
+        try {
+          const resp = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const json = await resp.json();
+
+          if (json && json.status === 'ok') {
+            document.getElementById('status').innerText = 'เช็คอินสำเร็จ ✅';
+            alert('เช็คอินสำเร็จ!');
+            liff.closeWindow(); // ปิดหน้าต่างกลับไป LINE
+          } else {
+            document.getElementById('status').innerText = 'เกิดข้อผิดพลาด';
+            alert('เกิดข้อผิดพลาด: ' + JSON.stringify(json));
+          }
+        } catch (err) {
+          document.getElementById('status').innerText = 'ส่งข้อมูลล้มเหลว';
+          alert('ส่งข้อมูลล้มเหลว: ' + err.toString());
+        }
+      }, function(error){
         alert('ไม่สามารถอ่านตำแหน่งได้: ' + error.message);
       }, { enableHighAccuracy: true, timeout: 10000 });
     }
-
+ 
     document.getElementById('btnCheckin').addEventListener('click', doCheckin);
     main();
   </script>
