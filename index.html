@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LINE Check-in</title>
+</head>
+<body>
+  <h2>LINE Check-in</h2>
+  <div id="status">กำลังเตรียมระบบ...</div>
+  <button id="btnCheckin">✅ Check-in</button>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    const liffId = "PUT_YOUR_LIFF_ID_HERE";
+    const GAS_URL = "PUT_YOUR_GAS_WEBAPP_URL_HERE";
+
+    async function main() {
+      await liff.init({ liffId: liffId });
+      document.getElementById('status').innerText = 'พร้อมใช้งาน';
+      if (!liff.isLoggedIn()) {
+        liff.login();
+      }
+    }
+
+    async function doCheckin() {
+      document.getElementById('status').innerText = 'กำลังอ่านพิกัด...';
+      if (!navigator.geolocation) {
+        alert('อุปกรณ์ของคุณไม่รองรับ Geolocation');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(async function (pos) {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        let profile = await liff.getProfile();
+        const payload = {
+          userId: profile.userId,
+          displayName: profile.displayName,
+          lat: lat,
+          lon: lon
+        };
+        const resp = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const json = await resp.json();
+        if (json.status === 'ok') {
+          document.getElementById('status').innerText = 'เช็คอินสำเร็จ ✅';
+          alert('เช็คอินสำเร็จ!');
+          liff.closeWindow();
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + JSON.stringify(json));
+        }
+      }, function(error) {
+        alert('ไม่สามารถอ่านตำแหน่งได้: ' + error.message);
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    document.getElementById('btnCheckin').addEventListener('click', doCheckin);
+    main();
+  </script>
+</body>
+</html>
