@@ -7,18 +7,17 @@
 </head>
 <body>
   <h2>LINE Check-in</h2>
-  <div id="status">(v1.1)กำลังเตรียมระบบ...</div>
+  <div id="status">กำลังเตรียมระบบ...</div>
   <button id="btnCheckin">✅ Check-in</button>
  
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
     const liffId = "2008403464-kaXOK95X"; 
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyQ1q9rjOz9V8Y3PWyKQRoIySkSyaoJKM5Q9F2oFNQGa9RDkEGY3ljfiDdG0MUXAHXtrQ/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxlyqSlR7X8vO_okwYT7dj7rL21FHEg_RDVa6UrD1QHJEmucLbCq5KB5Wv12aKrl9h5tA/exec";
  
     async function main() {
       await liff.init({ liffId: liffId });
-      document.getElementById('status').innerText = '(v1.1)พร้อมใช้งาน';
-      // ถ้าผู้ใช้ยังไม่ login เข้าระบบ LINE
+      document.getElementById('status').innerText = 'พร้อมใช้งาน';
       if (!liff.isLoggedIn()) {
         try { liff.login(); } catch(e) { console.log(e) }
       }
@@ -50,7 +49,6 @@
           liffId: liff.getContext ? liff.getContext().liffId : ''
         };
 
-        // ส่งข้อมูลไปยัง Google Apps Script
         try {
           const resp = await fetch(GAS_URL, {
             method: 'POST',
@@ -62,7 +60,7 @@
           if (json && json.status === 'ok') {
             document.getElementById('status').innerText = 'เช็คอินสำเร็จ ✅';
             alert('เช็คอินสำเร็จ!');
-            liff.closeWindow(); // ปิดหน้าต่างกลับไป LINE
+            liff.closeWindow();
           } else {
             document.getElementById('status').innerText = 'เกิดข้อผิดพลาด';
             alert('เกิดข้อผิดพลาด: ' + JSON.stringify(json));
