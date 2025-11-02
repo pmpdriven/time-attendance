@@ -7,30 +7,33 @@
 </head>
 <body>
   <h2>LINE Check-in</h2>
-  <div id="status">(v.0.3)กำลังเตรียมระบบ...</div>
+  <div id="status">(v.0.4) กำลังเตรียมระบบ...</div>
   <button id="btnCheckin">✅ Check-in</button>
- 
+
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
-    const liffId = "2008403464-kaXOK95X"; 
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxlyqSlR7X8vO_okwYT7dj7rL21FHEg_RDVa6UrD1QHJEmucLbCq5KB5Wv12aKrl9h5tA/exec";
- 
+    const liffId = "2008403464-kaXOK95X";  // ✅ LIFF ID ของคุณ
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxlyqSlR7X8vO_okwYT7dj7rL21FHEg_RDVa6UrD1QHJEmucLbCq5KB5Wv12aKrl9h5tA/exec"; // ✅ URL จาก Deploy
+
     async function main() {
       await liff.init({ liffId: liffId });
-      document.getElementById('status').innerText = '(v.0.3)พร้อมใช้งาน';
+      document.getElementById('status').innerText = '(v.0.4) พร้อมใช้งาน';
+
+      // ถ้ายังไม่ได้ login เข้าระบบ LINE
       if (!liff.isLoggedIn()) {
-        try { liff.login(); } catch(e) { console.log(e) }
+        liff.login();
       }
     }
- 
+
     async function doCheckin() {
       document.getElementById('status').innerText = 'กำลังอ่านพิกัด...';
+
       if (!navigator.geolocation) {
         alert('อุปกรณ์ของคุณไม่รองรับ Geolocation');
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(async function (pos) {
+      navigator.geolocation.getCurrentPosition(async function(pos) {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
         let profile = {};
@@ -69,11 +72,11 @@
           document.getElementById('status').innerText = 'ส่งข้อมูลล้มเหลว';
           alert('ส่งข้อมูลล้มเหลว: ' + err.toString());
         }
-      }, function(error){
+      }, function(error) {
         alert('ไม่สามารถอ่านตำแหน่งได้: ' + error.message);
       }, { enableHighAccuracy: true, timeout: 10000 });
     }
- 
+
     document.getElementById('btnCheckin').addEventListener('click', doCheckin);
     main();
   </script>
