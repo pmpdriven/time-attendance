@@ -204,7 +204,7 @@
 <body>
   <div class="container">
     <h2>⏰ เช็คเวลาทำงาน</h2>
-    <div class="version">เวอร์ชัน 1.0</div>
+    <div class="version">เวอร์ชัน 1.2</div>
     
     <div class="spinner" id="spinner"></div>
     <div id="status" class="loading">กำลังเตรียมระบบ...</div>
@@ -241,7 +241,7 @@
   <script>
     const CONFIG = {
       liffId: "2008403464-kaXOK95X",
-      gasUrl: "https://script.google.com/macros/s/AKfycbzn9ir61d6atzBgEksgm6TpF3gm399z9aszPiqt8SnNw1lfFNdLdS7ifN9Z91HELnJ0eQ/exec",
+      gasUrl: "https://script.google.com/macros/s/AKfycbxYgLfkMSUIaCaLhHWYBiPB4PUZXchJep9uHlw303fWC6XQZ39oua0RRj7JagvJyAhrlQ/exec",
       geoOptions: {
         enableHighAccuracy: true,
         timeout: 15000,
@@ -352,12 +352,28 @@
 
     async function checkTodayStatus() {
       try {
-        const today = new Date().toLocaleDateString('th-TH');
-        const response = await fetch(`${CONFIG.gasUrl}?action=checkStatus&userId=${userProfile.userId}&date=${encodeURIComponent(today)}`);
+        const now = new Date();
+        const thaiDate = now.toLocaleDateString('th-TH', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        
+        console.log('Checking status for:', userProfile.userId, 'Date:', thaiDate);
+        
+        const response = await fetch(`${CONFIG.gasUrl}?action=checkStatus&userId=${encodeURIComponent(userProfile.userId)}&date=${encodeURIComponent(thaiDate)}`);
         const data = await response.json();
         
-        if (data.status === 'ok') {
-          todayStatus = data.todayStatus || todayStatus;
+        console.log('Status response:', data);
+        
+        if (data.status === 'ok' && data.todayStatus) {
+          todayStatus = {
+            checkedIn: data.todayStatus.checkedIn || false,
+            checkedOut: data.todayStatus.checkedOut || false,
+            checkinTime: data.todayStatus.checkinTime || null,
+            checkoutTime: data.todayStatus.checkoutTime || null
+          };
+          console.log('Updated todayStatus:', todayStatus);
         }
       } catch (error) {
         console.error('Check Status Error:', error);
