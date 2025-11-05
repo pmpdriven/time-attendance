@@ -1,112 +1,137 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LINE Check In / Check Out</title>
-    <style>
-      body {
-        font-family: "Prompt", sans-serif;
-        text-align: center;
-        background: #f5f7fa;
-        margin: 0;
-        padding: 0;
-      }
-      h2 {
-        color: #333;
-        margin-top: 30px;
-      }
-      button {
-        width: 160px;
-        height: 50px;
-        font-size: 18px;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        margin: 10px;
-        color: #fff;
-      }
-      #checkinBtn {
-        background-color: #28a745;
-      }
-      #checkoutBtn {
-        background-color: #dc3545;
-      }
-      #status {
-        margin-top: 20px;
-        font-size: 16px;
-      }
-    </style>
-  </head>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check In / Check Out</title>
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h2 {
+      color: #333;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 10px;
+      width: 150px;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
 
-  <body>
-    <h2>ระบบบันทึกเวลาเข้า-ออก</h2>
+  <h2>ระบบ Check In / Check Out</h2>
 
-    <button id="checkinBtn">Check In</button>
-    <button id="checkoutBtn">Check Out</button>
+  <div>
+    <button id="checkinBtn">✅ Check In</button>
+    <button id="checkoutBtn">🏁 Check Out</button>
+  </div>
 
-    <div id="status">กำลังโหลดสถานะ...</div>
+  <div id="status">กำลังตรวจสอบสถานะ...</div>
 
-    <script>
-      // ✅ ตั้งค่าคงที่
-      const SCRIPT_URL =
-        "https://script.google.com/macros/s/AKfycbx2fI1aHqDQTIz6amu_8ZFgSTu-p2rv6FmxQxQYSwZtk_LcTQaPohwOYjpmkuTZc_Jb/exec";
-      const userId = "U17814d04672b1adfcd8fe146d8bcb343"; // 🔸 สมมุติ userId (กรณีเชื่อมกับ LINE จะได้จาก liff.getProfile())
-      const date = new Date().toLocaleDateString("th-TH", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
+  <script>
+    // === 🔧 ตั้งค่า URL ของ Google Apps Script ===
+    const API_URL = "https://script.google.com/macros/s/AKfycby51eek7mC5zt4dRK_TvaUKR2lMHapec2bjXGM5IrZ_B371B-nHUPFdN2_Cyfai-RZtcg/exec";
+
+    // === 🔧 ตั้งค่าผู้ใช้จำลอง (จริงๆ อาจเชื่อม LINE User ID หรือระบบ Login อื่น) ===
+    const userId = "U17814d04672b1adfcd8fe146d8bcb343";
+    const displayName = "John Doe";
+
+    // === 📅 แปลงวันที่เป็นรูปแบบ dd/MM/yyyy (ไทย พ.ศ.) ===
+    function getThaiDate() {
+      const now = new Date();
+      const d = now.getDate().toString().padStart(2, '0');
+      const m = (now.getMonth() + 1).toString().padStart(2, '0');
+      const y = now.getFullYear() + 543; // ปี พ.ศ.
+      return `${d}/${m}/${y}`;
+    }
+
+    // === 📍 อ่านตำแหน่ง GPS ===
+    function getLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject('เบราว์เซอร์ไม่รองรับ GPS');
+        } else {
+          navigator.geolocation.getCurrentPosition(
+            pos => resolve({
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude
+            }),
+            err => reject('ไม่สามารถอ่านตำแหน่งได้')
+          );
+        }
       });
+    }
 
-      // ✅ โหลดสถานะเริ่มต้น
-      async function loadStatus() {
-        const res = await fetch(
-          `${SCRIPT_URL}?action=checkStatus&userId=${userId}&date=${date}`
-        );
-        const data = await res.json();
+    // === 🚀 เรียก API POST เพื่อ Check In / Out ===
+    async function sendAction(action) {
+      try {
+        const location = await getLocation();
+        const payload = {
+          action: action,
+          userId: userId,
+          displayName: displayName,
+          date: getThaiDate(),
+          checkinLat: location.lat,
+          checkinLon: location.lon,
+          checkoutLat: location.lat,
+          checkoutLon: location.lon
+        };
 
-        if (data.todayStatus.checkedIn && !data.todayStatus.checkedOut) {
-          document.getElementById("status").innerText =
-            "คุณเช็กอินแล้ว เวลา: " + data.todayStatus.checkinTime;
-          document.getElementById("checkinBtn").disabled = true;
-        } else if (data.todayStatus.checkedOut) {
-          document.getElementById("status").innerText =
-            "เช็กเอาต์แล้ว เวลา: " + data.todayStatus.checkoutTime;
-          document.getElementById("checkinBtn").disabled = true;
-          document.getElementById("checkoutBtn").disabled = true;
-        } else {
-          document.getElementById("status").innerText = "ยังไม่ได้เช็กอิน";
-        }
-      }
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
 
-      // ✅ ฟังก์ชันส่ง Check In / Out
-      async function sendAction(actionType) {
-        const res = await fetch(
-          `${SCRIPT_URL}?action=${actionType}&userId=${userId}&date=${date}`
-        );
         const result = await res.json();
-
-        if (result.status === "success") {
-          if (actionType === "checkin") {
-            alert("เช็กอินสำเร็จ เวลา: " + result.time);
-          } else {
-            alert("เช็กเอาต์สำเร็จ เวลา: " + result.time);
-          }
-          loadStatus();
-        } else {
-          alert("เกิดข้อผิดพลาด: " + result.message);
-        }
+        document.getElementById("status").innerText = result.message || "ดำเนินการเรียบร้อย";
+      } catch (error) {
+        document.getElementById("status").innerText = "❌ " + error;
       }
+    }
 
-      // ✅ ผูกปุ่มกด
-      document
-        .getElementById("checkinBtn")
-        .addEventListener("click", () => sendAction("checkin"));
-      document
-        .getElementById("checkoutBtn")
-        .addEventListener("click", () => sendAction("checkout"));
+    // === 🕓 ตรวจสอบสถานะปัจจุบัน (Check Status) ===
+    async function checkStatus() {
+      const date = getThaiDate();
+      const res = await fetch(`${API_URL}?action=checkStatus&userId=${userId}&date=${date}`);
+      const data = await res.json();
+      if (data.status === "ok") {
+        const s = data.todayStatus;
+        let text = "";
+        if (s.checkedIn && !s.checkedOut) text = `✅ เช็คอินแล้วเวลา ${s.checkinTime}`;
+        else if (s.checkedIn && s.checkedOut) text = `🏁 เช็คเอาท์แล้วเวลา ${s.checkoutTime}`;
+        else text = "ยังไม่ได้เช็คอินวันนี้";
+        document.getElementById("status").innerText = text;
+      }
+    }
 
-      loadStatus();
-    </script>
-  </body>
+    // === 🎯 Event Buttons ===
+    document.getElementById("checkinBtn").addEventListener("click", () => sendAction("checkin"));
+    document.getElementById("checkoutBtn").addEventListener("click", () => sendAction("checkout"));
+
+    // === เรียกตอนโหลดหน้า ===
+    checkStatus();
+  </script>
+
+</body>
 </html>
