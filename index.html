@@ -352,7 +352,8 @@
 
     async function checkTodayStatus() {
       try {
-        const response = await fetch(`${CONFIG.gasUrl}?action=checkStatus&userId=${userProfile.userId}`);
+        const today = new Date().toLocaleDateString('th-TH');
+        const response = await fetch(`${CONFIG.gasUrl}?action=checkStatus&userId=${userProfile.userId}&date=${encodeURIComponent(today)}`);
         const data = await response.json();
         
         if (data.status === 'ok') {
@@ -410,28 +411,46 @@
 
     async function sendToGAS(type, lat, lon) {
       const now = new Date();
+      const thaiDate = now.toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const thaiTime = formatThaiTime(now);
+      
       const payload = {
         action: type,
         userId: userProfile?.userId || '',
         displayName: userProfile?.displayName || 'Unknown',
-        checkinLat: type === 'checkin' ? lat : '',
-        checkinLon: type === 'checkin' ? lon : '',
-        checkoutLat: type === 'checkout' ? lat : '',
-        checkoutLon: type === 'checkout' ? lon : '',
-        timestamp: now.toISOString(),
-        date: now.toLocaleDateString('th-TH'),
-        checkinTime: type === 'checkin' ? formatThaiTime(now) : '',
-        checkoutTime: type === 'checkout' ? formatThaiTime(now) : '',
-        liffId: liff.getContext?.()?.liffId || CONFIG.liffId
+        date: thaiDate,
+        timestamp: now.toISOString()
       };
+
+      // เพิ่มข้อมูลตาม action
+      if (type === 'checkin') {
+        payload.checkinTime = thaiTime;
+        payload.checkinLat = lat;
+        payload.checkinLon = lon;
+      } else if (type === 'checkout') {
+        payload.checkoutTime = thaiTime;
+        payload.checkoutLat = lat;
+        payload.checkoutLon = lon;
+      }
+
+      console.log('Sending payload:', payload);
 
       const response = await fetch(CONFIG.gasUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        redirect: 'follow'
       });
 
-      return await response.json();
+      const result = await response.json();
+      console.log('Response:', result);
+      return result;
     }
 
     async function sendLineMessage(type, time) {
