@@ -245,7 +245,7 @@
 
   <script>
     // === 🔧 ตั้งค่า ===
-    const API_URL = "https://script.google.com/macros/s/AKfycbzmTOLyNfC05qIywviBcsh6K9lPFJe523VPHuRGPUY7ndtEoFjYqH7_YcumXtj8mhta4w/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyg3xnHFzlMTGmKZdqMqUsv9K1jaHXwTC6NOrxbVR3BpR_Cfis-BSJ6xjfGUfQRoG79gw/exec";
     const LIFF_ID = "2008403464-kaXOK95X"; // ✅ ใส่ LIFF ID ของคุณแล้ว
 
     // === Elements ===
@@ -324,7 +324,7 @@
       return `${h}:${m} น.`;
     }
 
-    // === 💬 ส่งข้อความกลับไปที่ LINE (ใช้ LIFF) ===
+    // === 💬 ส่งข้อความกลับไปที่ LINE ===
     async function sendLineMessage(action, dateTime) {
       if (!liffInitialized) {
         console.log('LIFF not initialized, skip sending message');
@@ -336,24 +336,27 @@
         if (action === 'checkin') {
           message = `✅ เช็คอินสำเร็จ\n📅 ${dateTime}\n👤 ${lineDisplayName}`;
         } else if (action === 'checkout') {
-          message = `🏁 เช็คเอาท์สำเร็จ\n📅 ${dateTime}\n👤 ${lineDisplayName}\n\n✨ ขอบคุณสำหรับการทำงานวันนี้`;
+          message = `🏁 เช็คเอาท์สำเร็จ\n📅 ${dateTime}\n👤 ${lineDisplayName}`;
         }
 
-        // ส่งข้อความไปยังตัวเอง (แชทกับบอท)
-        if (liff.isApiAvailable('sendMessages')) {
+        if (liff.isApiAvailable('shareTargetPicker')) {
+          await liff.shareTargetPicker([
+            {
+              type: 'text',
+              text: message
+            }
+          ]);
+        } else {
+          // ส่งข้อความไปยังตัวเอง
           await liff.sendMessages([
             {
               type: 'text',
               text: message
             }
           ]);
-          console.log('Message sent via LIFF');
-        } else {
-          console.log('sendMessages API not available');
         }
       } catch (error) {
         console.error('Failed to send LINE message:', error);
-        // ไม่ต้อง throw error เพราะไม่ต้องการให้หยุดการทำงาน
       }
     }
 
