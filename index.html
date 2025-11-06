@@ -90,18 +90,12 @@
       font-weight: 500;
       transition: all 0.3s ease;
       box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-      position: relative;
-      overflow: hidden;
       min-width: 200px;
     }
 
     button:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-
-    button:active:not(:disabled) {
-      transform: translateY(0);
     }
 
     button:disabled {
@@ -207,17 +201,6 @@
       border-radius: 8px;
     }
 
-    .debug-info {
-      margin-top: 15px;
-      padding: 10px;
-      background: rgba(0,0,0,0.05);
-      border-radius: 8px;
-      font-size: 12px;
-      color: #666;
-      text-align: left;
-      display: none;
-    }
-
     @media (max-width: 480px) {
       .container {
         padding: 30px 20px;
@@ -248,9 +231,7 @@
       <div class="status-text">กำลังเริ่มต้นระบบ...</div>
     </div>
 
-    <div class="debug-info" id="debugInfo"></div>
-
-    <div class="version">Version 1.3.0</div>
+    <div class="version">Version 1.4.0 (ไม่ใช้ userId)</div>
   </div>
 
   <!-- LINE LIFF SDK -->
@@ -261,91 +242,50 @@
     // 🔧 ตั้งค่า - แก้ไขตรงนี้
     // ============================================
     const CONFIG = {
-      API_URL: "https://script.google.com/macros/s/AKfycbxKAgFXh4NjGIQZUJQVCH5iomQjDHyOaDACaqHx_K2pgStJJF5fGImbRbSnDWE0CYjIYw/exec",
-      LIFF_ID: "2008403464-kaXOK95X",
-      DEBUG_MODE: true // เปิด Debug เพื่อดูปัญหา
+      API_URL: "https://script.google.com/macros/s/AKfycbzTRf-Ujd7f7j8TwY0PMhlkAslXt98YvJbH3rDCDZsxNzQIBScZhNZ-H7fKXg5VrZ4boQ/exec",
+      LIFF_ID: "2008403464-kaXOK95X"
     };
 
     // ============================================
-    // 📱 Elements
+    // 📱 Elements & State
     // ============================================
     const elements = {
       actionBtn: document.getElementById("actionBtn"),
       buttonContainer: document.getElementById("buttonContainer"),
       statusCard: document.getElementById("statusCard"),
-      userInfo: document.getElementById("userInfo"),
-      debugInfo: document.getElementById("debugInfo")
+      userInfo: document.getElementById("userInfo")
     };
 
-    // ============================================
-    // 🎯 State
-    // ============================================
     const state = {
       currentAction: null,
       isProcessing: false,
-      lineUserId: null,
       lineDisplayName: "ผู้ใช้",
       liffInitialized: false
     };
-
-    // ============================================
-    // 🐛 Debug Functions
-    // ============================================
-    function debugLog(message, data = null) {
-      if (CONFIG.DEBUG_MODE) {
-        console.log(`[DEBUG] ${message}`, data || '');
-        const debugDiv = elements.debugInfo;
-        debugDiv.style.display = 'block';
-        const time = new Date().toLocaleTimeString('th-TH');
-        debugDiv.innerHTML += `<div>[${time}] ${message}</div>`;
-        if (data) {
-          debugDiv.innerHTML += `<div style="margin-left:10px;">${JSON.stringify(data)}</div>`;
-        }
-      }
-    }
 
     // ============================================
     // 🔐 LIFF Initialization
     // ============================================
     async function initializeLiff() {
       try {
-        debugLog('เริ่มต้น LIFF...', { liffId: CONFIG.LIFF_ID });
-        
         await liff.init({ liffId: CONFIG.LIFF_ID });
-        debugLog('LIFF init สำเร็จ');
         
         if (!liff.isLoggedIn()) {
-          debugLog('ยังไม่ได้ Login, redirect ไป Login');
           liff.login();
           return false;
         }
 
-        debugLog('Login แล้ว, กำลังดึง Profile...');
         const profile = await liff.getProfile();
-        
-        state.lineUserId = profile.userId;
         state.lineDisplayName = profile.displayName;
         state.liffInitialized = true;
         
-        debugLog('ดึง Profile สำเร็จ', {
-          userId: state.lineUserId,
-          displayName: state.lineDisplayName
-        });
-        
         elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName}`;
-        
         return true;
       } catch (error) {
-        debugLog('LIFF Error', error);
-        console.error('LIFF initialization failed:', error);
-        
-        // Fallback สำหรับทดสอบนอก LINE
-        state.lineUserId = "TEST_" + Date.now();
+        console.error('LIFF Error:', error);
         state.lineDisplayName = "ผู้ใช้ทดสอบ";
         state.liffInitialized = false;
-        
         elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName} (โหมดทดสอบ)`;
-        
         return true;
       }
     }
@@ -395,28 +335,17 @@
           return;
         }
 
-        const options = {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        };
-
         navigator.geolocation.getCurrentPosition(
-          pos => {
-            debugLog('ได้ตำแหน่ง GPS', {
-              lat: pos.coords.latitude,
-              lon: pos.coords.longitude
-            });
-            resolve({
-              lat: pos.coords.latitude,
-              lon: pos.coords.longitude
-            });
-          },
-          err => {
-            debugLog('GPS Error', err);
-            reject('ไม่สามารถอ่านตำแหน่งได้ กรุณาเปิด GPS');
-          },
-          options
+          pos => resolve({
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude
+          }),
+          err => reject('ไม่สามารถอ่านตำแหน่งได้ กรุณาเปิด GPS'),
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
         );
       });
     }
@@ -425,10 +354,7 @@
     // 💬 LINE Message Functions
     // ============================================
     async function sendLineMessage(action, dateTime) {
-      if (!state.liffInitialized) {
-        debugLog('LIFF ไม่พร้อม, ข้าม sendMessage');
-        return;
-      }
+      if (!state.liffInitialized) return;
 
       try {
         let message = '';
@@ -439,18 +365,10 @@
         }
 
         if (liff.isApiAvailable('sendMessages')) {
-          await liff.sendMessages([
-            {
-              type: 'text',
-              text: message
-            }
-          ]);
-          debugLog('ส่งข้อความ LINE สำเร็จ');
-        } else {
-          debugLog('sendMessages API ไม่พร้อม');
+          await liff.sendMessages([{ type: 'text', text: message }]);
         }
       } catch (error) {
-        debugLog('Error ส่งข้อความ LINE', error);
+        console.error('Failed to send LINE message:', error);
       }
     }
 
@@ -479,18 +397,10 @@
       elements.statusCard.className = `status-card ${type}`;
       
       let content = '';
-      if (title) {
-        content += `<div class="status-title">${title}</div>`;
-      }
+      if (title) content += `<div class="status-title">${title}</div>`;
       content += `<div class="status-text">${message}</div>`;
-      
-      if (timeInfo) {
-        content += `<div class="time-display">${timeInfo}</div>`;
-      }
-      
-      if (instruction) {
-        content += `<div class="instruction">${instruction}</div>`;
-      }
+      if (timeInfo) content += `<div class="time-display">${timeInfo}</div>`;
+      if (instruction) content += `<div class="instruction">${instruction}</div>`;
       
       elements.statusCard.innerHTML = content;
     }
@@ -518,14 +428,11 @@
       hideActionButton();
 
       try {
-        debugLog(`เริ่ม ${state.currentAction}...`);
-        
         const location = await getLocation();
         const dateTime = getThaiDateTime();
         
         const payload = {
           action: state.currentAction,
-          userId: state.lineUserId,
           displayName: state.lineDisplayName,
           date: getThaiDate(),
           dateTime: dateTime,
@@ -535,56 +442,27 @@
           checkoutLon: location.lon
         };
 
-        debugLog('ส่งข้อมูลไป API', payload);
-
         const response = await fetch(CONFIG.API_URL, {
           method: "POST",
-          mode: "cors",
-          redirect: "follow",
-          headers: { 
-            "Content-Type": "text/plain;charset=utf-8"
-          },
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
 
-        debugLog('Response status', response.status);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
         const result = await response.json();
-        debugLog('Response data', result);
         
         if (result.status === 'ok') {
           await sendLineMessage(state.currentAction, dateTime);
-          
-          updateStatus(
-            '✅ สำเร็จ!',
-            result.message || 'บันทึกข้อมูลเรียบร้อย', 
-            'success'
-          );
-          
+          updateStatus('✅ สำเร็จ!', result.message || 'บันทึกข้อมูลเรียบร้อย', 'success');
           setTimeout(checkStatus, 1500);
         } else {
-          updateStatus(
-            '❌ เกิดข้อผิดพลาด',
-            result.message || 'ไม่สามารถบันทึกข้อมูลได้',
-            'error'
-          );
+          updateStatus('❌ เกิดข้อผิดพลาด', result.message, 'error');
           setLoading(false);
           setTimeout(() => showActionButton(state.currentAction), 2000);
         }
 
       } catch (error) {
-        debugLog('Error ใน sendAction', error);
-        updateStatus(
-          '⚠️ เกิดข้อผิดพลาด',
-          'ไม่สามารถเชื่อมต่อ API ได้',
-          'error',
-          '',
-          'กรุณาตรวจสอบ: 1) อินเทอร์เน็ต 2) URL ของ Google Apps Script'
-        );
+        console.error('Error:', error);
+        updateStatus('⚠️ เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อได้', 'error');
         setTimeout(checkStatus, 3000);
       }
     }
@@ -594,40 +472,13 @@
     // ============================================
     async function checkStatus() {
       try {
-        debugLog('ตรวจสอบสถานะ...');
         setLoading(true, 'กำลังตรวจสอบสถานะ...');
         
         const date = getThaiDate();
-        const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(date)}`;
+        const url = `${CONFIG.API_URL}?action=checkStatus&displayName=${encodeURIComponent(state.lineDisplayName)}&date=${encodeURIComponent(date)}`;
         
-        debugLog('เรียก API', { url });
-
-        const response = await fetch(url, {
-          method: "GET",
-          mode: "cors",
-          cache: "no-cache"
-        });
-
-        debugLog('Response status', response.status);
-        debugLog('Response headers', {
-          contentType: response.headers.get('content-type'),
-          status: response.status,
-          ok: response.ok
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          debugLog('Response is not JSON', { contentType, text: text.substring(0, 200) });
-          throw new Error('Response ไม่ใช่ JSON. กรุณาตรวจสอบ Google Apps Script Deploy');
-        }
-
+        const response = await fetch(url);
         const data = await response.json();
-        debugLog('Response data', data);
         
         if (data.status === 'ok') {
           const s = data.todayStatus;
@@ -661,29 +512,17 @@
             );
           }
         } else {
-          throw new Error(data.message || 'Invalid response status');
+          throw new Error(data.message || 'Invalid response');
         }
       } catch (error) {
-        debugLog('Error ใน checkStatus', error);
+        console.error('Error:', error);
         hideActionButton();
-        
-        let errorMsg = 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
-        let instruction = 'รีเฟรชหน้านี้เพื่อลองอีกครั้ง';
-        
-        if (error.message.includes('HTTP')) {
-          errorMsg = 'Google Apps Script ไม่สามารถเชื่อมต่อได้';
-          instruction = 'กรุณาตรวจสอบ:<br>1. Deploy เป็น Web app<br>2. Who has access = Anyone<br>3. URL ถูกต้อง';
-        } else if (error.message.includes('JSON')) {
-          errorMsg = 'Google Apps Script Response ไม่ถูกต้อง';
-          instruction = 'กรุณา Deploy ใหม่และตรวจสอบ URL';
-        }
-        
         updateStatus(
           '⚠️ ไม่สามารถเชื่อมต่อ',
-          errorMsg,
+          'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต',
           'error',
           '',
-          `${instruction}<br><small>Error: ${error.message}</small>`
+          'รีเฟรชหน้านี้เพื่อลองอีกครั้ง'
         );
       } finally {
         state.isProcessing = false;
@@ -699,31 +538,16 @@
     // 🚀 Initialize App
     // ============================================
     async function initApp() {
-      debugLog('เริ่มต้นแอพ...');
-      
       const liffReady = await initializeLiff();
       
       if (liffReady) {
-        debugLog('LIFF พร้อม, เริ่ม checkStatus');
         await checkStatus();
-        
-        // Auto refresh ทุก 30 วินาที
         setInterval(() => {
-          if (!state.isProcessing) {
-            debugLog('Auto refresh...');
-            checkStatus();
-          }
+          if (!state.isProcessing) checkStatus();
         }, 30000);
-      } else {
-        updateStatus(
-          '⚠️ ไม่สามารถเริ่มต้นได้',
-          'กรุณาเปิดในแอพ LINE',
-          'error'
-        );
       }
     }
 
-    // เริ่มต้นเมื่อโหลดหน้าเสร็จ
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initApp);
     } else {
