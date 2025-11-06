@@ -250,7 +250,7 @@
 
     <div class="debug-info" id="debugInfo" style="display:none"></div>
 
-    <div class="version">Version 1.4.3 - Fixed</div>
+    <div class="version">Version 1.6.0 - Fixed Time Format</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -260,7 +260,7 @@
     // 🔧 ตั้งค่า - **แก้ไข URL ตรงนี้**
     // ============================================
     const CONFIG = {
-      API_URL: "https://script.google.com/macros/s/AKfycby8KAcBZrv0GpuszXSncenZM-d1NxMwmkSNTHwCzSHUqVAaqrbFJzhB7T6gUc1I8ShoAA/exec",
+      API_URL: "https://script.google.com/macros/s/AKfycby_YP4T3qfUZktoEIWDerjqewcl1KniSg2bwTGHwmjfg7VfYIUg8XpEXFXkDW5lFFCt9A/exec",
       LIFF_ID: "2008403464-kaXOK95X",
       DEBUG_MODE: true,
       MAX_RETRIES: 3,
@@ -343,7 +343,6 @@
       } catch (error) {
         debugLog('❌ LIFF Error', error);
         
-        // Fallback
         state.lineUserId = "TEST_" + Date.now();
         state.lineDisplayName = "ผู้ใช้ทดสอบ";
         state.liffInitialized = false;
@@ -463,11 +462,11 @@
       if (action === 'checkin') {
         elements.actionBtn.className = '';
         elements.actionBtn.innerHTML = '<span class="icon">✅</span> Check In';
-        elements.actionBtn.disabled = false; // เพิ่มบรรทัดนี้
+        elements.actionBtn.disabled = false;
       } else if (action === 'checkout') {
         elements.actionBtn.className = 'checkout';
         elements.actionBtn.innerHTML = '<span class="icon">🏁</span> Check Out';
-        elements.actionBtn.disabled = false; // เพิ่มบรรทัดนี้
+        elements.actionBtn.disabled = false;
       }
       
       debugLog('✅ แสดงปุ่ม', { action, disabled: elements.actionBtn.disabled });
@@ -551,7 +550,6 @@
     async function sendAction() {
       if (state.isProcessing || !state.currentAction) return;
       
-      // เก็บ action ไว้ก่อน เพราะ hideActionButton จะ reset เป็น null
       const actionToSend = state.currentAction;
       
       setLoading(true);
