@@ -250,7 +250,7 @@
 
     <div class="debug-info" id="debugInfo" style="display:none"></div>
 
-    <div class="version">Version 1.4.2 - Fixed</div>
+    <div class="version">Version 1.4.3 - Fixed</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -551,17 +551,20 @@
     async function sendAction() {
       if (state.isProcessing || !state.currentAction) return;
       
+      // เก็บ action ไว้ก่อน เพราะ hideActionButton จะ reset เป็น null
+      const actionToSend = state.currentAction;
+      
       setLoading(true);
       hideActionButton();
 
       try {
-        debugLog(`🚀 เริ่ม ${state.currentAction}...`);
+        debugLog(`🚀 เริ่ม ${actionToSend}...`);
         
         const location = await getLocation();
         const dateTime = getThaiDateTime();
         
         const payload = {
-          action: state.currentAction,
+          action: actionToSend,
           userId: state.lineUserId,
           displayName: state.lineDisplayName,
           date: getThaiDate(),
@@ -585,7 +588,7 @@
         });
         
         if (result.status === 'ok') {
-          await sendLineMessage(state.currentAction, dateTime);
+          await sendLineMessage(actionToSend, dateTime);
           
           updateStatus(
             '✅ สำเร็จ!',
@@ -601,7 +604,7 @@
             'error'
           );
           setLoading(false);
-          setTimeout(() => showActionButton(state.currentAction), 2000);
+          setTimeout(() => showActionButton(actionToSend), 2000);
         }
 
       } catch (error) {
