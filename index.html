@@ -44,19 +44,12 @@
       }
     }
 
-    h2 {
-      color: #333;
-      text-align: center;
-      margin-bottom: 10px;
-      font-size: 28px;
-      font-weight: 600;
-    }
-
     .user-info {
       text-align: center;
       color: #666;
       margin-bottom: 30px;
-      font-size: 14px;
+      font-size: 18px;
+      font-weight: 500;
     }
 
     .version {
@@ -65,56 +58,6 @@
       font-size: 12px;
       margin-top: 20px;
       user-select: none;
-    }
-
-    .button-container {
-      margin-bottom: 25px;
-      min-height: 60px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .button-container.hidden {
-      display: none;
-    }
-
-    button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 15px 40px;
-      font-size: 18px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-family: 'Prompt', sans-serif;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-      min-width: 200px;
-    }
-
-    button:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-
-    button:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    button.checkout {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-    }
-
-    button.checkout:hover:not(:disabled) {
-      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
     }
 
     .status-card {
@@ -128,6 +71,7 @@
       justify-content: center;
       align-items: center;
       animation: fadeIn 0.5s ease-out;
+      margin-bottom: 25px;
     }
 
     @keyframes fadeIn {
@@ -184,11 +128,6 @@
       100% { transform: rotate(360deg); }
     }
 
-    .icon {
-      font-size: 24px;
-      margin-right: 8px;
-    }
-
     .time-display {
       font-size: 14px;
       color: #666;
@@ -206,25 +145,63 @@
       border-radius: 8px;
     }
 
-    .debug-info {
-      margin-top: 15px;
-      padding: 10px;
-      background: rgba(0,0,0,0.05);
-      border-radius: 8px;
-      font-size: 12px;
-      color: #666;
-      text-align: left;
-      max-height: 300px;
-      overflow-y: auto;
+    .button-container {
+      min-height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .button-container.hidden {
+      display: none;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Prompt', sans-serif;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      min-width: 200px;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    button.checkout {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    }
+
+    button.checkout:hover:not(:disabled) {
+      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+    }
+
+    .icon {
+      font-size: 24px;
+      margin-right: 8px;
     }
 
     @media (max-width: 480px) {
       .container {
         padding: 30px 20px;
-      }
-
-      h2 {
-        font-size: 24px;
       }
 
       button {
@@ -236,33 +213,30 @@
 </head>
 <body>
   <div class="container">
-    <h2>🏢 ระบบบันทึกเวลาทำงาน</h2>
     <div class="user-info" id="userInfo">กำลังโหลด...</div>
-
-    <div class="button-container hidden" id="buttonContainer">
-      <button id="actionBtn"></button>
-    </div>
 
     <div id="statusCard" class="status-card loading">
       <div class="spinner"></div>
       <div class="status-text">กำลังเริ่มต้นระบบ...</div>
     </div>
 
-    <div class="debug-info" id="debugInfo" style="display:none"></div>
+    <div class="button-container hidden" id="buttonContainer">
+      <button id="actionBtn"></button>
+    </div>
 
-    <div class="version">Version 1.6.0 - Fixed Time Format</div>
+    <div class="version">Version 1.7.0 - Thailand Timezone</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <script>
     // ============================================
-    // 🔧 ตั้งค่า - **แก้ไข URL ตรงนี้**
+    // 🔧 ตั้งค่า
     // ============================================
     const CONFIG = {
       API_URL: "https://script.google.com/macros/s/AKfycby_YP4T3qfUZktoEIWDerjqewcl1KniSg2bwTGHwmjfg7VfYIUg8XpEXFXkDW5lFFCt9A/exec",
       LIFF_ID: "2008403464-kaXOK95X",
-      DEBUG_MODE: true,
+      DEBUG_MODE: false,
       MAX_RETRIES: 3,
       RETRY_DELAY: 2000
     };
@@ -274,8 +248,7 @@
       actionBtn: document.getElementById("actionBtn"),
       buttonContainer: document.getElementById("buttonContainer"),
       statusCard: document.getElementById("statusCard"),
-      userInfo: document.getElementById("userInfo"),
-      debugInfo: document.getElementById("debugInfo")
+      userInfo: document.getElementById("userInfo")
     };
 
     // ============================================
@@ -293,20 +266,9 @@
     // 🐛 Debug Functions
     // ============================================
     function debugLog(message, data = null) {
-      const timestamp = new Date().toLocaleTimeString('th-TH');
-      console.log(`[${timestamp}] ${message}`, data || '');
-      
       if (CONFIG.DEBUG_MODE) {
-        const debugDiv = elements.debugInfo;
-        debugDiv.style.display = 'block';
-        const entry = document.createElement('div');
-        entry.style.marginBottom = '5px';
-        entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
-        if (data) {
-          entry.innerHTML += `<br><span style="color:#666;font-size:11px;">${JSON.stringify(data, null, 2)}</span>`;
-        }
-        debugDiv.appendChild(entry);
-        debugDiv.scrollTop = debugDiv.scrollHeight;
+        const timestamp = new Date().toLocaleTimeString('th-TH');
+        console.log(`[${timestamp}] ${message}`, data || '');
       }
     }
 
@@ -354,24 +316,31 @@
     }
 
     // ============================================
-    // 📅 Date/Time Functions
+    // 📅 Date/Time Functions (Thailand Timezone)
     // ============================================
     function getThaiDate() {
+      // ใช้ timezone +7 สำหรับประเทศไทย
       const now = new Date();
-      const d = now.getDate().toString().padStart(2, '0');
-      const m = (now.getMonth() + 1).toString().padStart(2, '0');
-      const y = now.getFullYear() + 543;
+      const thaiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+      
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear() + 543; // แปลงเป็นปี พ.ศ.
+      
       return `${d}/${m}/${y}`;
     }
 
     function getThaiDateTime() {
       const now = new Date();
-      const d = now.getDate().toString().padStart(2, '0');
-      const m = (now.getMonth() + 1).toString().padStart(2, '0');
-      const y = now.getFullYear() + 543;
-      const h = now.getHours().toString().padStart(2, '0');
-      const min = now.getMinutes().toString().padStart(2, '0');
-      const s = now.getSeconds().toString().padStart(2, '0');
+      const thaiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+      
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear() + 543;
+      const h = thaiTime.getHours().toString().padStart(2, '0');
+      const min = thaiTime.getMinutes().toString().padStart(2, '0');
+      const s = thaiTime.getSeconds().toString().padStart(2, '0');
+      
       return `${d}/${m}/${y} ${h}:${min}:${s}`;
     }
 
@@ -383,8 +352,9 @@
 
     function getCurrentTime() {
       const now = new Date();
-      const h = now.getHours().toString().padStart(2, '0');
-      const m = now.getMinutes().toString().padStart(2, '0');
+      const thaiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+      const h = thaiTime.getHours().toString().padStart(2, '0');
+      const m = thaiTime.getMinutes().toString().padStart(2, '0');
       return `${h}:${m} น.`;
     }
 
@@ -652,7 +622,7 @@
               '👋 ยินดีต้อนรับ!',
               'คุณได้เช็คอินเรียบร้อยแล้ว',
               'success',
-              `เข้างานเวลา: ${formatTime(s.checkinTime)}`,
+              `เข้างาน: ${formatTime(s.checkinTime)}`,
               `กดปุ่ม Check Out เมื่อเลิกงาน (เวลาปัจจุบัน: ${getCurrentTime()})`
             );
           } else {
