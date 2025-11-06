@@ -224,7 +224,7 @@
       <button id="actionBtn"></button>
     </div>
 
-    <div class="version">Version 1.7.0 - Thailand Timezone</div>
+    <div class="version">Version 1.7.1 - Thailand Timezone</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -319,9 +319,10 @@
     // 📅 Date/Time Functions (Thailand Timezone)
     // ============================================
     function getThaiDate() {
-      // ใช้ timezone +7 สำหรับประเทศไทย
+      // ใช้ UTC offset +7 ชั่วโมงสำหรับประเทศไทย
       const now = new Date();
-      const thaiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const thaiTime = new Date(utc + (7 * 3600000)); // +7 ชั่วโมง
       
       const d = thaiTime.getDate().toString().padStart(2, '0');
       const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
@@ -332,7 +333,8 @@
 
     function getThaiDateTime() {
       const now = new Date();
-      const thaiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const thaiTime = new Date(utc + (7 * 3600000)); // +7 ชั่วโมง
       
       const d = thaiTime.getDate().toString().padStart(2, '0');
       const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
@@ -352,7 +354,8 @@
 
     function getCurrentTime() {
       const now = new Date();
-      const thaiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const thaiTime = new Date(utc + (7 * 3600000)); // +7 ชั่วโมง
       const h = thaiTime.getHours().toString().padStart(2, '0');
       const m = thaiTime.getMinutes().toString().padStart(2, '0');
       return `${h}:${m} น.`;
