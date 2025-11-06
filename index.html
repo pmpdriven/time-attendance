@@ -64,6 +64,7 @@
       color: #999;
       font-size: 12px;
       margin-top: 20px;
+      user-select: none;
     }
 
     .button-container {
@@ -249,7 +250,7 @@
 
     <div class="debug-info" id="debugInfo" style="display:none"></div>
 
-    <div class="version">Version 1.4.1 - Fixed</div>
+    <div class="version">Version 1.4.2 - Fixed</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -462,10 +463,14 @@
       if (action === 'checkin') {
         elements.actionBtn.className = '';
         elements.actionBtn.innerHTML = '<span class="icon">✅</span> Check In';
+        elements.actionBtn.disabled = false; // เพิ่มบรรทัดนี้
       } else if (action === 'checkout') {
         elements.actionBtn.className = 'checkout';
         elements.actionBtn.innerHTML = '<span class="icon">🏁</span> Check Out';
+        elements.actionBtn.disabled = false; // เพิ่มบรรทัดนี้
       }
+      
+      debugLog('✅ แสดงปุ่ม', { action, disabled: elements.actionBtn.disabled });
     }
 
     function hideActionButton() {
@@ -681,7 +686,14 @@
     // ============================================
     // 🎯 Event Listeners
     // ============================================
-    elements.actionBtn.addEventListener("click", sendAction);
+    elements.actionBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      debugLog('🖱️ ปุ่มถูกกด!', { 
+        action: state.currentAction, 
+        isProcessing: state.isProcessing 
+      });
+      sendAction();
+    });
 
     // ============================================
     // 🚀 Initialize App
