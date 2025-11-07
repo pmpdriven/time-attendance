@@ -224,7 +224,12 @@
       <button id="actionBtn"></button>
     </div>
 
-    <div class="version">Version 2.0.1 - LINE Reply with Close Window</div>
+    <!-- Debug Log Panel -->
+    <div id="debugLog" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; display: block;">
+      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">🐛 Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
+    </div>
+
+    <div class="version">Version 2.1.0 - Debug Mode + ShareTargetPicker</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -236,7 +241,7 @@
     const CONFIG = {
       API_URL: "https://script.google.com/macros/s/AKfycby_YP4T3qfUZktoEIWDerjqewcl1KniSg2bwTGHwmjfg7VfYIUg8XpEXFXkDW5lFFCt9A/exec",
       LIFF_ID: "2008403464-kaXOK95X",
-      DEBUG_MODE: false,
+      DEBUG_MODE: true, // เปิด Debug Mode
       MAX_RETRIES: 3,
       RETRY_DELAY: 2000
     };
@@ -266,9 +271,27 @@
     // 🐛 Debug Functions
     // ============================================
     function debugLog(message, data = null) {
+      const timestamp = new Date().toLocaleTimeString('th-TH');
+      const logMessage = `[${timestamp}] ${message}`;
+      
       if (CONFIG.DEBUG_MODE) {
-        const timestamp = new Date().toLocaleTimeString('th-TH');
-        console.log(`[${timestamp}] ${message}`, data || '');
+        console.log(logMessage, data || '');
+      }
+      
+      // แสดง Debug Log บนหน้าจอด้วย
+      if (CONFIG.DEBUG_MODE) {
+        const debugDiv = document.getElementById('debugLog');
+        if (debugDiv) {
+          const logEntry = document.createElement('div');
+          logEntry.style.cssText = 'font-size: 11px; padding: 2px 0; color: #666; border-bottom: 1px solid #eee;';
+          logEntry.textContent = logMessage + (data ? ' | ' + JSON.stringify(data).substring(0, 100) : '');
+          debugDiv.insertBefore(logEntry, debugDiv.firstChild);
+          
+          // เก็บแค่ 20 บรรทัดล่าสุด
+          while (debugDiv.children.length > 20) {
+            debugDiv.removeChild(debugDiv.lastChild);
+          }
+        }
       }
     }
 
@@ -418,16 +441,28 @@
     }
 
     // ============================================
-    // 💬 LINE Message Reply Functions (แก้ไขใหม่)
+    // 💬 LINE Message Reply Functions (วิธีใหม่ - ใช้ Share Target Picker)
     // ============================================
     async function sendLineReplyMessage(action, dateTime) {
+      debugLog('📤 เริ่มฟังก์ชัน sendLineReplyMessage', { 
+        action, 
+        dateTime, 
+        liffInitialized: state.liffInitialized 
+      });
+
       if (!state.liffInitialized) {
         debugLog('⚠️ LIFF ไม่พร้อม, ข้าม sendMessage');
         return false;
       }
 
       try {
-        debugLog('📤 เตรียมส่งข้อความ LINE Reply...', { action, dateTime });
+        // ตรวจสอบว่ามี LIFF API หรือไม่
+        debugLog('🔍 ตรวจสอบ LIFF APIs', {
+          isInClient: liff.isInClient(),
+          isLoggedIn: liff.isLoggedIn(),
+          hasShareTargetPicker: liff.isApiAvailable('shareTargetPicker'),
+          hasSendMessages: liff.isApiAvailable('sendMessages')
+        });
 
         let messageText = '';
         
@@ -444,46 +479,90 @@
                        `พักผ่อนให้เต็มที่นะคะ 😊`;
         }
 
-        // วิธีที่ 1: ลองส่งข้อความถ้า API พร้อม
+        debugLog('📝 ข้อความที่จะส่ง:', messageText);
+
+        // วิธีที่ 1: ลอง sendMessages ก่อน
         if (liff.isApiAvailable('sendMessages')) {
-          debugLog('✅ sendMessages API พร้อมใช้งาน');
+          debugLog('✅ พบ sendMessages API, กำลังส่ง...');
           
-          await liff.sendMessages([
+          try {
+            await liff.sendMessages([
+              {
+                type: 'text',
+                text: messageText
+              }
+            ]);
+            
+            debugLog('✅ sendMessages สำเร็จ!');
+            
+            // รอแล้วปิดหน้าต่าง
+            setTimeout(() => {
+              debugLog('🔒 กำลังปิดหน้าต่าง LIFF...');
+              liff.closeWindow();
+            }, 1500);
+            
+            return true;
+            
+          } catch (sendError) {
+            debugLog('❌ sendMessages ล้มเหลว:', sendError);
+            
+            // ถ้า sendMessages ไม่ได้ ลอง shareTargetPicker
+            if (liff.isApiAvailable('shareTargetPicker')) {
+              debugLog('🔄 ลอง shareTargetPicker แทน...');
+              
+              await liff.shareTargetPicker([
+                {
+                  type: 'text',
+                  text: messageText
+                }
+              ]);
+              
+              debugLog('✅ shareTargetPicker สำเร็จ!');
+              return true;
+            }
+          }
+        } 
+        // วิธีที่ 2: ถ้าไม่มี sendMessages ใช้ shareTargetPicker
+        else if (liff.isApiAvailable('shareTargetPicker')) {
+          debugLog('📤 ไม่มี sendMessages, ใช้ shareTargetPicker...');
+          
+          await liff.shareTargetPicker([
             {
               type: 'text',
               text: messageText
             }
-          ]).then(() => {
-            debugLog('✅ ส่งข้อความสำเร็จ');
-            // ปิด LIFF window หลังส่งข้อความเสร็จ (สำคัญมาก!)
-            setTimeout(() => {
-              liff.closeWindow();
-            }, 1000);
-          }).catch(err => {
-            debugLog('❌ Error จาก sendMessages:', err);
-            // ถ้าส่งไม่ได้ ให้ปิดหน้าต่างเฉยๆ
-            setTimeout(() => {
-              liff.closeWindow();
-            }, 2000);
-          });
+          ]);
           
+          debugLog('✅ shareTargetPicker สำเร็จ!');
           return true;
-        } else {
-          // วิธีที่ 2: ถ้า sendMessages ไม่พร้อม ให้ปิดหน้าต่าง
-          debugLog('⚠️ sendMessages API ไม่พร้อม, ปิดหน้าต่าง');
+        } 
+        // วิธีที่ 3: ถ้าไม่มีทั้งคู่
+        else {
+          debugLog('❌ ไม่มี API ส่งข้อความเลย');
+          
+          // แสดง alert แทน
+          alert(messageText);
+          
           setTimeout(() => {
             liff.closeWindow();
-          }, 1500);
+          }, 1000);
+          
           return false;
         }
 
       } catch (error) {
-        debugLog('❌ Error ส่งข้อความ LINE', error);
+        debugLog('💥 Error ใน sendLineReplyMessage:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
         
-        // ปิดหน้าต่างแม้เกิด error
+        // ถ้าเกิด error ให้แสดงข้อความแทน
+        alert(`บันทึกเวลาสำเร็จแล้ว!\n\n${action === 'checkin' ? 'เช็คอิน' : 'เช็คเอาท์'}: ${dateTime}`);
+        
         setTimeout(() => {
           liff.closeWindow();
-        }, 2000);
+        }, 1500);
         
         return false;
       }
