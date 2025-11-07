@@ -224,7 +224,7 @@
       <button id="actionBtn"></button>
     </div>
 
-    <div class="version">Version 1.7.1 - Thailand Timezone</div>
+    <div class="version">Version 2.0.0 - LINE Reply Message</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -319,14 +319,13 @@
     // 📅 Date/Time Functions (Thailand Timezone)
     // ============================================
     function getThaiDate() {
-      // ใช้ UTC offset +7 ชั่วโมงสำหรับประเทศไทย
       const now = new Date();
       const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const thaiTime = new Date(utc + (7 * 3600000)); // +7 ชั่วโมง
+      const thaiTime = new Date(utc + (7 * 3600000));
       
       const d = thaiTime.getDate().toString().padStart(2, '0');
       const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
-      const y = thaiTime.getFullYear() + 543; // แปลงเป็นปี พ.ศ.
+      const y = thaiTime.getFullYear() + 543;
       
       return `${d}/${m}/${y}`;
     }
@@ -334,7 +333,7 @@
     function getThaiDateTime() {
       const now = new Date();
       const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const thaiTime = new Date(utc + (7 * 3600000)); // +7 ชั่วโมง
+      const thaiTime = new Date(utc + (7 * 3600000));
       
       const d = thaiTime.getDate().toString().padStart(2, '0');
       const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
@@ -346,6 +345,25 @@
       return `${d}/${m}/${y} ${h}:${min}:${s}`;
     }
 
+    function getThaiDateTimeLong() {
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const thaiTime = new Date(utc + (7 * 3600000));
+      
+      const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+      const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+      
+      const dayName = dayNames[thaiTime.getDay()];
+      const d = thaiTime.getDate();
+      const monthName = monthNames[thaiTime.getMonth()];
+      const y = thaiTime.getFullYear() + 543;
+      const h = thaiTime.getHours().toString().padStart(2, '0');
+      const min = thaiTime.getMinutes().toString().padStart(2, '0');
+      
+      return `วัน${dayName}ที่ ${d} ${monthName} ${y} เวลา ${h}:${min} น.`;
+    }
+
     function formatTime(timeStr) {
       if (!timeStr) return '';
       const parts = timeStr.split(':');
@@ -355,7 +373,7 @@
     function getCurrentTime() {
       const now = new Date();
       const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const thaiTime = new Date(utc + (7 * 3600000)); // +7 ชั่วโมง
+      const thaiTime = new Date(utc + (7 * 3600000));
       const h = thaiTime.getHours().toString().padStart(2, '0');
       const m = thaiTime.getMinutes().toString().padStart(2, '0');
       return `${h}:${m} น.`;
@@ -400,28 +418,70 @@
     }
 
     // ============================================
-    // 💬 LINE Message Functions
+    // 💬 LINE Message Reply Functions (ปรับปรุงใหม่)
     // ============================================
-    async function sendLineMessage(action, dateTime) {
+    async function sendLineReplyMessage(action, dateTime) {
       if (!state.liffInitialized) {
         debugLog('⚠️ LIFF ไม่พร้อม, ข้าม sendMessage');
-        return;
+        return false;
       }
 
       try {
-        let message = '';
+        debugLog('📤 เตรียมส่งข้อความ LINE Reply...', { action, dateTime });
+
+        let messageText = '';
+        
         if (action === 'checkin') {
-          message = `✅ เช็คอินสำเร็จ\n📅 ${dateTime}\n👤 ${state.lineDisplayName}`;
+          messageText = `✅ เช็คอินสำเร็จ!\n\n` +
+                       `👤 คุณ${state.lineDisplayName}\n` +
+                       `📅 ${getThaiDateTimeLong()}\n\n` +
+                       `ขอให้มีความสุขกับการทำงานวันนี้ 💪`;
         } else if (action === 'checkout') {
-          message = `🏁 เช็คเอาท์สำเร็จ\n📅 ${dateTime}\n👤 ${state.lineDisplayName}\n\n✨ ขอบคุณสำหรับการทำงานวันนี้`;
+          messageText = `🏁 เช็คเอาท์สำเร็จ!\n\n` +
+                       `👤 คุณ${state.lineDisplayName}\n` +
+                       `📅 ${getThaiDateTimeLong()}\n\n` +
+                       `✨ ขอบคุณสำหรับการทำงานวันนี้\n` +
+                       `พักผ่อนให้เต็มที่นะคะ 😊`;
         }
 
-        if (liff.isApiAvailable('sendMessages')) {
-          await liff.sendMessages([{ type: 'text', text: message }]);
-          debugLog('✅ ส่งข้อความ LINE สำเร็จ');
+        // ตรวจสอบว่า API sendMessages พร้อมใช้งานหรือไม่
+        if (!liff.isApiAvailable('sendMessages')) {
+          debugLog('⚠️ sendMessages API ไม่พร้อมใช้งาน');
+          return false;
         }
+
+        // ส่งข้อความแบบ Reply
+        await liff.sendMessages([
+          {
+            type: 'text',
+            text: messageText
+          }
+        ]);
+
+        debugLog('✅ ส่งข้อความ LINE Reply สำเร็จ!');
+        
+        // แสดง notification บนหน้าจอว่าส่งสำเร็จ
+        updateStatus(
+          '✅ สำเร็จ!',
+          'บันทึกเวลาเรียบร้อย และส่งข้อความไปที่แชทแล้ว',
+          'success',
+          `📱 กรุณาตรวจสอบข้อความใน LINE Chat`
+        );
+        
+        return true;
+
       } catch (error) {
         debugLog('❌ Error ส่งข้อความ LINE', error);
+        
+        // แม้ส่งข้อความไม่สำเร็จ แต่การบันทึกเวลายังสำเร็จอยู่
+        updateStatus(
+          '⚠️ บันทึกสำเร็จ',
+          'แต่ไม่สามารถส่งข้อความไปที่แชทได้',
+          'warning',
+          'เวลาถูกบันทึกแล้ว แต่อาจมีปัญหาในการส่งข้อความ'
+        );
+        
+        return false;
       }
     }
 
@@ -525,7 +585,7 @@
       
       const actionToSend = state.currentAction;
       
-      setLoading(true);
+      setLoading(true, `กำลัง${actionToSend === 'checkin' ? 'เช็คอิน' : 'เช็คเอาท์'}...`);
       hideActionButton();
 
       try {
@@ -559,15 +619,12 @@
         });
         
         if (result.status === 'ok') {
-          await sendLineMessage(actionToSend, dateTime);
+          // ส่งข้อความ Reply ไปที่ LINE Chat พร้อมวันเวลา
+          setLoading(true, 'กำลังส่งข้อความไปที่ LINE...');
+          await sendLineReplyMessage(actionToSend, dateTime);
           
-          updateStatus(
-            '✅ สำเร็จ!',
-            result.message, 
-            'success'
-          );
-          
-          setTimeout(checkStatus, 1500);
+          // รอสักครู่แล้วค่อย refresh สถานะ
+          setTimeout(checkStatus, 2000);
         } else {
           updateStatus(
             '❌ เกิดข้อผิดพลาด',
