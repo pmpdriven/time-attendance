@@ -240,7 +240,7 @@
       <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">🐛 Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
     </div>
 
-    <div class="version">Version 2.2.0 - Send via Apps Script Backend</div>
+    <div class="version">Version 2.3.0 - Use liff.sendMessages (No Token Required)</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -250,7 +250,7 @@
     // 🔧 ตั้งค่า
     // ============================================
     const CONFIG = {
-      API_URL: "https://script.google.com/macros/s/AKfycbzQmRGquzYilg-ksjQt8v0sLN-1gWvQGg1t8vS47r06WFbuUHWmdsQDumXpS1LZ0NIbtA/exec",
+      API_URL: "https://script.google.com/macros/s/AKfycbx5Km_hKmpldtcmOG7ugy_OJDei4noJ4OQN8O1tRv_Z5gNmaI3k1KqtB1iXoQ1U9VxPAg/exec",
       LIFF_ID: "2008403464-kaXOK95X",
       DEBUG_MODE: true, // เปิด Debug Mode
       MAX_RETRIES: 3,
@@ -452,81 +452,118 @@
     }
 
     // ============================================
-    // 💬 LINE Message Reply Functions (ใช้ LINE Notify API ผ่าน Google Apps Script)
+    // 💬 LINE Message Reply Functions (ใช้ liff.sendMessages)
     // ============================================
     async function sendLineReplyMessage(action, dateTime) {
       debugLog('🚀 เข้าสู่ฟังก์ชัน sendLineReplyMessage', { 
         action, 
-        dateTime
+        dateTime,
+        liffInitialized: state.liffInitialized
       });
 
+      // ตรวจสอบว่า LIFF พร้อมหรือไม่
+      if (!state.liffInitialized) {
+        debugLog('❌ LIFF ไม่พร้อม');
+        updateStatus(
+          '⚠️ บันทึกสำเร็จ',
+          'แต่ไม่สามารถส่งข้อความได้ (LIFF ไม่พร้อม)',
+          'warning',
+          `📅 ${dateTime}`
+        );
+        setTimeout(checkStatus, 2000);
+        return false;
+      }
+
       try {
+        // สร้างข้อความ
         let messageText = '';
         
         if (action === 'checkin') {
-          messageText = `✅ เช็คอินสำเร็จ!\n\n` +
+          messageText = `✅ เช็คอินเสร็จ!\n\n` +
                        `👤 คุณ${state.lineDisplayName}\n` +
                        `📅 ${getThaiDateTimeLong()}\n\n` +
                        `ขอให้มีความสุขกับการทำงานวันนี้ 💪`;
         } else if (action === 'checkout') {
-          messageText = `🏁 เช็คเอาท์สำเร็จ!\n\n` +
+          messageText = `🏁 เช็คเอาท์เสร็จ!\n\n` +
                        `👤 คุณ${state.lineDisplayName}\n` +
                        `📅 ${getThaiDateTimeLong()}\n\n` +
                        `✨ ขอบคุณสำหรับการทำงานวันนี้\n` +
                        `พักผ่อนให้เต็มที่นะคะ 😊`;
         }
 
-        debugLog('📝 ข้อความที่จะส่ง:', messageText);
+        debugLog('📝 ข้อความที่จะส่ง:', messageText.substring(0, 50) + '...');
 
-        // ส่งข้อความผ่าน Google Apps Script
-        debugLog('📤 ส่งข้อความผ่าน Apps Script...');
-        
-        const payload = {
-          action: 'sendMessage',
-          userId: state.lineUserId,
-          message: messageText
-        };
-
-        debugLog('📦 Payload:', payload);
-
-        const response = await fetch(CONFIG.API_URL, {
-          method: "POST",
-          mode: "cors",
-          cache: "no-cache",
-          headers: { 
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: JSON.stringify(payload)
+        // ตรวจสอบว่ามี API sendMessages หรือไม่
+        const hasSendMessages = liff.isApiAvailable('sendMessages');
+        debugLog('🔍 ตรวจสอบ API:', {
+          isInClient: liff.isInClient(),
+          isLoggedIn: liff.isLoggedIn(),
+          hasSendMessages: hasSendMessages
         });
 
-        debugLog('📡 Response status:', response.status);
-
-        const result = await response.json();
-        debugLog('📬 Response data:', result);
-
-        if (result.status === 'ok') {
-          debugLog('✅ ส่งข้อความสำเร็จ!');
-          
+        if (!hasSendMessages) {
+          debugLog('❌ sendMessages API ไม่พร้อมใช้งาน');
           updateStatus(
-            '✅ สำเร็จทั้งหมด!',
-            'บันทึกเวลาและส่งข้อความไปที่ LINE เรียบร้อย',
-            'success',
-            `📅 ${dateTime}`
+            '⚠️ บันทึกสำเร็จ',
+            'แต่ไม่สามารถส่งข้อความได้ (API ไม่รองรับ)',
+            'warning',
+            `📅 ${dateTime}`,
+            'กรุณาเปิดจากแชท LINE หรือ Rich Menu'
           );
-          
           setTimeout(checkStatus, 2000);
-          return true;
-        } else {
-          debugLog('⚠️ ส่งข้อความไม่สำเร็จ:', result.message);
           return false;
         }
+
+        // ส่งข้อความผ่าน LIFF
+        debugLog('📤 กำลังส่งข้อความผ่าน liff.sendMessages...');
+        
+        await liff.sendMessages([
+          {
+            type: "text",
+            text: messageText
+          }
+        ]);
+
+        debugLog('✅ ส่งข้อความสำเร็จ!');
+
+        // แสดงสถานะสำเร็จ
+        updateStatus(
+          '✅ สำเร็จทั้งหมด!',
+          'บันทึกเวลาและส่งข้อความเรียบร้อย',
+          'success',
+          `📅 ${dateTime}`,
+          '🎉 ข้อความถูกส่งไปที่แชทแล้ว'
+        );
+
+        // ปิดหน้าต่าง LIFF หลังส่งข้อความ
+        debugLog('🔒 กำลังปิดหน้าต่าง LIFF...');
+        setTimeout(() => {
+          liff.closeWindow();
+        }, 2000);
+
+        return true;
 
       } catch (error) {
         debugLog('💥 Error ใน sendLineReplyMessage:', {
           name: error.name,
-          message: error.message
+          message: error.message,
+          stack: error.stack ? error.stack.substring(0, 200) : 'N/A'
         });
-        
+
+        // แสดง Error แต่บันทึกเวลาสำเร็จแล้ว
+        updateStatus(
+          '⚠️ บันทึกสำเร็จ',
+          'แต่ส่งข้อความไม่ได้',
+          'warning',
+          `📅 ${dateTime}`,
+          `Error: ${error.message}`
+        );
+
+        // ถ้า Error ก็ปิดหน้าต่างอยู่ดี
+        setTimeout(() => {
+          liff.closeWindow();
+        }, 3000);
+
         return false;
       }
     }
