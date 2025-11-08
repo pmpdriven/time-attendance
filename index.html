@@ -1,15 +1,4 @@
-// ============================================
-    // 💬 LINE Message Reply Functions (แก้ไขใหม่ - เพิ่ม Debug มากขึ้น)
-    // ============================================
-    async function sendLineReplyMessage(action, dateTime) {
-      debugLog('🚀 เข้าสู่ฟังก์ชัน sendLineReplyMessage', { 
-        action, 
-        dateTime, 
-        liffInitialized: state.liffInitialized 
-      });
-
-      if (!state.liffInitialized) {
-        debugLog('❌ LIFF ไม่พ<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
@@ -22,7 +11,6 @@
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       font-family: 'Prompt', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -32,7 +20,6 @@
       align-items: center;
       padding: 20px;
     }
-
     .container {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
@@ -43,18 +30,10 @@
       width: 100%;
       animation: slideUp 0.5s ease-out;
     }
-
     @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-
     .user-info {
       text-align: center;
       color: #666;
@@ -62,7 +41,6 @@
       font-size: 18px;
       font-weight: 500;
     }
-
     .version {
       text-align: center;
       color: #999;
@@ -70,7 +48,6 @@
       margin-top: 20px;
       user-select: none;
     }
-
     .status-card {
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
       border-radius: 12px;
@@ -84,46 +61,18 @@
       animation: fadeIn 0.5s ease-out;
       margin-bottom: 25px;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    .status-card.loading { background: linear-gradient(135deg, #e0e7ff 0%, #cfd9ff 100%); }
+    .status-card.success { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); }
+    .status-card.warning { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+    .status-card.error { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+    .status-card.completed { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
 
-    .status-card.loading {
-      background: linear-gradient(135deg, #e0e7ff 0%, #cfd9ff 100%);
-    }
-
-    .status-card.success {
-      background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
-    }
-
-    .status-card.warning {
-      background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-    }
-
-    .status-card.error {
-      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-    }
-
-    .status-card.completed {
-      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-    }
-
-    .status-text {
-      font-size: 16px;
-      color: #333;
-      font-weight: 400;
-      line-height: 1.6;
-    }
-
-    .status-title {
-      font-size: 20px;
-      color: #333;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
+    .status-text { font-size: 16px; color: #333; font-weight: 400; line-height: 1.6; }
+    .status-title { font-size: 20px; color: #333; font-weight: 600; margin-bottom: 10px; }
     .spinner {
       border: 3px solid #f3f3f3;
       border-top: 3px solid #667eea;
@@ -133,40 +82,14 @@
       animation: spin 1s linear infinite;
       margin-bottom: 15px;
     }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
-    .time-display {
-      font-size: 14px;
-      color: #666;
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(0,0,0,0.1);
-    }
-
-    .instruction {
-      font-size: 15px;
-      color: #555;
-      margin-top: 10px;
-      padding: 12px;
-      background: rgba(255,255,255,0.5);
-      border-radius: 8px;
-    }
-
-    .button-container {
-      min-height: 60px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .button-container.hidden {
-      display: none;
-    }
-
+    .time-display { font-size: 14px; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); }
+    .instruction { font-size: 15px; color: #555; margin-top: 10px; padding: 12px; background: rgba(255,255,255,0.5); border-radius: 8px; }
+    .button-container { min-height: 60px; display: flex; justify-content: center; align-items: center; }
+    .button-container.hidden { display: none; }
     button {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
@@ -181,84 +104,58 @@
       box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
       min-width: 200px;
     }
-
     button:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
     }
-
-    button:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
+    button:active:not(:disabled) { transform: translateY(0); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
     button.checkout {
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
     }
-
     button.checkout:hover:not(:disabled) {
       box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
     }
-
-    .icon {
-      font-size: 24px;
-      margin-right: 8px;
-    }
-
+    .icon { font-size: 24px; margin-right: 8px; }
     @media (max-width: 480px) {
-      .container {
-        padding: 30px 20px;
-      }
-
-      button {
-        width: 100%;
-        min-width: auto;
-      }
+      .container { padding: 30px 20px; }
+      button { width: 100%; min-width: auto; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="user-info" id="userInfo">กำลังโหลด...</div>
-
     <div id="statusCard" class="status-card loading">
       <div class="spinner"></div>
       <div class="status-text">กำลังเริ่มต้นระบบ...</div>
     </div>
-
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn"></button>
     </div>
-
     <!-- Debug Log Panel -->
     <div id="debugLog" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; display: block;">
-      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">🐛 Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
+      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
     </div>
-
-    <div class="version">Version 2.3.0 - Use liff.sendMessages (No Token Required)</div>
+    <div class="version">Version 2.4.0 - ส่งข้อความกลับแชท LINE ได้จริง by grok (liff.sendMessages)</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
   <script>
     // ============================================
-    // 🔧 ตั้งค่า
+    // ตั้งค่า
     // ============================================
     const CONFIG = {
       API_URL: "https://script.google.com/macros/s/AKfycbx5Km_hKmpldtcmOG7ugy_OJDei4noJ4OQN8O1tRv_Z5gNmaI3k1KqtB1iXoQ1U9VxPAg/exec",
       LIFF_ID: "2008403464-kaXOK95X",
-      DEBUG_MODE: true, // เปิด Debug Mode
+      DEBUG_MODE: true,
       MAX_RETRIES: 3,
       RETRY_DELAY: 2000
     };
 
     // ============================================
-    // 📱 Elements
+    // Elements
     // ============================================
     const elements = {
       actionBtn: document.getElementById("actionBtn"),
@@ -268,7 +165,7 @@
     };
 
     // ============================================
-    // 🎯 State
+    // State
     // ============================================
     const state = {
       currentAction: null,
@@ -279,17 +176,12 @@
     };
 
     // ============================================
-    // 🐛 Debug Functions
+    // Debug Functions
     // ============================================
     function debugLog(message, data = null) {
       const timestamp = new Date().toLocaleTimeString('th-TH');
       const logMessage = `[${timestamp}] ${message}`;
-      
-      if (CONFIG.DEBUG_MODE) {
-        console.log(logMessage, data || '');
-      }
-      
-      // แสดง Debug Log บนหน้าจอด้วย
+      if (CONFIG.DEBUG_MODE) console.log(logMessage, data || '');
       if (CONFIG.DEBUG_MODE) {
         const debugDiv = document.getElementById('debugLog');
         if (debugDiv) {
@@ -297,558 +189,283 @@
           logEntry.style.cssText = 'font-size: 11px; padding: 2px 0; color: #666; border-bottom: 1px solid #eee;';
           logEntry.textContent = logMessage + (data ? ' | ' + JSON.stringify(data).substring(0, 100) : '');
           debugDiv.insertBefore(logEntry, debugDiv.firstChild);
-          
-          // เก็บแค่ 20 บรรทัดล่าสุด
-          while (debugDiv.children.length > 20) {
-            debugDiv.removeChild(debugDiv.lastChild);
-          }
+          while (debugDiv.children.length > 20) debugDiv.removeChild(debugDiv.lastChild);
         }
       }
     }
 
     // ============================================
-    // 🔐 LIFF Initialization
+    // LIFF Initialization
     // ============================================
     async function initializeLiff() {
       try {
-        debugLog('🔄 เริ่มต้น LIFF...', { liffId: CONFIG.LIFF_ID });
-        
+        debugLog('เริ่มต้น LIFF...', { liffId: CONFIG.LIFF_ID });
         await liff.init({ liffId: CONFIG.LIFF_ID });
-        debugLog('✅ LIFF init สำเร็จ');
-        
+        debugLog('LIFF init สำเร็จ');
+
         if (!liff.isLoggedIn()) {
-          debugLog('⚠️ ยังไม่ได้ Login, redirect...');
+          debugLog('ยังไม่ได้ Login, redirect...');
           liff.login();
           return false;
         }
 
         const profile = await liff.getProfile();
-        
         state.lineUserId = profile.userId;
-        state.lineDisplayName = profile.displayName;
+        state.lineDisplayName = profile.displayName || "ผู้ใช้";
         state.liffInitialized = true;
-        
-        debugLog('✅ ดึง Profile สำเร็จ', {
-          userId: state.lineUserId,
-          displayName: state.lineDisplayName
-        });
-        
+
+        debugLog('ดึง Profile สำเร็จ', { userId: state.lineUserId, displayName: state.lineDisplayName });
         elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName}`;
-        
         return true;
       } catch (error) {
-        debugLog('❌ LIFF Error', error);
-        
+        debugLog('LIFF Error', error);
         state.lineUserId = "TEST_" + Date.now();
         state.lineDisplayName = "ผู้ใช้ทดสอบ";
         state.liffInitialized = false;
-        
         elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName} (โหมดทดสอบ)`;
-        
         return true;
       }
     }
 
     // ============================================
-    // 📅 Date/Time Functions (Thailand Timezone)
+    // Date/Time Functions (Thailand)
     // ============================================
     function getThaiDate() {
       const now = new Date();
-      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const thaiTime = new Date(utc + (7 * 3600000));
-      
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
       const d = thaiTime.getDate().toString().padStart(2, '0');
       const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
       const y = thaiTime.getFullYear() + 543;
-      
       return `${d}/${m}/${y}`;
     }
-
     function getThaiDateTime() {
       const now = new Date();
-      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const thaiTime = new Date(utc + (7 * 3600000));
-      
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
       const d = thaiTime.getDate().toString().padStart(2, '0');
       const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
       const y = thaiTime.getFullYear() + 543;
       const h = thaiTime.getHours().toString().padStart(2, '0');
       const min = thaiTime.getMinutes().toString().padStart(2, '0');
       const s = thaiTime.getSeconds().toString().padStart(2, '0');
-      
       return `${d}/${m}/${y} ${h}:${min}:${s}`;
     }
-
     function getThaiDateTimeLong() {
       const now = new Date();
-      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const thaiTime = new Date(utc + (7 * 3600000));
-      
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
       const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
       const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-      
-      const dayName = dayNames[thaiTime.getDay()];
-      const d = thaiTime.getDate();
-      const monthName = monthNames[thaiTime.getMonth()];
-      const y = thaiTime.getFullYear() + 543;
-      const h = thaiTime.getHours().toString().padStart(2, '0');
-      const min = thaiTime.getMinutes().toString().padStart(2, '0');
-      
-      return `วัน${dayName}ที่ ${d} ${monthName} ${y} เวลา ${h}:${min} น.`;
+      return `วัน${dayNames[thaiTime.getDay()]}ที่ ${thaiTime.getDate()} ${monthNames[thaiTime.getMonth()]} ${thaiTime.getFullYear() + 543} เวลา ${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
     }
-
-    function formatTime(timeStr) {
-      if (!timeStr) return '';
-      const parts = timeStr.split(':');
-      return `${parts[0]}:${parts[1]} น.`;
-    }
-
+    function formatTime(timeStr) { return timeStr ? `${timeStr.split(':')[0]}:${timeStr.split(':')[1]} น.` : ''; }
     function getCurrentTime() {
       const now = new Date();
-      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const thaiTime = new Date(utc + (7 * 3600000));
-      const h = thaiTime.getHours().toString().padStart(2, '0');
-      const m = thaiTime.getMinutes().toString().padStart(2, '0');
-      return `${h}:${m} น.`;
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      return `${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
     }
 
     // ============================================
-    // 📍 GPS Functions
+    // GPS Functions
     // ============================================
     function getLocation() {
       return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject('เบราว์เซอร์ไม่รองรับ GPS');
-          return;
-        }
-
-        const options = {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
-        };
-
-        debugLog('🌍 กำลังขอ GPS...');
-
+        if (!navigator.geolocation) return reject('เบราว์เซอร์ไม่รองรับ GPS');
+        const options = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+        debugLog('กำลังขอ GPS...');
         navigator.geolocation.getCurrentPosition(
-          pos => {
-            debugLog('✅ ได้ตำแหน่ง GPS', {
-              lat: pos.coords.latitude,
-              lon: pos.coords.longitude
-            });
-            resolve({
-              lat: pos.coords.latitude,
-              lon: pos.coords.longitude
-            });
-          },
-          err => {
-            debugLog('❌ GPS Error', err);
-            reject('ไม่สามารถอ่านตำแหน่งได้ กรุณาเปิด GPS');
-          },
+          pos => { debugLog('ได้ตำแหน่ง GPS', { lat: pos.coords.latitude, lon: pos.coords.longitude }); resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }); },
+          err => { debugLog('GPS Error', err); reject('ไม่สามารถอ่านตำแหน่งได้ กรุณาเปิด GPS'); },
           options
         );
       });
     }
 
     // ============================================
-    // 💬 LINE Message Reply Functions (ใช้ liff.sendMessages)
+    // LINE Message Reply (ใช้ liff.sendMessages)
     // ============================================
     async function sendLineReplyMessage(action, dateTime) {
-      debugLog('🚀 เข้าสู่ฟังก์ชัน sendLineReplyMessage', { 
-        action, 
-        dateTime,
-        liffInitialized: state.liffInitialized
-      });
+      debugLog('เข้าสู่ sendLineReplyMessage', { action, dateTime, inClient: liff.isInClient() });
 
-      // ตรวจสอบว่า LIFF พร้อมหรือไม่
-      if (!state.liffInitialized) {
-        debugLog('❌ LIFF ไม่พร้อม');
-        updateStatus(
-          '⚠️ บันทึกสำเร็จ',
-          'แต่ไม่สามารถส่งข้อความได้ (LIFF ไม่พร้อม)',
-          'warning',
-          `📅 ${dateTime}`
-        );
-        setTimeout(checkStatus, 2000);
+      if (!state.liffInitialized || !liff.isInClient()) {
+        debugLog('ต้องเปิดจากแชท LINE เท่านั้น');
+        updateStatus('บันทึกสำเร็จ', 'แต่ไม่สามารถส่งข้อความได้', 'warning', `📅 ${dateTime}`, 'กรุณาเปิดจากแชท LINE หรือ Rich Menu');
+        setTimeout(() => liff.closeWindow(), 3000);
         return false;
       }
 
       try {
-        // สร้างข้อความ
         let messageText = '';
-        
         if (action === 'checkin') {
-          messageText = `✅ เช็คอินเสร็จ!\n\n` +
-                       `👤 คุณ${state.lineDisplayName}\n` +
-                       `📅 ${getThaiDateTimeLong()}\n\n` +
-                       `ขอให้มีความสุขกับการทำงานวันนี้ 💪`;
+          messageText = `✅ *เช็คอินสำเร็จ!*\n\n👤 คุณ${state.lineDisplayName}\n📅 ${getThaiDateTimeLong()}\n\nขอให้มีความสุขกับการทำงานวันนี้ 💪`;
         } else if (action === 'checkout') {
-          messageText = `🏁 เช็คเอาท์เสร็จ!\n\n` +
-                       `👤 คุณ${state.lineDisplayName}\n` +
-                       `📅 ${getThaiDateTimeLong()}\n\n` +
-                       `✨ ขอบคุณสำหรับการทำงานวันนี้\n` +
-                       `พักผ่อนให้เต็มที่นะคะ 😊`;
+          messageText = `🏁 *เช็คเอาท์สำเร็จ!*\n\n👤 คุณ${state.lineDisplayName}\n📅 ${getThaiDateTimeLong()}\n\n✨ ขอบคุณสำหรับการทำงานวันนี้\nพักผ่อนให้เต็มที่นะคะ 😊`;
         }
 
-        debugLog('📝 ข้อความที่จะส่ง:', messageText.substring(0, 50) + '...');
+        debugLog('ข้อความที่ส่ง:', messageText);
 
-        // ตรวจสอบว่ามี API sendMessages หรือไม่
-        const hasSendMessages = liff.isApiAvailable('sendMessages');
-        debugLog('🔍 ตรวจสอบ API:', {
-          isInClient: liff.isInClient(),
-          isLoggedIn: liff.isLoggedIn(),
-          hasSendMessages: hasSendMessages
-        });
-
-        if (!hasSendMessages) {
-          debugLog('❌ sendMessages API ไม่พร้อมใช้งาน');
-          updateStatus(
-            '⚠️ บันทึกสำเร็จ',
-            'แต่ไม่สามารถส่งข้อความได้ (API ไม่รองรับ)',
-            'warning',
-            `📅 ${dateTime}`,
-            'กรุณาเปิดจากแชท LINE หรือ Rich Menu'
-          );
-          setTimeout(checkStatus, 2000);
+        if (!liff.isApiAvailable('sendMessages')) {
+          debugLog('API sendMessages ไม่พร้อม');
+          updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `📅 ${dateTime}`, 'กรุณาเปิดจากแชท LINE โดยตรง');
+          setTimeout(() => liff.closeWindow(), 3000);
           return false;
         }
 
-        // ส่งข้อความผ่าน LIFF
-        debugLog('📤 กำลังส่งข้อความผ่าน liff.sendMessages...');
-        
-        await liff.sendMessages([
-          {
-            type: "text",
-            text: messageText
-          }
-        ]);
+        await liff.sendMessages([{ type: 'text', text: messageText }]);
+        debugLog('ส่งข้อความสำเร็จ!');
 
-        debugLog('✅ ส่งข้อความสำเร็จ!');
-
-        // แสดงสถานะสำเร็จ
-        updateStatus(
-          '✅ สำเร็จทั้งหมด!',
-          'บันทึกเวลาและส่งข้อความเรียบร้อย',
-          'success',
-          `📅 ${dateTime}`,
-          '🎉 ข้อความถูกส่งไปที่แชทแล้ว'
-        );
-
-        // ปิดหน้าต่าง LIFF หลังส่งข้อความ
-        debugLog('🔒 กำลังปิดหน้าต่าง LIFF...');
-        setTimeout(() => {
-          liff.closeWindow();
-        }, 2000);
-
+        updateStatus('สำเร็จทั้งหมด!', 'บันทึกเวลาและส่งข้อความเรียบร้อย', 'success', `📅 ${dateTime}`, 'ข้อความถูกส่งไปยังแชท LINE แล้ว');
+        setTimeout(() => liff.closeWindow(), 2000);
         return true;
 
       } catch (error) {
-        debugLog('💥 Error ใน sendLineReplyMessage:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack ? error.stack.substring(0, 200) : 'N/A'
-        });
-
-        // แสดง Error แต่บันทึกเวลาสำเร็จแล้ว
-        updateStatus(
-          '⚠️ บันทึกสำเร็จ',
-          'แต่ส่งข้อความไม่ได้',
-          'warning',
-          `📅 ${dateTime}`,
-          `Error: ${error.message}`
-        );
-
-        // ถ้า Error ก็ปิดหน้าต่างอยู่ดี
-        setTimeout(() => {
-          liff.closeWindow();
-        }, 3000);
-
+        debugLog('Error ส่งข้อความ:', error);
+        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `📅 ${dateTime}`, `ข้อผิดพลาด: ${error.message}`);
+        setTimeout(() => liff.closeWindow(), 3000);
         return false;
       }
     }
 
     // ============================================
-    // 🎨 UI Functions
+    // UI Functions
     // ============================================
     function showActionButton(action) {
       state.currentAction = action;
       elements.buttonContainer.classList.remove('hidden');
-      
       if (action === 'checkin') {
         elements.actionBtn.className = '';
-        elements.actionBtn.innerHTML = '<span class="icon">✅</span> Check In';
-        elements.actionBtn.disabled = false;
-      } else if (action === 'checkout') {
+        elements.actionBtn.innerHTML = '<span class="icon">Check In</span>';
+      } else {
         elements.actionBtn.className = 'checkout';
-        elements.actionBtn.innerHTML = '<span class="icon">🏁</span> Check Out';
-        elements.actionBtn.disabled = false;
+        elements.actionBtn.innerHTML = '<span class="icon">Check Out</span>';
       }
-      
-      debugLog('✅ แสดงปุ่ม', { action, disabled: elements.actionBtn.disabled });
+      elements.actionBtn.disabled = false;
     }
-
-    function hideActionButton() {
-      elements.buttonContainer.classList.add('hidden');
-      state.currentAction = null;
-    }
-
+    function hideActionButton() { elements.buttonContainer.classList.add('hidden'); state.currentAction = null; }
     function updateStatus(title, message, type = 'info', timeInfo = '', instruction = '') {
       elements.statusCard.className = `status-card ${type}`;
-      
-      let content = '';
-      if (title) {
-        content += `<div class="status-title">${title}</div>`;
-      }
+      let content = title ? `<div class="status-title">${title}</div>` : '';
       content += `<div class="status-text">${message}</div>`;
-      
-      if (timeInfo) {
-        content += `<div class="time-display">${timeInfo}</div>`;
-      }
-      
-      if (instruction) {
-        content += `<div class="instruction">${instruction}</div>`;
-      }
-      
+      if (timeInfo) content += `<div class="time-display">${timeInfo}</div>`;
+      if (instruction) content += `<div class="instruction">${instruction}</div>`;
       elements.statusCard.innerHTML = content;
     }
-
     function setLoading(loading, message = 'กำลังดำเนินการ...') {
       state.isProcessing = loading;
       elements.actionBtn.disabled = loading;
-      
       if (loading) {
         elements.statusCard.className = 'status-card loading';
-        elements.statusCard.innerHTML = `
-          <div class="spinner"></div>
-          <div class="status-text">${message}</div>
-        `;
+        elements.statusCard.innerHTML = `<div class="spinner"></div><div class="status-text">${message}</div>`;
       }
     }
 
     // ============================================
-    // 🚀 API Functions with Retry
+    // API with Retry
     // ============================================
     async function fetchWithRetry(url, options, retries = CONFIG.MAX_RETRIES) {
       for (let i = 0; i < retries; i++) {
         try {
-          debugLog(`🔄 พยายามเชื่อมต่อ (${i + 1}/${retries})...`);
-          
+          debugLog(`เชื่อมต่อ (${i + 1}/${retries})...`);
           const response = await fetch(url, options);
-          
-          debugLog(`📡 Response: ${response.status} ${response.statusText}`);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-          
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const text = await response.text();
-          debugLog('📄 Response text:', text.substring(0, 200));
-          
           const data = JSON.parse(text);
-          debugLog('✅ Parse JSON สำเร็จ', data);
-          
+          debugLog('Parse JSON สำเร็จ', data);
           return data;
-          
         } catch (error) {
-          debugLog(`❌ ครั้งที่ ${i + 1} ล้มเหลว:`, error.message);
-          
-          if (i === retries - 1) {
-            throw error;
-          }
-          
-          debugLog(`⏳ รอ ${CONFIG.RETRY_DELAY}ms ก่อนลองใหม่...`);
-          await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
+          debugLog(`ครั้งที่ ${i + 1} ล้มเหลว:`, error.message);
+          if (i === retries - 1) throw error;
+          await new Promise(r => setTimeout(r, CONFIG.RETRY_DELAY));
         }
       }
     }
 
+    // ============================================
+    // Main Actions
+    // ============================================
     async function sendAction() {
       if (state.isProcessing || !state.currentAction) return;
-      
-      const actionToSend = state.currentAction;
-      
-      setLoading(true, `กำลัง${actionToSend === 'checkin' ? 'เช็คอิน' : 'เช็คเอาท์'}...`);
+      const action = state.currentAction;
+      setLoading(true, `กำลัง${action === 'checkin' ? 'เช็คอิน' : 'เช็คเอาท์'}...`);
       hideActionButton();
 
       try {
-        debugLog(`🚀 เริ่ม ${actionToSend}...`);
-        
         const location = await getLocation();
         const dateTime = getThaiDateTime();
-        
         const payload = {
-          action: actionToSend,
-          userId: state.lineUserId,
-          displayName: state.lineDisplayName,
-          date: getThaiDate(),
-          dateTime: dateTime,
-          checkinLat: location.lat,
-          checkinLon: location.lon,
-          checkoutLat: location.lat,
-          checkoutLon: location.lon
+          action, userId: state.lineUserId, displayName: state.lineDisplayName,
+          date: getThaiDate(), dateTime, checkinLat: location.lat, checkinLon: location.lon,
+          checkoutLat: location.lat, checkoutLon: location.lon
         };
 
-        debugLog('📤 ส่งข้อมูล:', payload);
-
         const result = await fetchWithRetry(CONFIG.API_URL, {
-          method: "POST",
-          mode: "cors",
-          cache: "no-cache",
-          headers: { 
-            "Content-Type": "text/plain;charset=utf-8"
-          },
+          method: "POST", mode: "cors", cache: "no-cache",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-        
-        if (result.status === 'ok') {
-          debugLog('🎉 บันทึกสำเร็จ! เตรียมส่งข้อความ LINE...', { action: actionToSend });
-          
-          // แสดงว่าบันทึกสำเร็จก่อน
-          updateStatus(
-            '✅ สำเร็จ!',
-            `บันทึก${actionToSend === 'checkin' ? 'เข้างาน' : 'ออกงาน'}เรียบร้อย`,
-            'success',
-            `📅 ${dateTime}`,
-            'กำลังส่งข้อความไปที่ LINE...'
-          );
-          
-          // ส่งข้อความ Reply ไปที่ LINE Chat
-          debugLog('📱 เรียก sendLineReplyMessage...', { actionToSend, dateTime });
-          const messageSent = await sendLineReplyMessage(actionToSend, dateTime);
-          debugLog('📬 ผลการส่งข้อความ:', { success: messageSent });
-          
-          // ถ้าส่งข้อความไม่สำเร็จ ให้กลับไปหน้าหลัก
-          if (!messageSent) {
-            debugLog('⚠️ ส่งข้อความไม่สำเร็จ, รีเฟรชสถานะ...');
-            setTimeout(checkStatus, 2000);
-          }
-          
-        } else {
-          updateStatus(
-            '❌ เกิดข้อผิดพลาด',
-            result.message,
-            'error'
-          );
-          setLoading(false);
-          setTimeout(() => showActionButton(actionToSend), 2000);
-        }
 
+        if (result.status === 'ok') {
+          updateStatus('สำเร็จ!', `บันทึก${action === 'checkin' ? 'เข้างาน' : 'ออกงาน'}เรียบร้อย`, 'success', `📅 ${dateTime}`, 'กำลังส่งข้อความ...');
+          const sent = await sendLineReplyMessage(action, dateTime);
+          if (!sent) setTimeout(checkStatus, 2000);
+        } else {
+          updateStatus('เกิดข้อผิดพลาด', result.message, 'error');
+          setLoading(false);
+          setTimeout(() => showActionButton(action), 2000);
+        }
       } catch (error) {
-        debugLog('💥 Error ใน sendAction:', error);
-        updateStatus(
-          '⚠️ ไม่สามารถเชื่อมต่อได้',
-          'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต',
-          'error',
-          '',
-          'หรือ URL ของ Google Apps Script อาจไม่ถูกต้อง'
-        );
+        debugLog('Error ใน sendAction:', error);
+        updateStatus('ไม่สามารถเชื่อมต่อได้', 'กรุณาตรวจสอบอินเทอร์เน็ต', 'error', '', 'หรือ URL ของ Google Apps Script');
         setTimeout(checkStatus, 3000);
       }
     }
 
     async function checkStatus() {
       try {
-        debugLog('🔍 ตรวจสอบสถานะ...');
         setLoading(true, 'กำลังตรวจสอบสถานะ...');
-        
-        const date = getThaiDate();
-        const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(date)}`;
-        
-        debugLog('📡 URL:', url);
+        const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
+        const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
 
-        const data = await fetchWithRetry(url, {
-          method: "GET",
-          mode: "cors",
-          cache: "no-cache"
-        });
-        
         if (data.status === 'ok') {
           const s = data.todayStatus;
-          
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
-            updateStatus(
-              '🎉 เสร็จสิ้นสำหรับวันนี้',
-              'คุณได้บันทึกเวลาเข้า-ออกงานเรียบร้อยแล้ว',
-              'completed',
-              `เข้างาน: ${formatTime(s.checkinTime)} | ออกงาน: ${formatTime(s.checkoutTime)}`,
-              'ขอบคุณสำหรับการทำงานวันนี้ 💪'
-            );
+            updateStatus('เสร็จสิ้นสำหรับวันนี้', 'คุณได้บันทึกเวลาเข้า-ออกงานเรียบร้อยแล้ว', 'completed',
+              `เข้างาน: ${formatTime(s.checkinTime)} | ออกงาน: ${formatTime(s.checkoutTime)}`, 'ขอบคุณสำหรับการทำงานวันนี้ 💪');
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
-            updateStatus(
-              '👋 ยินดีต้อนรับ!',
-              'คุณได้เช็คอินเรียบร้อยแล้ว',
-              'success',
-              `เข้างาน: ${formatTime(s.checkinTime)}`,
-              `กดปุ่ม Check Out เมื่อเลิกงาน (เวลาปัจจุบัน: ${getCurrentTime()})`
-            );
+            updateStatus('ยินดีต้อนรับ!', 'คุณได้เช็คอินเรียบร้อยแล้ว', 'success',
+              `เข้างาน: ${formatTime(s.checkinTime)}`, `กดปุ่ม Check Out (เวลาปัจจุบัน: ${getCurrentTime()})`);
           } else {
             showActionButton('checkin');
-            updateStatus(
-              '☀️ สวัสดีตอนเช้า!',
-              'คุณยังไม่ได้เช็คอินวันนี้',
-              'warning',
-              `วันที่: ${date}`,
-              `กดปุ่ม Check In เพื่อบันทึกเวลาเข้างาน (เวลาปัจจุบัน: ${getCurrentTime()})`
-            );
+            updateStatus('สวัสดีตอนเช้า!', 'คุณยังไม่ได้เช็คอินวันนี้', 'warning',
+              `วันที่: ${getThaiDate()}`, `กดปุ่ม Check In (เวลาปัจจุบัน: ${getCurrentTime()})`);
           }
-        } else {
-          throw new Error(data.message || 'Invalid response');
-        }
+        } else throw new Error(data.message || 'Invalid response');
       } catch (error) {
-        debugLog('💥 Error ใน checkStatus:', error);
+        debugLog('Error ใน checkStatus:', error);
         hideActionButton();
-        
-        updateStatus(
-          '⚠️ ไม่สามารถเชื่อมต่อ',
-          'กรุณาตรวจสอบ URL ของ Google Apps Script',
-          'error',
-          '',
-          `คลิก "Test" ใน Apps Script แล้วดู Execution log<br><small>${error.message}</small>`
-        );
+        updateStatus('ไม่สามารถเชื่อมต่อ', 'กรุณาตรวจสอบ URL ของ Google Apps Script', 'error', '', `คลิก "Test" ใน Apps Script<br><small>${error.message}</small>`);
       } finally {
         state.isProcessing = false;
       }
     }
 
     // ============================================
-    // 🎯 Event Listeners
+    // Event Listeners
     // ============================================
-    elements.actionBtn.addEventListener("click", function(e) {
-      e.preventDefault();
-      debugLog('🖱️ ปุ่มถูกกด!', { 
-        action: state.currentAction, 
-        isProcessing: state.isProcessing 
-      });
-      sendAction();
-    });
+    elements.actionBtn.addEventListener("click", e => { e.preventDefault(); sendAction(); });
 
     // ============================================
-    // 🚀 Initialize App
+    // Initialize App
     // ============================================
     async function initApp() {
-      debugLog('🚀 เริ่มต้นแอพ...');
-      
+      debugLog('เริ่มต้นแอพ...');
       const liffReady = await initializeLiff();
-      
       if (liffReady) {
-        debugLog('✅ LIFF พร้อม, เริ่ม checkStatus');
         await checkStatus();
-        
-        setInterval(() => {
-          if (!state.isProcessing) {
-            debugLog('🔄 Auto refresh...');
-            checkStatus();
-          }
-        }, 30000);
+        setInterval(() => { if (!state.isProcessing) checkStatus(); }, 30000);
       } else {
-        updateStatus(
-          '⚠️ ไม่สามารถเริ่มต้นได้',
-          'กรุณาเปิดในแอพ LINE',
-          'error'
-        );
+        updateStatus('ไม่สามารถเริ่มต้นได้', 'กรุณาเปิดในแอพ LINE', 'error');
       }
     }
 
