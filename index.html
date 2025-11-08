@@ -138,7 +138,7 @@
     <div id="debugLog" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; display: block;">
       <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
     </div>
-    <div class="version">Version 2.4.0 - ส่งข้อความกลับแชท LINE ได้จริง by grok (liff.sendMessages)</div>
+    <div class="version">Version 2.5.0 - แก้ไข Error INVALID_ARGUMENT by grok (chat_message.write)</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -281,7 +281,7 @@
     }
 
     // ============================================
-    // LINE Message Reply (ใช้ liff.sendMessages)
+    // LINE Message Reply (ปรับ Error Handling สำหรับ INVALID_ARGUMENT)
     // ============================================
     async function sendLineReplyMessage(action, dateTime) {
       debugLog('เข้าสู่ sendLineReplyMessage', { action, dateTime, inClient: liff.isInClient() });
@@ -310,6 +310,9 @@
           return false;
         }
 
+        // เพิ่ม log permission ก่อนส่ง
+        debugLog('ตรวจสอบ permission ก่อนส่ง...');
+
         await liff.sendMessages([{ type: 'text', text: messageText }]);
         debugLog('ส่งข้อความสำเร็จ!');
 
@@ -318,9 +321,33 @@
         return true;
 
       } catch (error) {
-        debugLog('Error ส่งข้อความ:', error);
-        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `📅 ${dateTime}`, `ข้อผิดพลาด: ${error.message}`);
-        setTimeout(() => liff.closeWindow(), 3000);
+        debugLog('Error ส่งข้อความ:', { code: error.code, message: error.message });
+
+        let instruction = `ข้อผิดพลาด: ${error.message}`;
+        let autoClose = 3000;
+
+        // จัดการ Error เฉพาะ INVALID_ARGUMENT (scope ไม่เปิด)
+        if (error.code === 'INVALID_ARGUMENT' || error.message.includes('INVALID_ARGUMENT') || error.message.includes('permissions')) {
+          instruction = '❌ Error: ไม่มีสิทธิ์ส่งข้อความ (chat_message.write scope ไม่เปิด)\n\n' +
+                       '🔧 วิธีแก้:\n' +
+                       '1. ไป LINE Developers Console > LIFF > Edit\n' +
+                       '2. เปิด "chat_message.write" (คลิกขยายเพื่อเห็น)\n' +
+                       '3. Update แล้วล็อกออกรายการ LINE\n' +
+                       '4. เปิด LIFF ใหม่และยอมรับ permission\n\n' +
+                       'กดปุ่มด้านล่างเพื่อลองใหม่';
+          autoClose = false;  // ไม่ปิด window เพื่อให้ retry ได้
+          // แสดงปุ่ม retry
+          elements.actionBtn.textContent = 'ลองส่งข้อความใหม่';
+          elements.actionBtn.disabled = false;
+          elements.buttonContainer.classList.remove('hidden');
+          elements.actionBtn.onclick = () => sendLineReplyMessage(action, dateTime);
+        }
+
+        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `📅 ${dateTime}`, instruction);
+
+        if (autoClose) {
+          setTimeout(() => liff.closeWindow(), autoClose);
+        }
         return false;
       }
     }
@@ -333,10 +360,10 @@
       elements.buttonContainer.classList.remove('hidden');
       if (action === 'checkin') {
         elements.actionBtn.className = '';
-        elements.actionBtn.innerHTML = '<span class="icon">Check In</span>';
+        elements.actionBtn.innerHTML = '<span class="icon">✅</span> Check In';
       } else {
         elements.actionBtn.className = 'checkout';
-        elements.actionBtn.innerHTML = '<span class="icon">Check Out</span>';
+        elements.actionBtn.innerHTML = '<span class="icon">🏁</span> Check Out';
       }
       elements.actionBtn.disabled = false;
     }
