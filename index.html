@@ -137,17 +137,16 @@
     <div id="debugLog" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; display: block;">
       <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
     </div>
-    <div class="version">Version 2.5.1 - ปรับส่งข้อความด้วย LIFF แบบง่าย</div>
+    <div class="version">Version 2.6.0 - แก้ไข formatTime() ถาวร</div>
   </div>
-
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
     // ============================================
     // ตั้งค่า
     // ============================================
     const CONFIG = {
-      API_URL: "https://script.google.com/macros/s/AKfycbx5Km_hKmpldtcmOG7ugy_OJDei4noJ4OQN8O1tRv_Z5gNmaI3k1KqtB1iXoQ1U9VxPAg/exec",
-      LIFF_ID: "2008403464-kaXOK95X", // เปลี่ยนเป็น LIFF ID ของคุณ
+      API_URL: "https://script.google.com/macros/s/AKfycbz0tm-UbfaiBSuC0sVTB6XGUQXpZpXgFMKd0E9fjjJqsBECpJPmAyqNrII6RF_axaVXUw/exec",
+      LIFF_ID: "2008403464-kaXOK95X",
       DEBUG_MODE: true,
       MAX_RETRIES: 3,
       RETRY_DELAY: 2000
@@ -201,18 +200,15 @@
         debugLog('เริ่มต้น LIFF...', { liffId: CONFIG.LIFF_ID });
         await liff.init({ liffId: CONFIG.LIFF_ID });
         debugLog('LIFF init สำเร็จ');
-
         if (!liff.isLoggedIn()) {
           debugLog('ยังไม่ได้ Login, redirect...');
           liff.login();
           return false;
         }
-
         const profile = await liff.getProfile();
         state.lineUserId = profile.userId;
         state.lineDisplayName = profile.displayName || "ผู้ใช้";
         state.liffInitialized = true;
-
         debugLog('ดึง Profile สำเร็จ', { userId: state.lineUserId, displayName: state.lineDisplayName });
         elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName}`;
         return true;
@@ -259,7 +255,34 @@
       return `วัน${dayNames[thaiTime.getDay()]}ที่ ${thaiTime.getDate()} ${monthNames[thaiTime.getMonth()]} ${thaiTime.getFullYear() + 543} เวลา ${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
     }
 
-    function formatTime(timeStr) { return timeStr ? `${timeStr.split(':')[0]}:${timeStr.split(':')[1]} น.` : ''; }
+    // แก้ไข formatTime() ให้รับ HH:mm จาก backend ได้ทันที
+    function formatTime(timeStr) {
+      if (!timeStr) return '';
+
+      // กรณี backend ส่ง HH:mm หรือ HH:mm:ss
+      if (typeof timeStr === 'string' && timeStr.includes(':')) {
+        const parts = timeStr.split(':');
+        const hours = parts[0].padStart(2, '0');
+        const minutes = parts[1].padStart(2, '0');
+        return `${hours}:${minutes} น.`;
+      }
+
+      // กรณีฉุกเฉิน: ถ้าเป็น ISO string หรือ timestamp
+      let date;
+      if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('-'))) {
+        date = new Date(timeStr);
+      } else if (typeof timeStr === 'number') {
+        date = new Date(timeStr);
+      } else {
+        return '';
+      }
+
+      if (isNaN(date.getTime())) return '';
+
+      const thaiTime = new Date(date.getTime() + (7 * 3600000));
+      return `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+    }
+
     function getCurrentTime() {
       const now = new Date();
       const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
@@ -283,7 +306,7 @@
     }
 
     // ============================================
-    // LINE Message Reply (แบบง่าย ตามตัวอย่างแรก)
+    // LINE Message Reply
     // ============================================
     async function sendLineReplyMessage(action, dateTime) {
       if (!liff.isInClient()) {
@@ -291,36 +314,23 @@
         setTimeout(() => liff.closeWindow(), 3000);
         return;
       }
-
       const message = action === 'checkin'
         ? `เช็คอินสำเร็จ!\n\nคุณ${state.lineDisplayName}\nวันที่ ${getThaiDateTimeLong()}\n\nขอให้วันนี้เป็นวันที่ดี`
         : `เช็คเอาท์สำเร็จ!\n\nคุณ${state.lineDisplayName}\nวันที่ ${getThaiDateTimeLong()}\n\nขอบคุณที่ทำงานอย่างตั้งใจ\nพักผ่อนให้เต็มที่นะ`;
-
       try {
-        await liff.sendMessages([
-          { type: 'text', text: message }
-        ]);
-
+        await liff.sendMessages([{ type: 'text', text: message }]);
         debugLog('ส่งข้อความสำเร็จ');
         updateStatus('สำเร็จทั้งหมด!', 'บันทึกและส่งข้อความเรียบร้อย', 'success', `วันที่ ${dateTime}`);
         setTimeout(() => liff.closeWindow(), 2000);
-
       } catch (err) {
         debugLog('Error ส่งข้อความ', err);
-
         let instruction = '';
         if (err.code === 'INVALID_ARGUMENT' || err.message.includes('permissions')) {
-          instruction = `ต้องเปิดสิทธิ์ "ส่งข้อความ" ใน LIFF\n\n` +
-                        `1. ไป LINE Developers > LIFF > Edit\n` +
-                        `2. เปิด "chat_message.write"\n` +
-                        `3. บันทึก > ล็อกอินใหม่`;
+          instruction = `ต้องเปิดสิทธิ์ "ส่งข้อความ" ใน LIFF\n\n1. ไป LINE Developers > LIFF > Edit\n2. เปิด "chat_message.write"\n3. บันทึก > ล็อกอินใหม่`;
         } else {
           instruction = `เกิดข้อผิดพลาด: ${err.message || err.code}`;
         }
-
         updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `วันที่ ${dateTime}`, instruction);
-
-        // ปุ่มลองใหม่
         elements.actionBtn.textContent = 'ลองส่งใหม่';
         elements.actionBtn.disabled = false;
         elements.buttonContainer.classList.remove('hidden');
@@ -344,9 +354,9 @@
       elements.actionBtn.disabled = false;
     }
 
-    function hideActionButton() { 
-      elements.buttonContainer.classList.add('hidden'); 
-      state.currentAction = null; 
+    function hideActionButton() {
+      elements.buttonContainer.classList.add('hidden');
+      state.currentAction = null;
     }
 
     function updateStatus(title, message, type = 'info', timeInfo = '', instruction = '') {
@@ -396,23 +406,20 @@
       const action = state.currentAction;
       setLoading(true, `กำลัง${action === 'checkin' ? 'เช็คอิน' : 'เช็คเอาท์'}...`);
       hideActionButton();
-
       try {
         const location = await getLocation();
         const dateTime = getThaiDateTime();
         const payload = {
           action, userId: state.lineUserId, displayName: state.lineDisplayName,
-          date: getThaiDate(), dateTime, 
+          date: getThaiDate(), dateTime,
           checkinLat: location.lat, checkinLon: location.lon,
           checkoutLat: location.lat, checkoutLon: location.lon
         };
-
         const result = await fetchWithRetry(CONFIG.API_URL, {
           method: "POST", mode: "cors", cache: "no-cache",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-
         if (result.status === 'ok') {
           updateStatus('สำเร็จ!', `บันทึก${action === 'checkin' ? 'เข้างาน' : 'ออกงาน'}เรียบร้อย`, 'success', `วันที่ ${dateTime}`, 'กำลังส่งข้อความ...');
           await sendLineReplyMessage(action, dateTime);
@@ -434,7 +441,6 @@
         setLoading(true, 'กำลังตรวจสอบสถานะ...');
         const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
         const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
-
         if (data.status === 'ok') {
           const s = data.todayStatus;
           if (s.checkedIn && s.checkedOut) {
