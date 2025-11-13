@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>รายงานทีม Check In/Out</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -14,7 +15,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
       background: white;
       border-radius: 16px;
@@ -29,6 +30,7 @@
     }
     .header h1 { font-size: 28px; margin-bottom: 8px; }
     .header p { font-size: 16px; opacity: 0.9; }
+
     .controls {
       padding: 20px;
       background: #f8f9fa;
@@ -57,7 +59,7 @@
       background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 12px center;
       padding-left: 40px;
     }
-    .btn {
+    .btn, .export-btn {
       padding: 12px 24px;
       background: #667eea;
       color: white;
@@ -68,7 +70,8 @@
       font-family: 'Prompt', sans-serif;
       transition: 0.3s;
     }
-    .btn:hover { background: #5a6fd8; transform: translateY(-2px); }
+    .btn:hover, .export-btn:hover { background: #5a6fd8; transform: translateY(-2px); }
+    .export-btn { background: #28a745; }
 
     .filter-row {
       display: flex;
@@ -78,7 +81,7 @@
       width: 100%;
     }
     .filter-btn {
-      padding: 10px 20px;
+      padding: 10px 18px;
       border: 2px solid #ddd;
       background: white;
       color: #333;
@@ -87,104 +90,48 @@
       cursor: pointer;
       font-family: 'Prompt', sans-serif;
       transition: 0.3s;
+      white-space: nowrap;
+    }
+    .filter-btn .count {
+      font-weight: 600;
+      margin-left: 4px;
     }
     .filter-btn.active {
-      background: #667eea;
       color: white;
-      border-color: #667eea;
+      border-color: transparent;
     }
     .filter-btn[data-filter="all"] { border-color: #007bff; }
     .filter-btn[data-filter="checkedIn"] { border-color: #28a745; }
     .filter-btn[data-filter="checkedOut"] { border-color: #dc3545; }
     .filter-btn[data-filter="notCheckedIn"] { border-color: #ffc107; }
     .filter-btn[data-filter="notCheckedOut"] { border-color: #fd7e14; }
+    .filter-btn[data-filter="lateCheckIn"] { border-color: #e83e8c; }
+    .filter-btn[data-filter="possibleAbsent"] { border-color: #6f42c1; }
     .filter-btn.active[data-filter="all"] { background: #007bff; }
     .filter-btn.active[data-filter="checkedIn"] { background: #28a745; }
     .filter-btn.active[data-filter="checkedOut"] { background: #dc3545; }
     .filter-btn.active[data-filter="notCheckedIn"] { background: #ffc107; color: #333; }
-    .filter-btn.active[data-filter="notCheckedOut"] { background: #fd7e14; color: white; }
+    .filter-btn.active[data-filter="notCheckedOut"] { background: #fd7e14; }
+    .filter-btn.active[data-filter="lateCheckIn"] { background: #e83e8c; }
+    .filter-btn.active[data-filter="possibleAbsent"] { background: #6f42c1; }
 
-    .summary {
-      display: flex;
-      justify-content: space-around;
-      padding: 20px;
-      background: #f1f3f5;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-    .stat-card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      text-align: center;
-      min-width: 120px;
-      flex: 1;
-    }
-    .stat-card h3 { font-size: 14px; color: #666; margin-bottom: 8px; }
-    .stat-card .number { font-size: 32px; font-weight: 600; }
-    .stat-card.total .number { color: #007bff; }
-    .stat-card.checkin .number { color: #28a745; }
-    .stat-card.checkout .number { color: #dc3545; }
-    .stat-card.absent .number { color: #ffc107; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-    }
-    th, td {
-      padding: 14px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-    th {
-      background: #667eea;
-      color: white;
-      font-weight: 600;
-    }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { padding: 14px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #667eea; color: white; font-weight: 600; }
     tr:hover { background: #f8f9fa; }
-    .status {
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 500;
-    }
+    .status { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; }
     .status.checkedIn { background: #d4edda; color: #155724; }
     .status.checkedOut { background: #f8d7da; color: #721c24; }
-    .status-checkedIn { background: #fff3cd; color: #856404; }
+    .status.notCheckedIn { background: #fff3cd; color: #856404; }
 
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-    }
-    .spinner {
-      border: 4px solid #f3f3f3;
-     (border-top: 4px solid #667eea;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 15px;
-    }
+    .loading { text-align: center; padding: 40px; color: #666; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .footer {
-      text-align: center;
-      padding: 20px;
-      color: #999;
-      font-size: 14px;
-    }
-    .no-data {
-      text-align: center;
-      padding: 30px;
-      color: #999;
-      font-style: italic;
-    }
+    .footer { text-align: center; padding: 20px; color: #999; font-size: 14px; }
+    .no-data { text-align: center; padding: 30px; color: #999; font-style: italic; }
     @media (max-width: 600px) {
-      .summary { flex-direction: column; }
       .top-row, .filter-row { flex-direction: column; }
-      .date-input, .search-input, .btn, .filter-btn { width: 100%; }
+      .date-input, .search-input, .btn, .filter-btn, .export-btn { width: 100%; }
     }
   </style>
 </head>
@@ -200,14 +147,11 @@
         <input type="date" id="datePicker" class="date-input" />
         <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาชื่อ..." />
         <button class="btn" onclick="loadReport()">แสดงรายงาน</button>
+        <button class="export-btn" onclick="exportToExcel()">Export Excel</button>
       </div>
 
-      <div class="filter-row">
-        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">ทั้งหมด</button>
-        <button class="filter-btn" data-filter="checkedIn" onclick="setFilter('checkedIn')">Check In</button>
-        <button class="filter-btn" data-filter="checkedOut" onclick="setFilter('checkedOut')">Check Out</button>
-        <button class="filter-btn" data-filter="notCheckedIn" onclick="setFilter('notCheckedIn')">ยังไม่ Check In</button>
-        <button class="filter-btn" data-filter="notCheckedOut" onclick="setFilter('notCheckedOut')">ยังไม่ Check Out</button>
+      <div class="filter-row" id="filterButtons">
+        <!-- ปุ่มจะถูกสร้างด้วย JS -->
       </div>
     </div>
 
@@ -217,7 +161,6 @@
     </div>
 
     <div id="report" style="display: none;">
-      <div class="summary" id="summary"></div>
       <div id="tableContainer">
         <table id="reportTable">
           <thead>
@@ -235,15 +178,26 @@
     </div>
 
     <div class="footer">
-      <p>ระบบ Check In/Out by Google Apps Script • เวอร์ชัน 3.0</p>
+      <p>ระบบ Check In/Out by Google Apps Script • เวอร์ชัน 4.0</p>
     </div>
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxk29XaY4aT8UsWp43AGBWYzf_wX0mr_Crx7QxWerCXj_9ly1fSXGoWEXnTD5lMhSraIg/exec"; // ใส่ URL ของคุณ
+    const API_URL = "https://script.google.com/macros/s/AKfycbyTUBMWCb1cJeV7ZQyrUaZ3b9AKZAN_IboWJK1LnS0IVeCxMXOeyytByvYeVUeaGwgT/exec"; // ใส่ URL ของคุณ
 
     let allMembers = [];
     let currentFilter = 'all';
+    let reportData = null;
+
+    const filters = [
+      { key: 'all', label: 'ทั้งหมด', color: '#007bff' },
+      { key: 'checkedIn', label: 'Check In', color: '#28a745' },
+      { key: 'checkedOut', label: 'Check Out', color: '#dc3545' },
+      { key: 'notCheckedIn', label: 'ยังไม่ Check In', color: '#ffc107' },
+      { key: 'notCheckedOut', label: 'ยังไม่ Check Out', color: '#fd7e14' },
+      { key: 'lateCheckIn', label: 'Check In หลัง 09:00', color: '#e83e8c' },
+      { key: 'possibleAbsent', label: 'อาจจะลา', color: '#6f42c1' }
+    ];
 
     function toThaiDate(dateStr) {
       const d = new Date(dateStr);
@@ -251,6 +205,33 @@
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       return `${dd}/${mm}/${thaiYear}`;
+    }
+
+    function createFilterButtons(data) {
+      const container = document.getElementById('filterButtons');
+      container.innerHTML = '';
+
+      filters.forEach(f => {
+        const count = getFilterCount(f.key, data);
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.dataset.filter = f.key;
+        btn.innerHTML = `${f.label} <span class="count">(${count})</span>`;
+        btn.onclick = () => setFilter(f.key);
+        if (f.key === 'all') btn.classList.add('active');
+        container.appendChild(btn);
+      });
+    }
+
+    function getFilterCount(filter, data) {
+      if (filter === 'all') return data.total;
+      if (filter === 'checkedIn') return data.checkedIn;
+      if (filter === 'checkedOut') return data.checkedOut;
+      if (filter === 'notCheckedIn') return data.notCheckedIn;
+      if (filter === 'notCheckedOut') return data.notCheckedOut;
+      if (filter === 'lateCheckIn') return data.lateCheckIn;
+      if (filter === 'possibleAbsent') return data.possibleAbsent;
+      return 0;
     }
 
     async function loadReport() {
@@ -271,36 +252,15 @@
 
         if (json.status !== 'ok') throw new Error(json.message);
 
+        reportData = json.data;
         allMembers = json.data.members;
-        displaySummary(json.data);
-        applyFilters();
+        createFilterButtons(json.data);
+        setFilter('all');
       } catch (err) {
         alert('เกิดข้อผิดพลาด: ' + err.message);
       } finally {
         document.getElementById('loading').style.display = 'none';
       }
-    }
-
-    function displaySummary(data) {
-      document.getElementById('summary').innerHTML = `
-        <div class="stat-card total">
-          <h3>ทั้งหมด</h3>
-          <div class="number">${data.total}</div>
-        </div>
-        <div class="stat-card checkin">
-          <h3>Check In</h3>
-          <div class="number">${data.checkedIn}</div>
-        </div>
-        <div class="stat-card checkout">
-          <h3>Check Out</h3>
-          <div class="number">${data.checkedOut}</div>
-        </div>
-        <div class="stat-card absent">
-          <h3>ยังไม่มา</h3>
-          <div class="number">${data.notCheckedIn}</div>
-        </div>
-      `;
-      document.getElementById('report').style.display = 'block';
     }
 
     function setFilter(filter) {
@@ -318,8 +278,10 @@
 
       let filtered = allMembers;
 
-      if (currentFilter === 'notCheckedOut') {
-        filtered = filtered.filter(m => m.status === 'checkedIn');
+      if (currentFilter === 'lateCheckIn') {
+        filtered = filtered.filter(m => m.checkinHour > 9);
+      } else if (currentFilter === 'possibleAbsent') {
+        filtered = filtered.filter(m => m.status === 'notCheckedIn' && new Date().getHours() >= 9);
       } else if (currentFilter !== 'all') {
         filtered = filtered.filter(m => m.status === currentFilter);
       }
@@ -333,22 +295,47 @@
         return;
       }
 
-// เปลี่ยนแค่บรรทัดนี้ในฟังก์ชัน applyFilters()
-filtered.forEach((m, i) => {
-  const statusText = m.status === 'checkedOut' ? 'ออกงานแล้ว' :
-                    m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา';
-  const statusClass = m.status;
+      filtered.forEach((m, i) => {
+        const statusText = m.status === 'checkedOut' ? 'ออกงานแล้ว' :
+                          m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา';
+        const statusClass = m.status;
 
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td>${i + 1}</td>
-    <td><strong>${m.displayName}</strong></td>
-    <td>${m.checkinTime}</td>
-    <td>${m.checkoutTime}</td>
-    <td><span class="status ${statusClass}">${statusText}</span></td>
-  `;
-  tbody.appendChild(row);  // แก้ตรงนี้!
-});
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td><strong>${m.displayName}</strong></td>
+          <td>${m.checkinTime}</td>
+          <td>${m.checkoutTime}</td>
+          <td><span class="status ${statusClass}">${statusText}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById('report').style.display = 'block';
+    }
+
+    function exportToExcel() {
+      if (!reportData) return alert('กรุณาโหลดข้อมูลก่อน');
+
+      const filtered = allMembers.filter(m => {
+        if (currentFilter === 'all') return true;
+        if (currentFilter === 'lateCheckIn') return m.checkinHour > 9;
+        if (currentFilter === 'possibleAbsent') return m.status === 'notCheckedIn' && new Date().getHours() >= 9;
+        return m.status === currentFilter;
+      });
+
+      const data = filtered.map((m, i) => ({
+        'ลำดับ': i + 1,
+        'ชื่อ': m.displayName,
+        'Check In': m.checkinTime,
+        'Check Out': m.checkoutTime,
+        'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' : m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Report");
+      XLSX.writeFile(wb, `รายงาน_${reportData.date}.xlsx`);
     }
 
     document.getElementById('searchInput').addEventListener('input', applyFilters);
