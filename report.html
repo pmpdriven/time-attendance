@@ -82,11 +82,12 @@
         <tbody id="reportBody"></tbody>
       </table>
     </div>
-    <div class="footer"><p>ระบบ Check In/Out • Enterprise Edition v5.2</p></div>
+    <div class="footer"><p>ระบบ Check In/Out • Enterprise Edition v5.3</p></div>
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwVIhFGhrJ3Wy6h4PX7-k6PGmKw8_ZReWwC-rAdaZfr_G0eXzuMa7_iJ79nb61HOv0dLg/exec"; // ใส่ URL จริง!
+    // ใส่ URL Web App ของคุณที่นี่
+    const API_URL = "https://script.google.com/macros/s/AKfycbz3Puor-nRfApcRWN2s5gDaPwLaum_FOL6zU71i5ZaGfwrOfhdxi3K4Mh6mQGr3_1OvHg/exec"; // เปลี่ยนเป็น URL จริง!
 
     let allMembers = [], currentFilter = 'all', reportData = null, autoRefresh = null;
 
@@ -213,7 +214,7 @@
         return;
       }
 
-      filtered.forEach((m, i) => {
+      filtered.forEach((m, i) =>  {
         const statusText = m.status === 'checkedOut' ? 'ออกงานแล้ว' : m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา';
         const row = document.createElement('tr');
         row.innerHTML = `<td>${i + 1}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.displayName}</td><td>${m.checkinTime}</td><td>${m.checkoutTime}</td><td><span class="status ${m.status}">${statusText}</span></td>`;
