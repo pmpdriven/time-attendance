@@ -2,494 +2,321 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ระบบ Check In / Check Out</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Check In / Check Out</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Prompt', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       padding: 20px;
     }
-    .container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      padding: 40px;
-      max-width: 500px;
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
       width: 100%;
-      animation: slideUp 0.5s ease-out;
+      max-width: 420px;
+      overflow: hidden;
     }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
+    .header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header h1 { font-size: 24px; margin-bottom: 8px; }
+    .header p { font-size: 16px; opacity: 0.9; }
+    .body {
+      padding: 30px 20px;
     }
     .user-info {
       text-align: center;
-      color: #666;
-      margin-bottom: 30px;
-      font-size: 18px;
-      font-weight: 500;
-    }
-    .version {
-      text-align: center;
-      color: #999;
-      font-size: 12px;
-      margin-top: 20px;
-      user-select: none;
-    }
-    .status-card {
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      border-radius: 12px;
-      padding: 25px;
-      text-align: center;
-      min-height: 100px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      animation: fadeIn 0.5s ease-out;
       margin-bottom: 25px;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .user-name {
+      font-size: 22px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
     }
-    .status-card.loading { background: linear-gradient(135deg, #e0e7ff 0%, #cfd9ff 100%); }
-    .status-card.success { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); }
-    .status-card.warning { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
-    .status-card.error { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
-    .status-card.completed { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
-    .status-text { font-size: 16px; color: #333; font-weight: 400; line-height: 1.6; }
-    .status-title { font-size: 20px; color: #333; font-weight: 600; margin-bottom: 10px; }
-    .spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #667eea;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 15px;
+    .user-id {
+      font-size: 14px;
+      color: #888;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .time-display { font-size: 14px; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); }
-    .instruction { font-size: 15px; color: #555; margin-top: 10px; padding: 12px; background: rgba(255,255,255,0.5); border-radius: 8px; }
-    .button-container { min-height: 60px; display: flex; justify-content: center; align-items: center; }
-    .button-container.hidden { display: none; }
-    button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 15px 40px;
-      font-size: 18px;
+    .status {
+      text-align: center;
+      margin-bottom: 25px;
+      padding: 15px;
       border-radius: 12px;
-      cursor: pointer;
-      font-family: 'Prompt', sans-serif;
+      font-size: 16px;
       font-weight: 500;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-      min-width: 200px;
     }
-    button:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    .status.checkin { background: #d4edda; color: #155724; }
+    .status.checkout { background: #f8d7da; color: #721c24; }
+    .status.none { background: #fff3cd; color: #856404; }
+    .btn-group {
+      display: flex;
+      gap: 15px;
     }
-    button:active:not(:disabled) { transform: translateY(0); }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    button.checkout {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    .btn {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+      font-family: 'Prompt', sans-serif;
     }
-    button.checkout:hover:not(:disabled) {
-      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+    .btn.checkin {
+      background: #28a745;
+      color: white;
     }
-    .icon { font-size: 24px; margin-right: 8px; }
-    @media (max-width: 480px) {
-      .container { padding: 30px 20px; }
-      button { width: 100%; min-width: auto; }
+    .btn.checkout {
+      background: #dc3545;
+      color: white;
+    }
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+      margin: 20px 0;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="user-info" id="userInfo">กำลังโหลด...</div>
-    <div id="statusCard" class="status-card loading">
-      <div class="spinner"></div>
-      <div class="status-text">กำลังเริ่มต้นระบบ...</div>
+  <div class="card">
+    <div class="header">
+      <h1>Check In / Check Out</h1>
+      <p>ระบบบันทึกเวลาเข้างาน-ออกงาน</p>
     </div>
-    <div class="button-container hidden" id="buttonContainer">
-      <button id="actionBtn"></button>
+
+    <div class="body">
+      <div class="user-info">
+        <div class="user-name" id="displayName">กำลังโหลด...</div>
+        <div class="user-id" id="userId">-</div>
+      </div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>กำลังตรวจสอบสถานะ...</p>
+      </div>
+
+      <div id="statusContainer" style="display: none;">
+        <div class="status" id="status">
+          <span id="statusText">ยังไม่เช็คอิน</span>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn checkin" id="checkinBtn" onclick="doCheckIn()">Check In</button>
+          <button class="btn checkout" id="checkoutBtn" onclick="doCheckOut()">Check Out</button>
+        </div>
+      </div>
     </div>
-    <!-- Debug Log Panel -->
-    <div id="debugLog" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; display: block;">
-      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
+
+    <div class="footer">
+      <p>ระบบโดย Google Apps Script • เวอร์ชัน 2.9</p>
     </div>
-    <div class="version">Version 2.6.0 - แก้ไข formatTime() ถาวร</div>
   </div>
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <script>
-    // ============================================
-    // ตั้งค่า
-    // ============================================
+    // ตั้งค่า URL ของ Google Apps Script
     const CONFIG = {
-      API_URL: "https://script.google.com/macros/s/AKfycbyc4n1T5keMJsxyjkqAWqWeFTvXedCncTHh5eCRG2cP3BuP7EU2Jr8KFU7IxIGVW3JNjw/exec",
-      LIFF_ID: "2008403464-kaXOK95X",
-      DEBUG_MODE: true,
-      MAX_RETRIES: 3,
-      RETRY_DELAY: 2000
+      API_URL: "https://script.google.com/macros/s/AKfycbyc4n1T5keMJsxyjkqAWqWeFTvXedCncTHh5eCRG2cP3BuP7EU2Jr8KFU7IxIGVW3JNjw/exec"  // ใส่ URL ของคุณ
     };
 
-    // ============================================
-    // Elements
-    // ============================================
-    const elements = {
-      actionBtn: document.getElementById("actionBtn"),
-      buttonContainer: document.getElementById("buttonContainer"),
-      statusCard: document.getElementById("statusCard"),
-      userInfo: document.getElementById("userInfo")
+    // ข้อมูลผู้ใช้ (เปลี่ยนตามระบบของคุณ)
+    const USER = {
+      userId: "U001",        // เปลี่ยนเป็น userId จริง
+      displayName: "นาย สมชาย ใจดี"  // หรือดึงจาก LIFF
     };
 
-    // ============================================
-    // State
-    // ============================================
-    const state = {
-      currentAction: null,
-      isProcessing: false,
-      lineUserId: null,
-      lineDisplayName: "ผู้ใช้",
-      liffInitialized: false
-    };
-
-    // ============================================
-    // Debug Functions
-    // ============================================
-    function debugLog(message, data = null) {
-      const timestamp = new Date().toLocaleTimeString('th-TH');
-      const logMessage = `[${timestamp}] ${message}`;
-      if (CONFIG.DEBUG_MODE) console.log(logMessage, data || '');
-      if (CONFIG.DEBUG_MODE) {
-        const debugDiv = document.getElementById('debugLog');
-        if (debugDiv) {
-          const logEntry = document.createElement('div');
-          logEntry.style.cssText = 'font-size: 11px; padding: 2px 0; color: #666; border-bottom: 1px solid #eee;';
-          logEntry.textContent = logMessage + (data ? ' | ' + JSON.stringify(data).substring(0, 100) : '');
-          debugDiv.insertBefore(logEntry, debugDiv.firstChild);
-          while (debugDiv.children.length > 20) debugDiv.removeChild(debugDiv.lastChild);
-        }
-      }
-    }
-
-    // ============================================
-    // LIFF Initialization
-    // ============================================
-    async function initializeLiff() {
-      try {
-        debugLog('เริ่มต้น LIFF...', { liffId: CONFIG.LIFF_ID });
-        await liff.init({ liffId: CONFIG.LIFF_ID });
-        debugLog('LIFF init สำเร็จ');
-        if (!liff.isLoggedIn()) {
-          debugLog('ยังไม่ได้ Login, redirect...');
-          liff.login();
-          return false;
-        }
-        const profile = await liff.getProfile();
-        state.lineUserId = profile.userId;
-        state.lineDisplayName = profile.displayName || "ผู้ใช้";
-        state.liffInitialized = true;
-        debugLog('ดึง Profile สำเร็จ', { userId: state.lineUserId, displayName: state.lineDisplayName });
-        elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName}`;
-        return true;
-      } catch (error) {
-        debugLog('LIFF Error', error);
-        state.lineUserId = "TEST_" + Date.now();
-        state.lineDisplayName = "ผู้ใช้ทดสอบ";
-        state.liffInitialized = false;
-        elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName} (โหมดทดสอบ)`;
-        return true;
-      }
-    }
-
-    // ============================================
-    // Date/Time Functions (Thailand)
-    // ============================================
+    // แปลงวันที่เป็น dd/MM/yyyy (พ.ศ.)
     function getThaiDate() {
-      const now = new Date();
-      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
-      const d = thaiTime.getDate().toString().padStart(2, '0');
-      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
-      const y = thaiTime.getFullYear() + 543;
-      return `${d}/${m}/${y}`;
+      const d = new Date();
+      const thaiYear = d.getFullYear() + 543;
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      return `${dd}/${mm}/${thaiYear}`;
     }
 
-    function getThaiDateTime() {
-      const now = new Date();
-      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
-      const d = thaiTime.getDate().toString().padStart(2, '0');
-      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
-      const y = thaiTime.getFullYear() + 543;
-      const h = thaiTime.getHours().toString().padStart(2, '0');
-      const min = thaiTime.getMinutes().toString().padStart(2, '0');
-      const s = thaiTime.getSeconds().toString().padStart(2, '0');
-      return `${d}/${m}/${y} ${h}:${min}:${s}`;
-    }
+    // ตรวจสอบสถานะวันนี้
+    async function checkStatus() {
+      const date = getThaiDate();
+      const url = `${CONFIG.API_URL}?action=checkStatus&userId=${USER.userId}&date=${encodeURIComponent(date)}`;
 
-    function getThaiDateTimeLong() {
-      const now = new Date();
-      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
-      const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-      const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-      return `วัน${dayNames[thaiTime.getDay()]}ที่ ${thaiTime.getDate()} ${monthNames[thaiTime.getMonth()]} ${thaiTime.getFullYear() + 543} เวลา ${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
-    }
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
 
-    // แก้ไข formatTime() ให้รับ HH:mm จาก backend ได้ทันที
-    function formatTime(timeStr) {
-      if (!timeStr) return '';
-
-      // กรณี backend ส่ง HH:mm หรือ HH:mm:ss
-      if (typeof timeStr === 'string' && timeStr.includes(':')) {
-        const parts = timeStr.split(':');
-        const hours = parts[0].padStart(2, '0');
-        const minutes = parts[1].padStart(2, '0');
-        return `${hours}:${minutes} น.`;
+        if (json.status === 'ok') {
+          const s = json.todayStatus;
+          updateUI(s);
+        } else {
+          alert(json.message);
+        }
+      } catch (err) {
+        alert('ไม่สามารถเชื่อมต่อได้: ' + err.message);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('statusContainer').style.display = 'block';
       }
+    }
 
-      // กรณีฉุกเฉิน: ถ้าเป็น ISO string หรือ timestamp
-      let date;
-      if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('-'))) {
-        date = new Date(timeStr);
-      } else if (typeof timeStr === 'number') {
-        date = new Date(timeStr);
+    // อัปเดต UI ตามสถานะ
+    function updateUI(status) {
+      document.getElementById('displayName').textContent = USER.displayName;
+      document.getElementById('userId').textContent = `ID: ${USER.userId}`;
+
+      const statusEl = document.getElementById('status');
+      const statusText = document.getElementById('statusText');
+      const checkinBtn = document.getElementById('checkinBtn');
+      const checkoutBtn = document.getElementById('checkoutBtn');
+
+      if (status.checkedOut) {
+        statusEl.className = 'status checkout';
+        statusText.innerHTML = `เช็คเอาท์แล้ว<br><small>เวลา ${status.checkoutTime} น.</small>`;
+        checkinBtn.disabled = true;
+        checkoutBtn.disabled = true;
+      } else if (status.checkedIn) {
+        statusEl.className = 'status checkin';
+        statusText.innerHTML = `เช็คอินแล้ว<br><small>เวลา ${status.checkinTime} น.</small>`;
+        checkinBtn.disabled = true;
+        checkoutBtn.disabled = false;
       } else {
-        return '';
+        statusEl.className = 'status none';
+        statusText.textContent = 'ยังไม่เช็คอิน';
+        checkinBtn.disabled = false;
+        checkoutBtn.disabled = true;
+      }
+    }
+
+    // Check In
+    async function doCheckIn() {
+      if (!navigator.geolocation) {
+        alert('อุปกรณ์ไม่รองรับ GPS');
+        return;
       }
 
-      if (isNaN(date.getTime())) return '';
+      checkinBtn.disabled = true;
+      checkinBtn.textContent = 'กำลังบันทึก...';
 
-      const thaiTime = new Date(date.getTime() + (7 * 3600000));
-      return `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
-    }
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const data = {
+          userId: USER.userId,
+          displayName: USER.displayName,
+          date: getThaiDate(),
+          action: 'checkin',
+          checkinLat: position.coords.latitude,
+          checkinLon: position.coords.longitude
+        };
 
-    function getCurrentTime() {
-      const now = new Date();
-      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
-      return `${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
-    }
+        try {
+          const res = await fetch(CONFIG.API_URL, {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          const json = await res.json();
 
-    // ============================================
-    // GPS Functions
-    // ============================================
-    function getLocation() {
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) return reject('เบราว์เซอร์ไม่รองรับ GPS');
-        const options = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
-        debugLog('กำลังขอ GPS...');
-        navigator.geolocation.getCurrentPosition(
-          pos => { debugLog('ได้ตำแหน่ง GPS', { lat: pos.coords.latitude, lon: pos.coords.longitude }); resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }); },
-          err => { debugLog('GPS Error', err); reject('ไม่สามารถอ่านตำแหน่งได้ กรุณาเปิด GPS'); },
-          options
-        );
+          if (json.status === 'ok') {
+            alert(json.message);
+            checkStatus();
+          } else {
+            alert(json.message);
+          }
+        } catch (err) {
+          alert('เกิดข้อผิดพลาด: ' + err.message);
+        } finally {
+          checkinBtn.disabled = false;
+          checkinBtn.textContent = 'Check In';
+        }
+      }, () => {
+        alert('ไม่สามารถดึงตำแหน่งได้');
+        checkinBtn.disabled = false;
+        checkinBtn.textContent = 'Check In';
       });
     }
 
-    // ============================================
-    // LINE Message Reply
-    // ============================================
-    async function sendLineReplyMessage(action, dateTime) {
-      if (!liff.isInClient()) {
-        updateStatus('บันทึกสำเร็จ', 'แต่ต้องเปิดในแชท LINE เพื่อส่งข้อความ', 'warning', `วันที่ ${dateTime}`);
-        setTimeout(() => liff.closeWindow(), 3000);
+    // Check Out
+    async function doCheckOut() {
+      if (!navigator.geolocation) {
+        alert('อุปกรณ์ไม่รองรับ GPS');
         return;
       }
-      const message = action === 'checkin'
-        ? `เช็คอินสำเร็จ!\n\nคุณ${state.lineDisplayName}\nวันที่ ${getThaiDateTimeLong()}\n\nขอให้วันนี้เป็นวันที่ดี`
-        : `เช็คเอาท์สำเร็จ!\n\nคุณ${state.lineDisplayName}\nวันที่ ${getThaiDateTimeLong()}\n\nขอบคุณที่ทำงานอย่างตั้งใจ\nพักผ่อนให้เต็มที่นะ`;
-      try {
-        await liff.sendMessages([{ type: 'text', text: message }]);
-        debugLog('ส่งข้อความสำเร็จ');
-        updateStatus('สำเร็จทั้งหมด!', 'บันทึกและส่งข้อความเรียบร้อย', 'success', `วันที่ ${dateTime}`);
-        setTimeout(() => liff.closeWindow(), 2000);
-      } catch (err) {
-        debugLog('Error ส่งข้อความ', err);
-        let instruction = '';
-        if (err.code === 'INVALID_ARGUMENT' || err.message.includes('permissions')) {
-          instruction = `ต้องเปิดสิทธิ์ "ส่งข้อความ" ใน LIFF\n\n1. ไป LINE Developers > LIFF > Edit\n2. เปิด "chat_message.write"\n3. บันทึก > ล็อกอินใหม่`;
-        } else {
-          instruction = `เกิดข้อผิดพลาด: ${err.message || err.code}`;
-        }
-        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `วันที่ ${dateTime}`, instruction);
-        elements.actionBtn.textContent = 'ลองส่งใหม่';
-        elements.actionBtn.disabled = false;
-        elements.buttonContainer.classList.remove('hidden');
-        elements.actionBtn.onclick = () => sendLineReplyMessage(action, dateTime);
-      }
-    }
 
-    // ============================================
-    // UI Functions
-    // ============================================
-    function showActionButton(action) {
-      state.currentAction = action;
-      elements.buttonContainer.classList.remove('hidden');
-      if (action === 'checkin') {
-        elements.actionBtn.className = '';
-        elements.actionBtn.innerHTML = 'Check In';
-      } else {
-        elements.actionBtn.className = 'checkout';
-        elements.actionBtn.innerHTML = 'Check Out';
-      }
-      elements.actionBtn.disabled = false;
-    }
+      checkoutBtn.disabled = true;
+      checkoutBtn.textContent = 'กำลังบันทึก...';
 
-    function hideActionButton() {
-      elements.buttonContainer.classList.add('hidden');
-      state.currentAction = null;
-    }
-
-    function updateStatus(title, message, type = 'info', timeInfo = '', instruction = '') {
-      elements.statusCard.className = `status-card ${type}`;
-      let content = title ? `<div class="status-title">${title}</div>` : '';
-      content += `<div class="status-text">${message}</div>`;
-      if (timeInfo) content += `<div class="time-display">${timeInfo}</div>`;
-      if (instruction) content += `<div class="instruction">${instruction}</div>`;
-      elements.statusCard.innerHTML = content;
-    }
-
-    function setLoading(loading, message = 'กำลังดำเนินการ...') {
-      state.isProcessing = loading;
-      elements.actionBtn.disabled = loading;
-      if (loading) {
-        elements.statusCard.className = 'status-card loading';
-        elements.statusCard.innerHTML = `<div class="spinner"></div><div class="status-text">${message}</div>`;
-      }
-    }
-
-    // ============================================
-    // API with Retry
-    // ============================================
-    async function fetchWithRetry(url, options, retries = CONFIG.MAX_RETRIES) {
-      for (let i = 0; i < retries; i++) {
-        try {
-          debugLog(`เชื่อมต่อ (${i + 1}/${retries})...`);
-          const response = await fetch(url, options);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const text = await response.text();
-          const data = JSON.parse(text);
-          debugLog('Parse JSON สำเร็จ', data);
-          return data;
-        } catch (error) {
-          debugLog(`ครั้งที่ ${i + 1} ล้มเหลว:`, error.message);
-          if (i === retries - 1) throw error;
-          await new Promise(r => setTimeout(r, CONFIG.RETRY_DELAY));
-        }
-      }
-    }
-
-    // ============================================
-    // Main Actions
-    // ============================================
-    async function sendAction() {
-      if (state.isProcessing || !state.currentAction) return;
-      const action = state.currentAction;
-      setLoading(true, `กำลัง${action === 'checkin' ? 'เช็คอิน' : 'เช็คเอาท์'}...`);
-      hideActionButton();
-      try {
-        const location = await getLocation();
-        const dateTime = getThaiDateTime();
-        const payload = {
-          action, userId: state.lineUserId, displayName: state.lineDisplayName,
-          date: getThaiDate(), dateTime,
-          checkinLat: location.lat, checkinLon: location.lon,
-          checkoutLat: location.lat, checkoutLon: location.lon
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const data = {
+          userId: USER.userId,
+          date: getThaiDate(),
+          action: 'checkout',
+          checkoutLat: position.coords.latitude,
+          checkoutLon: position.coords.longitude
         };
-        const result = await fetchWithRetry(CONFIG.API_URL, {
-          method: "POST", mode: "cors", cache: "no-cache",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-        if (result.status === 'ok') {
-          updateStatus('สำเร็จ!', `บันทึก${action === 'checkin' ? 'เข้างาน' : 'ออกงาน'}เรียบร้อย`, 'success', `วันที่ ${dateTime}`, 'กำลังส่งข้อความ...');
-          await sendLineReplyMessage(action, dateTime);
-          setTimeout(checkStatus, 2000);
-        } else {
-          updateStatus('เกิดข้อผิดพลาด', result.message, 'error');
-          setLoading(false);
-          setTimeout(() => showActionButton(action), 2000);
-        }
-      } catch (error) {
-        debugLog('Error ใน sendAction:', error);
-        updateStatus('ไม่สามารถเชื่อมต่อได้', 'กรุณาตรวจสอบอินเทอร์เน็ต', 'error', '', 'หรือ URL ของ Google Apps Script');
-        setTimeout(checkStatus, 3000);
-      }
-    }
 
-    async function checkStatus() {
-      try {
-        setLoading(true, 'กำลังตรวจสอบสถานะ...');
-        const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
-        const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
-        if (data.status === 'ok') {
-          const s = data.todayStatus;
-          if (s.checkedIn && s.checkedOut) {
-            hideActionButton();
-            updateStatus('เสร็จสิ้นสำหรับวันนี้', 'คุณได้บันทึกเวลาเข้า-ออกงานเรียบร้อยแล้ว', 'completed',
-              `เข้างาน: ${formatTime(s.checkinTime)} | ออกงาน: ${formatTime(s.checkoutTime)}`, 'ขอบคุณสำหรับการทำงานวันนี้');
-          } else if (s.checkedIn && !s.checkedOut) {
-            showActionButton('checkout');
-            updateStatus('ยินดีต้อนรับ!', 'คุณได้เช็คอินเรียบร้อยแล้ว', 'success',
-              `เข้างาน: ${formatTime(s.checkinTime)}`, `กดปุ่ม Check Out (เวลาปัจจุบัน: ${getCurrentTime()})`);
+        try {
+          const res = await fetch(CONFIG.API_URL, {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          const json = await res.json();
+
+          if (json.status === 'ok') {
+            alert(json.message);
+            checkStatus();
           } else {
-            showActionButton('checkin');
-            updateStatus('สวัสดีตอนเช้า!', 'คุณยังไม่ได้เช็คอินวันนี้', 'warning',
-              `วันที่: ${getThaiDate()}`, `กดปุ่ม Check In (เวลาปัจจุบัน: ${getCurrentTime()})`);
+            alert(json.message);
           }
-        } else throw new Error(data.message || 'Invalid response');
-      } catch (error) {
-        debugLog('Error ใน checkStatus:', error);
-        hideActionButton();
-        updateStatus('ไม่สามารถเชื่อมต่อ', 'กรุณาตรวจสอบ URL ของ Google Apps Script', 'error', '', `คลิก "Test" ใน Apps Script<br><small>${error.message}</small>`);
-      } finally {
-        state.isProcessing = false;
-      }
+        } catch (err) {
+          alert('เกิดข้อผิดพลาด: ' + err.message);
+        } finally {
+          checkoutBtn.disabled = false;
+          checkoutBtn.textContent = 'Check Out';
+        }
+      }, () => {
+        alert('ไม่สามารถดึงตำแหน่งได้');
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = 'Check Out';
+      });
     }
 
-    // ============================================
-    // Event Listeners
-    // ============================================
-    elements.actionBtn.addEventListener("click", e => { e.preventDefault(); sendAction(); });
-
-    // ============================================
-    // Initialize App
-    // ============================================
-    async function initApp() {
-      debugLog('เริ่มต้นแอพ...');
-      const liffReady = await initializeLiff();
-      if (liffReady) {
-        await checkStatus();
-        setInterval(() => { if (!state.isProcessing) checkStatus(); }, 30000);
-      } else {
-        updateStatus('ไม่สามารถเริ่มต้นได้', 'กรุณาเปิดในแอพ LINE', 'error');
-      }
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-      initApp();
-    }
+    // เริ่มต้น
+    window.onload = () => {
+      checkStatus();
+    };
   </script>
 </body>
 </html>
