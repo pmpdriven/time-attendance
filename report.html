@@ -4,134 +4,278 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>รายงานทีม Check In/Out</title>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #0ea5e9;
+      --purple: #8b5cf6;
+      --pink: #ec4899;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Prompt', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       min-height: 100vh;
-      padding: 20px;
+      padding: 16px;
+      color: var(--gray-900);
     }
+
     .container {
       max-width: 1000px;
       margin: 0 auto;
       background: white;
       border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       overflow: hidden;
     }
+
     .header {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
       color: white;
-      padding: 25px;
+      padding: 20px;
       text-align: center;
     }
-    .header h1 { font-size: 28px; margin-bottom: 8px; }
-    .header p { font-size: 16px; opacity: 0.9; }
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .header p {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
 
     .controls {
-      padding: 20px;
-      background: #f8f9fa;
+      padding: 16px;
+      background: var(--gray-100);
       display: flex;
       flex-direction: column;
-      gap: 15px;
-      align-items: center;
+      gap: 12px;
     }
+
     .top-row {
       display: flex;
-      gap: 15px;
+      gap: 8px;
       flex-wrap: wrap;
-      justify-content: center;
       align-items: center;
-      width: 100%;
     }
+
     .date-input, .search-input {
-      padding: 12px 16px;
-      font-size: 16px;
-      border: 2px solid #ddd;
+      padding: 10px 12px;
+      font-size: 0.875rem;
+      border: 1px solid var(--gray-300);
       border-radius: 8px;
-      font-family: 'Prompt', sans-serif;
-      min-width: 180px;
+      font-family: inherit;
+      flex: 1;
+      min-width: 140px;
     }
+
     .search-input {
-      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 12px center;
-      padding-left: 40px;
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 10px center;
+      padding-left: 36px;
     }
-    .btn, .export-btn {
-      padding: 12px 24px;
-      background: #667eea;
-      color: white;
+
+    .btn, .export-btn, .menu-toggle {
+      padding: 10px 16px;
+      font-size: 0.875rem;
       border: none;
       border-radius: 8px;
-      font-size: 16px;
       cursor: pointer;
-      font-family: 'Prompt', sans-serif;
-      transition: 0.3s;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.2s;
     }
-    .btn:hover, .export-btn:hover { background: #5a6fd8; transform: translateY(-2px); }
-    .export-btn { background: #28a745; }
 
-    .filter-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      width: 100%;
-    }
-    .filter-btn {
-      padding: 10px 18px;
-      border: 2px solid #ddd;
-      background: white;
-      color: #333;
-      border-radius: 8px;
-      font-size: 15px;
-      cursor: pointer;
-      font-family: 'Prompt', sans-serif;
-      transition: 0.3s;
-      white-space: nowrap;
-    }
-    .filter-btn .count {
-      font-weight: 600;
-      margin-left: 4px;
-    }
-    .filter-btn.active {
+    .btn {
+      background: var(--primary);
       color: white;
-      border-color: transparent;
     }
-    .filter-btn[data-filter="all"] { border-color: #007bff; }
-    .filter-btn[data-filter="checkedIn"] { border-color: #28a745; }
-    .filter-btn[data-filter="checkedOut"] { border-color: #dc3545; }
-    .filter-btn[data-filter="notCheckedIn"] { border-color: #ffc107; }
-    .filter-btn[data-filter="notCheckedOut"] { border-color: #fd7e14; }
-    .filter-btn[data-filter="lateCheckIn"] { border-color: #e83e8c; }
-    .filter-btn[data-filter="possibleAbsent"] { border-color: #6f42c1; }
-    .filter-btn.active[data-filter="all"] { background: #007bff; }
-    .filter-btn.active[data-filter="checkedIn"] { background: #28a745; }
-    .filter-btn.active[data-filter="checkedOut"] { background: #dc3545; }
-    .filter-btn.active[data-filter="notCheckedIn"] { background: #ffc107; color: #333; }
-    .filter-btn.active[data-filter="notCheckedOut"] { background: #fd7e14; }
-    .filter-btn.active[data-filter="lateCheckIn"] { background: #e83e8c; }
-    .filter-btn.active[data-filter="possibleAbsent"] { background: #6f42c1; }
+    .btn:hover { background: var(--primary-light); transform: translateY(-1px); }
 
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th, td { padding: 14px; text-align: left; border-bottom: 1px solid #eee; }
-    th { background: #667eea; color: white; font-weight: 600; }
-    tr:hover { background: #f8f9fa; }
-    .status { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; }
-    .status.checkedIn { background: #d4edda; color: #155724; }
-    .status.checkedOut { background: #f8d7da; color: #721c24; }
-    .status.notCheckedIn { background: #fff3cd; color: #856404; }
+    .export-btn {
+      background: var(--success);
+      color: white;
+    }
+    .export-btn:hover { background: #059669; transform: translateY(-1px); }
 
-    .loading { text-align: center; padding: 40px; color: #666; }
-    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+    .menu-toggle {
+      background: white;
+      color: var(--gray-700);
+      border: 1px solid var(--gray-300);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .menu-toggle::after {
+      content: "▼";
+      font-size: 0.75rem;
+    }
+
+    /* Filter Menu (Mobile) */
+    .filter-menu {
+      position: relative;
+      display: none;
+    }
+    .filter-menu.active {
+      display: block;
+    }
+    .filter-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      margin-top: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      z-index: 10;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .filter-item {
+      padding: 10px 14px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .filter-item:last-child { border-bottom: none; }
+    .filter-item:hover { background: var(--gray-100); }
+    .filter-item .count {
+      background: var(--gray-200);
+      color: var(--gray-700);
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 12px;
+      min-width: 20px;
+      text-align: center;
+    }
+    .filter-item.active {
+      background: var(--primary);
+      color: white;
+    }
+    .filter-item.active .count { background: rgba(255,255,255,0.3); color: white; }
+
+    /* Desktop: Show buttons inline */
+    @media (min-width: 640px) {
+      .filter-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .filter-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        border: 1px solid var(--gray-300);
+        background: white;
+        color: var(--gray-700);
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s;
+      }
+      .filter-btn .count {
+        font-weight: 600;
+        font-size: 0.75rem;
+      }
+      .filter-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+      .filter-menu { display: none; }
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      margin: 16px 0;
+    }
+    th, td {
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    th {
+      background: var(--gray-100);
+      color: var(--gray-700);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    tr:hover { background: var(--gray-50); }
+    .status {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      text-align: center;
+      min-width: 60px;
+    }
+    .status.checkedIn { background: #d1fae5; color: #065f46; }
+    .status.checkedOut { background: #fee2e2; color: #991b1b; }
+    .status.notCheckedIn { background: #fef3c7; color: #92400e; }
+
+    .loading {
+      text-align: center;
+      padding: 32px;
+      color: var(--gray-500);
+    }
+    .spinner {
+      border: 3px solid var(--gray-200);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 12px;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .footer { text-align: center; padding: 20px; color: #999; font-size: 14px; }
-    .no-data { text-align: center; padding: 30px; color: #999; font-style: italic; }
-    @media (max-width: 600px) {
-      .top-row, .filter-row { flex-direction: column; }
-      .date-input, .search-input, .btn, .filter-btn, .export-btn { width: 100%; }
+
+    .footer {
+      text-align: center;
+      padding: 16px;
+      color: var(--gray-500);
+      font-size: 0.75rem;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 32px;
+      color: var(--gray-500);
+      font-style: italic;
+      font-size: 0.875rem;
+    }
+
+    /* Mobile Overrides */
+    @media (max-width: 639px) {
+      .top-row { flex-direction: column; }
+      .date-input, .search-input, .btn, .export-btn { width: 100%; }
+      .filter-row { display: none; }
+      .filter-menu { display: block; }
     }
   </style>
 </head>
@@ -139,25 +283,35 @@
   <div class="container">
     <div class="header">
       <h1>รายงานทีม Check In/Out</h1>
-      <p>แสดงสถานะวันนี้แบบเรียลไทม์</p>
+      <p>ข้อมูลเรียลไทม์ • อัปเดตทุก 30 วินาที</p>
     </div>
 
     <div class="controls">
       <div class="top-row">
         <input type="date" id="datePicker" class="date-input" />
         <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาชื่อ..." />
-        <button class="btn" onclick="loadReport()">แสดงรายงาน</button>
+        <button class="btn" onclick="loadReport()">แสดง</button>
         <button class="export-btn" onclick="exportToExcel()">Export Excel</button>
       </div>
 
-      <div class="filter-row" id="filterButtons">
-        <!-- ปุ่มจะถูกสร้างด้วย JS -->
+      <!-- Mobile: Filter Menu -->
+      <div class="filter-menu" id="filterMenu">
+        <button class="menu-toggle" onclick="toggleFilterMenu()">
+          <span id="selectedFilterLabel">ทั้งหมด</span>
+          <span id="selectedFilterCount">(0)</span>
+        </button>
+        <div class="filter-dropdown" id="filterDropdown" style="display:none;">
+          <!-- ไอเท็มจะถูกสร้างด้วย JS -->
+        </div>
       </div>
+
+      <!-- Desktop: Filter Buttons -->
+      <div class="filter-row" id="filterButtons"></div>
     </div>
 
     <div id="loading" class="loading">
       <div class="spinner"></div>
-      <p>กำลังโหลดข้อมูลวันนี้...</p>
+      <p>กำลังโหลดข้อมูล...</p>
     </div>
 
     <div id="report" style="display: none;">
@@ -166,7 +320,7 @@
           <thead>
             <tr>
               <th>ลำดับ</th>
-              <th>ชื่อ</th>
+              <th>ชื่อ-สกุล</th>
               <th>Check In</th>
               <th>Check Out</th>
               <th>สถานะ</th>
@@ -178,7 +332,7 @@
     </div>
 
     <div class="footer">
-      <p>ระบบ Check In/Out by Google Apps Script • เวอร์ชัน 4.0</p>
+      <p>ระบบ Check In/Out • Enterprise Edition v5.0</p>
     </div>
   </div>
 
@@ -188,15 +342,16 @@
     let allMembers = [];
     let currentFilter = 'all';
     let reportData = null;
+    let autoRefresh = null;
 
     const filters = [
-      { key: 'all', label: 'ทั้งหมด', color: '#007bff' },
-      { key: 'checkedIn', label: 'Check In', color: '#28a745' },
-      { key: 'checkedOut', label: 'Check Out', color: '#dc3545' },
-      { key: 'notCheckedIn', label: 'ยังไม่ Check In', color: '#ffc107' },
+      { key: 'all', label: 'ทั้งหมด', color: '#2563eb' },
+      { key: 'checkedIn', label: 'Check In', color: '#10b981' },
+      { key: 'checkedOut', label: 'Check Out', color: '#ef4444' },
+      { key: 'notCheckedIn', label: 'ยังไม่ Check In', color: '#f59e0b' },
       { key: 'notCheckedOut', label: 'ยังไม่ Check Out', color: '#fd7e14' },
-      { key: 'lateCheckIn', label: 'Check In หลัง 09:00', color: '#e83e8c' },
-      { key: 'possibleAbsent', label: 'อาจจะลา', color: '#6f42c1' }
+      { key: 'lateCheckIn', label: 'Check In หลัง 09:00', color: '#ec4899' },
+      { key: 'possibleAbsent', label: 'อาจจะลา', color: '#8b5cf6' }
     ];
 
     function toThaiDate(dateStr) {
@@ -207,30 +362,53 @@
       return `${dd}/${mm}/${thaiYear}`;
     }
 
-    function createFilterButtons(data) {
-      const container = document.getElementById('filterButtons');
+    function createFilterButtons(isMobile = false) {
+      const container = isMobile ? document.getElementById('filterDropdown') : document.getElementById('filterButtons');
       container.innerHTML = '';
 
       filters.forEach(f => {
-        const count = getFilterCount(f.key, data);
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn';
-        btn.dataset.filter = f.key;
-        btn.innerHTML = `${f.label} <span class="count">(${count})</span>`;
-        btn.onclick = () => setFilter(f.key);
-        if (f.key === 'all') btn.classList.add('active');
-        container.appendChild(btn);
+        const count = getFilterCount(f.key, reportData || {});
+        const item = document.createElement(isMobile ? 'div' : 'button');
+        item.className = isMobile ? 'filter-item' : 'filter-btn';
+        if (!isMobile) item.dataset.filter = f.key;
+        item.innerHTML = `
+          <span>${f.label}</span>
+          <span class="count">(${count})</span>
+        `;
+        if (f.key === currentFilter) item.classList.add('active');
+        if (!isMobile) {
+          item.onclick = () => setFilter(f.key);
+        } else {
+          item.onclick = () => {
+            setFilter(f.key);
+            toggleFilterMenu();
+          };
+        }
+        container.appendChild(item);
       });
     }
 
+    function updateSelectedFilter() {
+      const selected = filters.find(f => f.key === currentFilter);
+      if (selected) {
+        document.getElementById('selectedFilterLabel').textContent = selected.label;
+        document.getElementById('selectedFilterCount').textContent = `(${getFilterCount(currentFilter, reportData || {})})`;
+      }
+    }
+
+    function toggleFilterMenu() {
+      const dropdown = document.getElementById('filterDropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+
     function getFilterCount(filter, data) {
-      if (filter === 'all') return data.total;
-      if (filter === 'checkedIn') return data.checkedIn;
-      if (filter === 'checkedOut') return data.checkedOut;
-      if (filter === 'notCheckedIn') return data.notCheckedIn;
-      if (filter === 'notCheckedOut') return data.notCheckedOut;
-      if (filter === 'lateCheckIn') return data.lateCheckIn;
-      if (filter === 'possibleAbsent') return data.possibleAbsent;
+      if (filter === 'all') return data.total || 0;
+      if (filter === 'checkedIn') return data.checkedIn || 0;
+      if (filter === 'checkedOut') return data.checkedOut || 0;
+      if (filter === 'notCheckedIn') return data.notCheckedIn || 0;
+      if (filter === 'notCheckedOut') return data.notCheckedOut || 0;
+      if (filter === 'lateCheckIn') return data.lateCheckIn || 0;
+      if (filter === 'possibleAbsent') return data.possibleAbsent || 0;
       return 0;
     }
 
@@ -254,8 +432,17 @@
 
         reportData = json.data;
         allMembers = json.data.members;
-        createFilterButtons(json.data);
+
+        // สร้างปุ่มทั้ง Mobile และ Desktop
+        createFilterButtons(false); // Desktop
+        createFilterButtons(true);  // Mobile
+        updateSelectedFilter();
         setFilter('all');
+
+        // รีเฟรชอัตโนมัติทุก 30 วินาที
+        if (autoRefresh) clearInterval(autoRefresh);
+        autoRefresh = setInterval(loadReport, 30000);
+
       } catch (err) {
         alert('เกิดข้อผิดพลาด: ' + err.message);
       } finally {
@@ -265,9 +452,13 @@
 
     function setFilter(filter) {
       currentFilter = filter;
-      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
-      if (activeBtn) activeBtn.classList.add('active');
+      document.querySelectorAll('.filter-btn, .filter-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll(`[data-filter="${filter}"], .filter-item`).forEach(el => {
+        if (el.dataset?.filter === filter || el.textContent.includes(filters.find(f => f.key === filter).label)) {
+          el.classList.add('active');
+        }
+      });
+      updateSelectedFilter();
       applyFilters();
     }
 
@@ -316,7 +507,6 @@
 
     function exportToExcel() {
       if (!reportData) return alert('กรุณาโหลดข้อมูลก่อน');
-
       const filtered = allMembers.filter(m => {
         if (currentFilter === 'all') return true;
         if (currentFilter === 'lateCheckIn') return m.checkinHour > 9;
@@ -326,7 +516,7 @@
 
       const data = filtered.map((m, i) => ({
         'ลำดับ': i + 1,
-        'ชื่อ': m.displayName,
+        'ชื่อ-สกุล': m.displayName,
         'Check In': m.checkinTime,
         'Check Out': m.checkoutTime,
         'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' : m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
@@ -338,9 +528,18 @@
       XLSX.writeFile(wb, `รายงาน_${reportData.date}.xlsx`);
     }
 
+    // Event Listeners
     document.getElementById('searchInput').addEventListener('input', applyFilters);
     document.getElementById('datePicker').addEventListener('change', loadReport);
 
+    // Click outside to close menu
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#filterMenu')) {
+        document.getElementById('filterDropdown').style.display = 'none';
+      }
+    });
+
+    // Load on start
     window.onload = () => {
       const today = new Date();
       const yyyy = today.getFullYear();
