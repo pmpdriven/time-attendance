@@ -333,21 +333,22 @@
         return;
       }
 
-      filtered.forEach((m, i) => {
-        const statusText = m.status === 'checkedOut' ? 'ออกงานแล้ว' :
-                          m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา';
-        const statusClass = m.status;
+// เปลี่ยนแค่บรรทัดนี้ในฟังก์ชัน applyFilters()
+filtered.forEach((m, i) => {
+  const statusText = m.status === 'checkedOut' ? 'ออกงานแล้ว' :
+                    m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา';
+  const statusClass = m.status;
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${i + 1}</td>
-          <td><strong>${m.displayName}</strong></td>
-          <td>${m.checkinTime}</td>
-          <td>${m.checkoutTime}</td>
-          <td><span class="status ${statusClass}">${statusText}</span></td>
-        `;
-        tbody.appendElement(row);
-      });
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>${i + 1}</td>
+    <td><strong>${m.displayName}</strong></td>
+    <td>${m.checkinTime}</td>
+    <td>${m.checkoutTime}</td>
+    <td><span class="status ${statusClass}">${statusText}</span></td>
+  `;
+  tbody.appendChild(row);  // แก้ตรงนี้!
+});
     }
 
     document.getElementById('searchInput').addEventListener('input', applyFilters);
