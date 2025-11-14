@@ -6,30 +6,65 @@
   <title>ระบบ Check In / Check Out</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
       font-family: 'Prompt', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh; display: flex; justify-content: center; align-items: center;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       padding: 20px;
     }
     .container {
-      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-      border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      padding: 40px; max-width: 500px; width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
       animation: slideUp 0.5s ease-out;
     }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-    .user-info { text-align: center; color: #666; margin-bottom: 30px; font-size: 18px; font-weight: 500; }
-    .version { text-align: center; color: #999; font-size: 12px; margin-top: 20px; user-select: none; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .user-info {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .version {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin-top: 20px;
+      user-select: none;
+    }
     .status-card {
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      border-radius: 12px; padding: 25px; text-align: center;
-      min-height: 100px; display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      animation: fadeIn 0.5s ease-out; margin-bottom: 25px;
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.5s ease-out;
+      margin-bottom: 25px;
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
     .status-card.loading { background: linear-gradient(135deg, #e0e7ff 0%, #cfd9ff 100%); }
     .status-card.success { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); }
     .status-card.warning { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
@@ -38,31 +73,50 @@
     .status-text { font-size: 16px; color: #333; font-weight: 400; line-height: 1.6; }
     .status-title { font-size: 20px; color: #333; font-weight: 600; margin-bottom: 10px; }
     .spinner {
-      border: 3px solid #f3f3f3; border-top: 3px solid #667eea;
-      border-radius: 50%; width: 40px; height: 40px;
-      animation: spin 1s linear infinite; margin-bottom: 15px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
     }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
     .time-display { font-size: 14px; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); }
     .instruction { font-size: 15px; color: #555; margin-top: 10px; padding: 12px; background: rgba(255,255,255,0.5); border-radius: 8px; }
     .button-container { min-height: 60px; display: flex; justify-content: center; align-items: center; }
     .button-container.hidden { display: none; }
     button {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white; border: none; padding: 15px 40px;
-      font-size: 18px; border-radius: 12px; cursor: pointer;
-      font-family: 'Prompt', sans-serif; font-weight: 500;
-      transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Prompt', sans-serif;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
       min-width: 200px;
     }
-    button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6); }
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
     button:active:not(:disabled) { transform: translateY(0); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
     button.checkout {
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
     }
-    button.checkout:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6); }
+    button.checkout:hover:not(:disabled) {
+      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+    }
+    .icon { font-size: 24px; margin-right: 8px; }
     @media (max-width: 480px) {
       .container { padding: 30px 20px; }
       button { width: 100%; min-width: auto; }
@@ -79,19 +133,19 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn"></button>
     </div>
+    <!-- Debug Log Panel -->
     <div id="debugLog" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; display: block;">
-      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log</div>
+      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
     </div>
-    <div class="version">Version 2.6.3 - รองรับ Apps Script v4.0.2</div>
+    <div class="version">Version 2.6.0 - แก้ไข formatTime() ถาวร</div>
   </div>
-
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
     // ============================================
-    // ตั้งค่า (เปลี่ยนเฉพาะ URL นี้)
+    // ตั้งค่า
     // ============================================
     const CONFIG = {
-      API_URL: "https://script.google.com/macros/s/AKfycbxzXseQ8MLPLgnE5e8l_ILnJbfWW0QeT887Pk-by_-Ch4wVBRLHbbYFlN-Kt3kcvOvbXg/exec",
+      API_URL: "https://script.google.com/macros/s/AKfycbxTBBxSbQVtZdqpSw-aYKpg5cBCsLrDe5Zgql4k3kL9yfYuQ1B4HleuKLkb1G4dodGi5Q/exec",
       LIFF_ID: "2008403464-kaXOK95X",
       DEBUG_MODE: true,
       MAX_RETRIES: 3,
@@ -120,7 +174,7 @@
     };
 
     // ============================================
-    // Debug
+    // Debug Functions
     // ============================================
     function debugLog(message, data = null) {
       const timestamp = new Date().toLocaleTimeString('th-TH');
@@ -169,7 +223,7 @@
     }
 
     // ============================================
-    // Date Functions (Thai)
+    // Date/Time Functions (Thailand)
     // ============================================
     function getThaiDate() {
       const now = new Date();
@@ -178,6 +232,18 @@
       const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
       const y = thaiTime.getFullYear() + 543;
       return `${d}/${m}/${y}`;
+    }
+
+    function getThaiDateTime() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear() + 543;
+      const h = thaiTime.getHours().toString().padStart(2, '0');
+      const min = thaiTime.getMinutes().toString().padStart(2, '0');
+      const s = thaiTime.getSeconds().toString().padStart(2, '0');
+      return `${d}/${m}/${y} ${h}:${min}:${s}`;
     }
 
     function getThaiDateTimeLong() {
@@ -189,13 +255,32 @@
       return `วัน${dayNames[thaiTime.getDay()]}ที่ ${thaiTime.getDate()} ${monthNames[thaiTime.getMonth()]} ${thaiTime.getFullYear() + 543} เวลา ${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
     }
 
+    // แก้ไข formatTime() ให้รับ HH:mm จาก backend ได้ทันที
     function formatTime(timeStr) {
       if (!timeStr) return '';
+
+      // กรณี backend ส่ง HH:mm หรือ HH:mm:ss
       if (typeof timeStr === 'string' && timeStr.includes(':')) {
-        const [h, m] = timeStr.split(':');
-        return `${h.padStart(2, '0')}:${m.padStart(2, '0')} น.`;
+        const parts = timeStr.split(':');
+        const hours = parts[0].padStart(2, '0');
+        const minutes = parts[1].padStart(2, '0');
+        return `${hours}:${minutes} น.`;
       }
-      return '';
+
+      // กรณีฉุกเฉิน: ถ้าเป็น ISO string หรือ timestamp
+      let date;
+      if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('-'))) {
+        date = new Date(timeStr);
+      } else if (typeof timeStr === 'number') {
+        date = new Date(timeStr);
+      } else {
+        return '';
+      }
+
+      if (isNaN(date.getTime())) return '';
+
+      const thaiTime = new Date(date.getTime() + (7 * 3600000));
+      return `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
     }
 
     function getCurrentTime() {
@@ -205,7 +290,7 @@
     }
 
     // ============================================
-    // GPS
+    // GPS Functions
     // ============================================
     function getLocation() {
       return new Promise((resolve, reject) => {
@@ -221,21 +306,21 @@
     }
 
     // ============================================
-    // LINE Reply
+    // LINE Message Reply
     // ============================================
-    async function sendLineReplyMessage(action, serverTime) {
+    async function sendLineReplyMessage(action, dateTime) {
       if (!liff.isInClient()) {
-        updateStatus('บันทึกสำเร็จ', 'แต่ต้องเปิดในแชท LINE เพื่อส่งข้อความ', 'warning', `เวลา: ${serverTime}`);
+        updateStatus('บันทึกสำเร็จ', 'แต่ต้องเปิดในแชท LINE เพื่อส่งข้อความ', 'warning', `วันที่ ${dateTime}`);
         setTimeout(() => liff.closeWindow(), 3000);
         return;
       }
       const message = action === 'checkin'
-        ? `เช็คอินสำเร็จ!\n\nคุณ${state.lineDisplayName}\n${getThaiDateTimeLong()}\n\nขอให้วันนี้เป็นวันที่ดี`
-        : `เช็คเอาท์สำเร็จ!\n\nคุณ${state.lineDisplayName}\n${getThaiDateTimeLong()}\n\nขอบคุณที่ทำงานอย่างตั้งใจ\nพักผ่อนให้เต็มที่นะ`;
+        ? `เช็คอินสำเร็จ!\n\nคุณ${state.lineDisplayName}\nวันที่ ${getThaiDateTimeLong()}\n\nขอให้วันนี้เป็นวันที่ดี`
+        : `เช็คเอาท์สำเร็จ!\n\nคุณ${state.lineDisplayName}\nวันที่ ${getThaiDateTimeLong()}\n\nขอบคุณที่ทำงานอย่างตั้งใจ\nพักผ่อนให้เต็มที่นะ`;
       try {
         await liff.sendMessages([{ type: 'text', text: message }]);
         debugLog('ส่งข้อความสำเร็จ');
-        updateStatus('สำเร็จทั้งหมด!', 'บันทึกและส่งข้อความเรียบร้อย', 'success', `เวลา: ${serverTime}`);
+        updateStatus('สำเร็จทั้งหมด!', 'บันทึกและส่งข้อความเรียบร้อย', 'success', `วันที่ ${dateTime}`);
         setTimeout(() => liff.closeWindow(), 2000);
       } catch (err) {
         debugLog('Error ส่งข้อความ', err);
@@ -245,16 +330,16 @@
         } else {
           instruction = `เกิดข้อผิดพลาด: ${err.message || err.code}`;
         }
-        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `เวลา: ${serverTime}`, instruction);
+        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `วันที่ ${dateTime}`, instruction);
         elements.actionBtn.textContent = 'ลองส่งใหม่';
         elements.actionBtn.disabled = false;
         elements.buttonContainer.classList.remove('hidden');
-        elements.actionBtn.onclick = () => sendLineReplyMessage(action, serverTime);
+        elements.actionBtn.onclick = () => sendLineReplyMessage(action, dateTime);
       }
     }
 
     // ============================================
-    // UI
+    // UI Functions
     // ============================================
     function showActionButton(action) {
       state.currentAction = action;
@@ -293,18 +378,13 @@
     }
 
     // ============================================
-    // API with Retry + CORS Fix (v4.0.2)
+    // API with Retry
     // ============================================
     async function fetchWithRetry(url, options, retries = CONFIG.MAX_RETRIES) {
       for (let i = 0; i < retries; i++) {
         try {
           debugLog(`เชื่อมต่อ (${i + 1}/${retries})...`);
-          const response = await fetch(url, {
-            ...options,
-            mode: "cors",
-            credentials: "omit",
-            cache: "no-cache"
-          });
+          const response = await fetch(url, options);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const text = await response.text();
           const data = JSON.parse(text);
@@ -328,34 +408,21 @@
       hideActionButton();
       try {
         const location = await getLocation();
-        const date = getThaiDate();
-
+        const dateTime = getThaiDateTime();
         const payload = {
-          action,
-          userId: state.lineUserId,
-          displayName: state.lineDisplayName,
-          date
+          action, userId: state.lineUserId, displayName: state.lineDisplayName,
+          date: getThaiDate(), dateTime,
+          checkinLat: location.lat, checkinLon: location.lon,
+          checkoutLat: location.lat, checkoutLon: location.lon
         };
-
-        if (action === 'checkin') {
-          payload.checkinLat = location.lat;
-          payload.checkinLon = location.lon;
-        } else {
-          payload.checkoutLat = location.lat;
-          payload.checkoutLon = location.lon;
-        }
-
         const result = await fetchWithRetry(CONFIG.API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", mode: "cors", cache: "no-cache",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-
         if (result.status === 'ok') {
-          const timeMatch = result.message.match(/เวลา (\d{2}:\d{2})/);
-          const serverTime = timeMatch ? timeMatch[1] + ' น.' : '';
-          updateStatus('สำเร็จ!', result.message, 'success', `เวลา: ${serverTime}`, 'กำลังส่งข้อความ...');
-          await sendLineReplyMessage(action, serverTime);
+          updateStatus('สำเร็จ!', `บันทึก${action === 'checkin' ? 'เข้างาน' : 'ออกงาน'}เรียบร้อย`, 'success', `วันที่ ${dateTime}`, 'กำลังส่งข้อความ...');
+          await sendLineReplyMessage(action, dateTime);
           setTimeout(checkStatus, 2000);
         } else {
           updateStatus('เกิดข้อผิดพลาด', result.message, 'error');
@@ -373,9 +440,9 @@
       try {
         setLoading(true, 'กำลังตรวจสอบสถานะ...');
         const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
-        const data = await fetchWithRetry(url, { method: "GET" });
+        const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
         if (data.status === 'ok') {
-          const s = data.data;
+          const s = data.todayStatus;
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
             updateStatus('เสร็จสิ้นสำหรับวันนี้', 'คุณได้บันทึกเวลาเข้า-ออกงานเรียบร้อยแล้ว', 'completed',
