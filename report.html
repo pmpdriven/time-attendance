@@ -122,7 +122,7 @@
     </div>
 
     <div class="footer">
-      <p>ระบบ Check In/Out • Enterprise Edition v5.2 (แก้ Filter 100%)</p>
+      <p>ระบบ Check In/Out • Enterprise Edition v5.3 (Filter 100% + ปุ่มนับถูกต้องทุกกรณี)</p>
     </div>
   </div>
 
@@ -134,13 +134,13 @@
     let autoRefresh = null;
 
     const filters = [
-      { key: 'all',           label: 'ทั้งหมด',       countKey: 'total' },
-      { key: 'checkedIn',     label: 'Check In',      countKey: 'checkedIn' },
-      { key: 'checkedOut',    label: 'Check Out',     countKey: 'checkedOut' },
-      { key: 'notCheckedIn',  label: 'ยังไม่ Check In', countKey: 'notCheckedIn' },
-      { key: 'notCheckedOut', label: 'ยังไม่ Check Out', countKey: 'notCheckedOut' },
-      { key: 'lateCheckIn',   label: 'มาสาย (หลัง 09:00)', countKey: 'lateCheckIn' },
-      { key: 'possibleAbsent',label: 'อาจลา/ขาด',     countKey: 'possibleAbsent' }
+      { key: 'all',           label: 'ทั้งหมด',       },
+      { key: 'checkedIn',     label: 'Check In',      },
+      { key: 'checkedOut',    label: 'Check Out',     },
+      { key: 'notCheckedIn',  label: 'ยังไม่ Check In', },
+      { key: 'notCheckedOut', label: 'ยังไม่ Check Out', },
+      { key: 'lateCheckIn',   label: 'มาสาย (หลัง 09:00)', },
+      { key: 'possibleAbsent',label: 'อาจลา/ขาด',     }
     ];
 
     function toThaiDate(dateStr) {
@@ -151,25 +151,21 @@
       return `${dd}/${mm}/${thaiYear}`;
     }
 
-    function getFilterCount(key, data) {
-      if (!data) return 0;
-      const map = {
-        total: data.total || 0,
-        checkedIn: data.checkedIn || 0,
-        checkedOut: data.checkedOut || 0,
-        notCheckedIn: data.notCheckedIn || 0,
-        notCheckedOut: data.notCheckedOut || 0,
-        lateCheckIn: data.lateCheckIn || 0,
-        possibleAbsent: data.possibleAbsent || 0
-      };
-      return map[key] || 0;
-    }
-
+    // สร้างปุ่ม Filter พร้อมจำนวนที่ถูกต้องทุกครั้ง
     function createFilterButtons() {
       const container = document.getElementById('filterButtons');
       container.innerHTML = '';
+
       filters.forEach(f => {
-        const count = getFilterCount(f.countKey, reportData);
+        let count = 0;
+        if (f.key === 'all') count = allMembers.length;
+        else if (f.key === 'checkedIn') count = allMembers.filter(m => m.status === 'checkedIn').length;
+        else if (f.key === 'checkedOut') count = allMembers.filter(m => m.status === 'checkedOut').length;
+        else if (f.key === 'notCheckedIn') count = allMembers.filter(m => m.status === 'notCheckedIn').length;
+        else if (f.key === 'notCheckedOut') count = allMembers.filter(m => m.status === 'checkedIn').length;
+        else if (f.key === 'lateCheckIn') count = allMembers.filter(m => m.checkinHour > 9).length;
+        else if (f.key === 'possibleAbsent') count = allMembers.filter(m => m.status === 'notCheckedIn').length;
+
         const btn = document.createElement('button');
         btn.className = 'filter-btn';
         if (f.key === currentFilter) btn.classList.add('active');
@@ -238,27 +234,27 @@
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="no-data">ไม่พบข้อมูลที่ตรงกัน</td></tr>`;
-        return;
+      } else {
+        filtered.forEach((m, i) => {
+          let statusText = 'ยังไม่มา';
+          let statusClass = 'notCheckedIn';
+          if (m.status === 'checkedOut') { statusText = 'ออกงานแล้ว'; statusClass = 'checkedOut'; }
+          else if (m.status === 'checkedIn') { statusText = 'เข้างานแล้ว'; statusClass = 'checkedIn'; }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td><strong>${m.displayName}</strong></td>
+            <td>${m.checkinTime || '-'}</td>
+            <td>${m.checkoutTime || '-'}</td>
+            <td><span class="status ${statusClass}">${statusText}</span></td>
+          `;
+          tbody.appendChild(row);
+        });
       }
 
-      filtered.forEach((m, i) => {
-        let statusText = 'ยังไม่มา';
-        let statusClass = 'notCheckedIn';
-        if (m.status === 'checkedOut') { statusText = 'ออกงานแล้ว'; statusClass = 'checkedOut'; }
-        else if (m.status === 'checkedIn') { statusText = 'เข้างานแล้ว'; statusClass = 'checkedIn'; }
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${i + 1}</td>
-          <td><strong>${m.displayName}</strong></td>
-          <td>${m.checkinTime || '-'}</td>
-          <td>${m.checkoutTime || '-'}</td>
-          <td><span class="status ${statusClass}">${statusText}</span></td>
-        `;
-        tbody.appendChild(row);
-      });
-
       document.getElementById('report').style.display = 'block';
+      createFilterButtons(); // สำคัญ: อัปเดตจำนวนปุ่มทุกครั้ง
     }
 
     function exportToExcel() {
