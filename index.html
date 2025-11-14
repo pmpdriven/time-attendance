@@ -10,15 +10,12 @@
     body {
       font-family: 'Prompt', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; display: flex; justify-content: center; align-items: center;
       padding: 20px;
     }
     .container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+      border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       padding: 40px; max-width: 500px; width: 100%;
       animation: slideUp 0.5s ease-out;
     }
@@ -66,7 +63,6 @@
       box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
     }
     button.checkout:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6); }
-    .icon { font-size: 24px; margin-right: 8px; }
     @media (max-width: 480px) {
       .container { padding: 30px 20px; }
       button { width: 100%; min-width: auto; }
@@ -84,18 +80,18 @@
       <button id="actionBtn"></button>
     </div>
     <div id="debugLog" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; display: block;">
-      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
+      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log</div>
     </div>
-    <div class="version">Version 2.6.1 - ปรับเชื่อม Apps Script v4.0.1</div>
+    <div class="version">Version 2.6.3 - รองรับ Apps Script v4.0.2</div>
   </div>
 
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
     // ============================================
-    // ตั้งค่า
+    // ตั้งค่า (เปลี่ยนเฉพาะ URL นี้)
     // ============================================
     const CONFIG = {
-      API_URL: "https://script.google.com/macros/s/AKfycbzbnw4zibUVPyKvVkdpf-py8hyvGhAwXK4-0aKwbUzEbcIzJGkW0jReC0Xriuoe8yyT/exec",
+      API_URL: "https://script.google.com/macros/s/AKfycbxzXseQ8MLPLgnE5e8l_ILnJbfWW0QeT887Pk-by_-Ch4wVBRLHbbYFlN-Kt3kcvOvbXg/exec",
       LIFF_ID: "2008403464-kaXOK95X",
       DEBUG_MODE: true,
       MAX_RETRIES: 3,
@@ -173,7 +169,7 @@
     }
 
     // ============================================
-    // Date Functions (Thailand)
+    // Date Functions (Thai)
     // ============================================
     function getThaiDate() {
       const now = new Date();
@@ -297,13 +293,18 @@
     }
 
     // ============================================
-    // API with Retry
+    // API with Retry + CORS Fix (v4.0.2)
     // ============================================
     async function fetchWithRetry(url, options, retries = CONFIG.MAX_RETRIES) {
       for (let i = 0; i < retries; i++) {
         try {
           debugLog(`เชื่อมต่อ (${i + 1}/${retries})...`);
-          const response = await fetch(url, options);
+          const response = await fetch(url, {
+            ...options,
+            mode: "cors",
+            credentials: "omit",
+            cache: "no-cache"
+          });
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const text = await response.text();
           const data = JSON.parse(text);
@@ -329,7 +330,6 @@
         const location = await getLocation();
         const date = getThaiDate();
 
-        // ส่งเฉพาะข้อมูลที่จำเป็น
         const payload = {
           action,
           userId: state.lineUserId,
@@ -337,7 +337,6 @@
           date
         };
 
-        // เพิ่มตำแหน่งตาม action
         if (action === 'checkin') {
           payload.checkinLat = location.lat;
           payload.checkinLon = location.lon;
@@ -348,8 +347,6 @@
 
         const result = await fetchWithRetry(CONFIG.API_URL, {
           method: "POST",
-          mode: "cors",
-          cache: "no-cache",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
@@ -376,12 +373,12 @@
       try {
         setLoading(true, 'กำลังตรวจสอบสถานะ...');
         const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
-        const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
+        const data = await fetchWithRetry(url, { method: "GET" });
         if (data.status === 'ok') {
           const s = data.data;
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
-            updateStatus('เสร็จสิ้นสำหรับวันนี้', 'คุณได้บันทึกเวลาเข้า-ออกออกงานเรียบร้อยแล้ว', 'completed',
+            updateStatus('เสร็จสิ้นสำหรับวันนี้', 'คุณได้บันทึกเวลาเข้า-ออกงานเรียบร้อยแล้ว', 'completed',
               `เข้างาน: ${formatTime(s.checkinTime)} | ออกงาน: ${formatTime(s.checkoutTime)}`, 'ขอบคุณสำหรับการทำงานวันนี้');
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
