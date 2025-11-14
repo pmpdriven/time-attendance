@@ -8,214 +8,79 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-light: #3b82f6;
-      --gray-100: #f3f4f6;
-      --gray-200: #e5e7eb;
-      --gray-300: #d1d5db;
-      --gray-500: #6b7280;
-      --gray-700: #374151;
-      --gray-900: #111827;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --info: #0ea5e9;
-      --purple: #8b5cf6;
-      --pink: #ec4899;
+      --primary: #2563eb; --primary-light: #3b82f6; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+      --gray-300: #d1d5db; --gray-500: #6b7280; --gray-700: #374151; --gray-900: #111827;
+      --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --info: #0ea5e9;
+      --purple: #8b5cf6; --pink: #ec4899;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      min-height: 100vh;
-      padding: 16px;
-      color: var(--gray-900);
+      min-height: 100vh; padding: 16px; color: var(--gray-900);
     }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-    }
-    .header {
-      background: linear-gradient(135deg, var(--primary), var(--primary-light));
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    .header h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .header p {
-      font-size: 0.875rem;
-      opacity: 0.9;
-    }
-    .controls {
-      padding: 16px;
-      background: var(--gray-100);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .top-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .date-input, .search-input {
-      padding: 10px 12px;
-      font-size: 0.875rem;
-      border: 1px solid var(--gray-300);
-      border-radius: 8px;
-      font-family: inherit;
-      flex: 1;
-      min-width: 140px;
-    }
+    .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white; padding: 20px; text-align: center; }
+    .header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
+    .header p { font-size: 0.875rem; opacity: 0.9; }
+    .controls { padding: 16px; background: var(--gray-100); display: flex; flex-direction: column; gap: 12px; }
+    .top-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .date-input, .search-input { padding: 10px 12px; font-size: 0.875rem; border: 1px solid var(--gray-300);
+      border-radius: 8px; font-family: inherit; flex: 1; min-width: 140px; }
     .search-input {
       background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 10px center;
       padding-left: 36px;
     }
-    .btn, .export-btn {
-      padding: 10px 16px;
-      font-size: 0.875rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-    .btn {
-      background: var(--primary);
-      color: white;
-    }
+    .btn, .export-btn { padding: 10px 16px; font-size: 0.875rem; border: none; border-radius: 8px;
+      cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.2s; }
+    .btn { background: var(--primary); color: white; }
     .btn:hover { background: var(--primary-light); transform: translateY(-1px); }
-    .export-btn {
-      background: var(--success);
-      color: white;
-    }
+    .export-btn { background: var(--success); color: white; }
     .export-btn:hover { background: #059669; transform: translateY(-1px); }
 
-    /* Filter Row – แสดงทั้ง Desktop และ Mobile */
     .filter-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 8px 0;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      padding: 8px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
     .filter-row::-webkit-scrollbar { display: none; }
-
     .filter-btn {
-      padding: 8px 14px;
-      font-size: 0.8rem;
-      border: 1px solid var(--gray-300);
-      background: white;
-      color: var(--gray-700);
-      border-radius: 8px;
-      cursor: pointer;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.2s;
-      min-width: 90px;
-      flex-shrink: 0;
+      padding: 8px 14px; font-size: 0.8rem; border: 1px solid var(--gray-300);
+      background: white; color: var(--gray-700); border-radius: 8px; cursor: pointer;
+      white-space: nowrap; display: flex; align-items: center; gap: 4px;
+      transition: all 0.2s; min-width: 90px; flex-shrink: 0;
     }
-    .filter-btn .count {
-      font-weight: 600;
-      font-size: 0.75rem;
-    }
-    .filter-btn.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
+    .filter-btn .count { font-weight: 600; font-size: 0.75rem; }
+    .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-    /* Mobile: ปุ่มเล็กลง + เลื่อนได้ */
     @media (max-width: 639px) {
       .top-row { flex-direction: column; }
       .date-input, .search-input, .btn, .export-btn { width: 100%; }
-      .filter-row {
-        gap: 6px;
-        padding: 8px 0;
-      }
-      .filter-btn {
-        min-width: 90px;
-        font-size: 0.75rem;
-        padding: 6px 10px;
-      }
-      .filter-btn .count { font-size: 0.7rem; }
+      .filter-btn { min-width: 90px; font-size: 0.75rem; padding: 6px 10px; }
     }
 
-    /* Table */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8125rem;
-      margin: 16px 0;
-    }
-    th, td {
-      padding: 10px 8px;
-      text-align: left;
-      border-bottom: 1px solid var(--gray-200);
-    }
-    th {
-      background: var(--gray-100);
-      color: var(--gray-700);
-      font-weight: 500;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    tr:hover { background: var(--gray-50); }
-    .status {
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.6875rem;
-      font-weight: 500;
-      text-align: center;
-      min-width: 60px;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; margin: 16px 0; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--gray-200); }
+    th { background: var(--gray-100); color: var(--gray-700); font-weight: 500;
+         font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr:hover { background: #f9fafb; }
+    .status { padding: 4px 8px; border-radius: 12px; font-size: 0.6875rem;
+              font-weight: 500; text-align: center; min-width: 60px; }
     .status.checkedIn { background: #d1fae5; color: #065f46; }
     .status.checkedOut { background: #fee2e2; color: #991b1b; }
     .status.notCheckedIn { background: #fef3c7; color: #92400e; }
-    .loading {
-      text-align: center;
-      padding: 32px;
-      color: var(--gray-500);
-    }
+
+    .loading { text-align: center; padding: 32px; color: var(--gray-500); }
     .spinner {
-      border: 3px solid var(--gray-200);
-      border-top: 3px solid var(--primary);
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      animation: spin 1s linear infinite;
+      border: 3px solid var(--gray-200); border-top: 3px solid var(--primary);
+      border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite;
       margin: 0 auto 12px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .footer {
-      text-align: center;
-      padding: 16px;
-      color: var(--gray-500);
-      font-size: 0.75rem;
-    }
-    .no-data {
-      text-align: center;
-      padding: 32px;
-      color: var(--gray-500);
-      font-style: italic;
-      font-size: 0.875rem;
-    }
+    .footer { text-align: center; padding: 16px; color: var(--gray-500); font-size: 0.75rem; }
+    .no-data { text-align: center; padding: 32px; color: var(--gray-500);
+               font-style: italic; font-size: 0.875rem; }
   </style>
 </head>
 <body>
@@ -231,8 +96,6 @@
         <button class="btn" onclick="loadReport()">แสดง</button>
         <button class="export-btn" onclick="exportToExcel()">Export Excel</button>
       </div>
-
-      <!-- Filter Buttons (แสดงทั้ง Desktop และ Mobile) -->
       <div class="filter-row" id="filterButtons"></div>
     </div>
 
@@ -259,7 +122,7 @@
     </div>
 
     <div class="footer">
-      <p>ระบบ Check In/Out • Enterprise Edition v5.1</p>
+      <p>ระบบ Check In/Out • Enterprise Edition v5.2 (แก้ Filter 100%)</p>
     </div>
   </div>
 
@@ -271,13 +134,13 @@
     let autoRefresh = null;
 
     const filters = [
-      { key: 'all', label: 'ทั้งหมด', color: '#2563eb' },
-      { key: 'checkedIn', label: 'Check In', color: '#10b981' },
-      { key: 'checkedOut', label: 'Check Out', color: '#ef4444' },
-      { key: 'notCheckedIn', label: 'ยังไม่ Check In', color: '#f59e0b' },
-      { key: 'notCheckedOut', label: 'ยังไม่ Check Out', color: '#fd7e14' },
-      { key: 'lateCheckIn', label: 'Check In หลัง 09:00', color: '#ec4899' },
-      { key: 'possibleAbsent', label: 'อาจจะลา', color: '#8b5cf6' }
+      { key: 'all',           label: 'ทั้งหมด',       countKey: 'total' },
+      { key: 'checkedIn',     label: 'Check In',      countKey: 'checkedIn' },
+      { key: 'checkedOut',    label: 'Check Out',     countKey: 'checkedOut' },
+      { key: 'notCheckedIn',  label: 'ยังไม่ Check In', countKey: 'notCheckedIn' },
+      { key: 'notCheckedOut', label: 'ยังไม่ Check Out', countKey: 'notCheckedOut' },
+      { key: 'lateCheckIn',   label: 'มาสาย (หลัง 09:00)', countKey: 'lateCheckIn' },
+      { key: 'possibleAbsent',label: 'อาจลา/ขาด',     countKey: 'possibleAbsent' }
     ];
 
     function toThaiDate(dateStr) {
@@ -288,50 +151,54 @@
       return `${dd}/${mm}/${thaiYear}`;
     }
 
+    function getFilterCount(key, data) {
+      if (!data) return 0;
+      const map = {
+        total: data.total || 0,
+        checkedIn: data.checkedIn || 0,
+        checkedOut: data.checkedOut || 0,
+        notCheckedIn: data.notCheckedIn || 0,
+        notCheckedOut: data.notCheckedOut || 0,
+        lateCheckIn: data.lateCheckIn || 0,
+        possibleAbsent: data.possibleAbsent || 0
+      };
+      return map[key] || 0;
+    }
+
     function createFilterButtons() {
       const container = document.getElementById('filterButtons');
       container.innerHTML = '';
       filters.forEach(f => {
-        const count = getFilterCount(f.key, reportData || {});
+        const count = getFilterCount(f.countKey, reportData);
         const btn = document.createElement('button');
         btn.className = 'filter-btn';
-        btn.dataset.filter = f.key;
-        btn.innerHTML = `<span>${f.label}</span><span class="count">(${count})</span>`;
         if (f.key === currentFilter) btn.classList.add('active');
+        btn.dataset.filter = f.key;
+        btn.innerHTML = `${f.label} <span class="count">(${count})</span>`;
         btn.onclick = () => setFilter(f.key);
         container.appendChild(btn);
       });
     }
 
-    function getFilterCount(filter, data) {
-      if (filter === 'all') return data.total || 0;
-      if (filter === 'checkedIn') return data.checkedIn || 0;
-      if (filter === 'checkedOut') return data.checkedOut || 0;
-      if (filter === 'notCheckedIn') return data.notCheckedIn || 0;
-      if (filter === 'notCheckedOut') return data.notCheckedOut || 0;
-      if (filter === 'lateCheckIn') return data.lateCheckIn || 0;
-      if (filter === 'possibleAbsent') return data.possibleAbsent || 0;
-      return 0;
-    }
-
     async function loadReport() {
       const dateInput = document.getElementById('datePicker').value;
-      if (!dateInput) {
-        alert('กรุณาเลือกวันที่');
-        return;
-      }
+      if (!dateInput) { alert('กรุณาเลือกวันที่'); return; }
       const thaiDate = toThaiDate(dateInput);
+
       document.getElementById('loading').style.display = 'block';
       document.getElementById('report').style.display = 'none';
+
       try {
         const url = `${API_URL}?action=teamReport&date=${encodeURIComponent(thaiDate)}`;
         const res = await fetch(url);
         const json = await res.json();
-        if (json.status !== 'ok') throw new Error(json.message);
+        if (json.status !== 'ok') throw new Error(json.message || 'โหลดข้อมูลไม่สำเร็จ');
+
         reportData = json.data;
-        allMembers = json.data.members;
+        allMembers = json.data.members || [];
         createFilterButtons();
         setFilter('all');
+
         if (autoRefresh) clearInterval(autoRefresh);
         autoRefresh = setInterval(loadReport, 30000);
       } catch (err) {
@@ -343,8 +210,8 @@
 
     function setFilter(filter) {
       currentFilter = filter;
-      document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll(`[data-filter="${filter}"]`).forEach(el => el.classList.add('active'));
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll(`[data-filter="${filter}"]`).forEach(b => b.classList.add('active'));
       applyFilters();
     }
 
@@ -352,13 +219,16 @@
       const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
       const tbody = document.getElementById('reportBody');
       tbody.innerHTML = '';
-      let filtered = allMembers;
+
+      let filtered = [...allMembers];
 
       if (currentFilter === 'lateCheckIn') {
         filtered = filtered.filter(m => m.checkinHour > 9);
-      } else if (currentFilter === 'possibleAbsent') {
-        filtered = filtered.filter(m => m.status === 'notCheckedIn' && new Date().getHours() >= 9);
-      } else if (currentFilter !== 'all') {
+      }
+      else if (currentFilter === 'possibleAbsent') {
+        filtered = filtered.filter(m => m.status === 'notCheckedIn');
+      }
+      else if (currentFilter !== 'all') {
         filtered = filtered.filter(m => m.status === currentFilter);
       }
 
@@ -372,48 +242,54 @@
       }
 
       filtered.forEach((m, i) => {
-        const statusText = m.status === 'checkedOut' ? 'ออกงานแล้ว' :
-                          m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา';
-        const statusClass = m.status;
+        let statusText = 'ยังไม่มา';
+        let statusClass = 'notCheckedIn';
+        if (m.status === 'checkedOut') { statusText = 'ออกงานแล้ว'; statusClass = 'checkedOut'; }
+        else if (m.status === 'checkedIn') { statusText = 'เข้างานแล้ว'; statusClass = 'checkedIn'; }
+
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${i + 1}</td>
           <td><strong>${m.displayName}</strong></td>
-          <td>${m.checkinTime}</td>
-          <td>${m.checkoutTime}</td>
+          <td>${m.checkinTime || '-'}</td>
+          <td>${m.checkoutTime || '-'}</td>
           <td><span class="status ${statusClass}">${statusText}</span></td>
         `;
         tbody.appendChild(row);
       });
+
       document.getElementById('report').style.display = 'block';
     }
 
     function exportToExcel() {
       if (!reportData) return alert('กรุณาโหลดข้อมูลก่อน');
-      const filtered = allMembers.filter(m => {
-        if (currentFilter === 'all') return true;
-        if (currentFilter === 'lateCheckIn') return m.checkinHour > 9;
-        if (currentFilter === 'possibleAbsent') return m.status === 'notCheckedIn' && new Date().getHours() >= 9;
-        return m.status === currentFilter;
-      });
-      const data = filtered.map((m, i) => ({
-        'ลำดับ': i + 1,
-        'ชื่อ-สกุล': m.displayName,
-        'Check In': m.checkinTime,
-        'Check Out': m.checkoutTime,
-        'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' : m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
-      }));
+      const data = allMembers
+        .filter(m => {
+          if (currentFilter === 'all') return true;
+          if (currentFilter === 'lateCheckIn') return m.checkinHour > 9;
+          if (currentFilter === 'possibleAbsent') return m.status === 'notCheckedIn';
+          return m.status === currentFilter;
+        })
+        .map((m, i) => ({
+          'ลำดับ': i + 1,
+          'ชื่อ-สกุล': m.displayName,
+          'Check In': m.checkinTime || '-',
+          'Check Out': m.checkoutTime || '-',
+          'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' :
+                   m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
+        }));
+
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Report");
-      XLSX.writeFile(wb, `รายงาน_${reportData.date}.xlsx`);
+      XLSX.writeFile(wb, `รายงาน_CheckInOut_${reportData.date}.xlsx`);
     }
 
     // Event Listeners
     document.getElementById('searchInput').addEventListener('input', applyFilters);
     document.getElementById('datePicker').addEventListener('change', loadReport);
 
-    // Load on start
+    // โหลดวันนี้อัตโนมัติ
     window.onload = () => {
       const today = new Date();
       const yyyy = today.getFullYear();
