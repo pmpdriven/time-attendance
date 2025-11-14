@@ -78,7 +78,7 @@
       margin: 0 auto 12px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .footer { text-align: center; padding: 16px; color: var(--gray-500); font-size: 0.75rem; }
+    .footer { text-align: center一定程度上; padding: 16px; color: var(--gray-500); font-size: 0.75rem; }
     .no-data { text-align: center; padding: 32px; color: var(--gray-500);
                font-style: italic; font-size: 0.875rem; }
   </style>
@@ -105,24 +105,22 @@
     </div>
 
     <div id="report" style="display: none;">
-      <div id="tableContainer">
-        <table id="reportTable">
-          <thead>
-            <tr>
-              <th>ลำดับ</th>
-              <th>ชื่อ-สกุล</th>
-              <th>Check In</th>
-              <th>Check Out</th>
-              <th>สถานะ</th>
-            </tr>
-          </thead>
-          <tbody id="reportBody"></tbody>
-        </table>
-      </div>
+      <table id="reportTable">
+        <thead>
+          <tr>
+            <th>ลำดับ</th>
+            <th>ชื่อ-สกุล</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="reportBody"></tbody>
+      </table>
     </div>
 
     <div class="footer">
-      <p>ระบบ Check In/Out • Enterprise Edition v5.3 (Filter 100% + ปุ่มนับถูกต้องทุกกรณี)</p>
+      <p>ระบบ Check In/Out • Enterprise Edition v5.4 (ปุ่มนับถูกต้อง 100% ทุกกรณี)</p>
     </div>
   </div>
 
@@ -134,13 +132,13 @@
     let autoRefresh = null;
 
     const filters = [
-      { key: 'all',           label: 'ทั้งหมด',       },
-      { key: 'checkedIn',     label: 'Check In',      },
-      { key: 'checkedOut',    label: 'Check Out',     },
-      { key: 'notCheckedIn',  label: 'ยังไม่ Check In', },
-      { key: 'notCheckedOut', label: 'ยังไม่ Check Out', },
-      { key: 'lateCheckIn',   label: 'มาสาย (หลัง 09:00)', },
-      { key: 'possibleAbsent',label: 'อาจลา/ขาด',     }
+      { key: 'all',           label: 'ทั้งหมด' },
+      { key: 'checkedIn',     label: 'Check In' },
+      { key: 'checkedOut',    label: 'Check Out' },
+      { key: 'notCheckedIn',  label: 'ยังไม่ Check In' },
+      { key: 'notCheckedOut', label: 'ยังไม่ Check Out' },
+      { key: 'lateCheckIn',   label: 'มาสาย (หลัง 09:00)' },
+      { key: 'possibleAbsent',label: 'อาจลา/ขาด' }
     ];
 
     function toThaiDate(dateStr) {
@@ -151,21 +149,22 @@
       return `${dd}/${mm}/${thaiYear}`;
     }
 
-    // สร้างปุ่ม Filter พร้อมจำนวนที่ถูกต้องทุกครั้ง
     function createFilterButtons() {
       const container = document.getElementById('filterButtons');
       container.innerHTML = '';
 
-      filters.forEach(f => {
-        let count = 0;
-        if (f.key === 'all') count = allMembers.length;
-        else if (f.key === 'checkedIn') count = allMembers.filter(m => m.status === 'checkedIn').length;
-        else if (f.key === 'checkedOut') count = allMembers.filter(m => m.status === 'checkedOut').length;
-        else if (f.key === 'notCheckedIn') count = allMembers.filter(m => m.status === 'notCheckedIn').length;
-        else if (f.key === 'notCheckedOut') count = allMembers.filter(m => m.status === 'checkedIn').length;
-        else if (f.key === 'lateCheckIn') count = allMembers.filter(m => m.checkinHour > 9).length;
-        else if (f.key === 'possibleAbsent') count = allMembers.filter(m => m.status === 'notCheckedIn').length;
+      const counts = {
+        all: allMembers.length,
+        checkedIn: allMembers.filter(m => m.status === 'checkedIn').length,
+        checkedOut: allMembers.filter(m => m.status === 'checkedOut').length,
+        notCheckedIn: allMembers.filter(m => m.status === 'notCheckedIn').length,
+        notCheckedOut: allMembers.filter(m => m.status === 'checkedIn').length,
+        lateCheckIn: allMembers.filter(m => m.checkinHour > 9).length,
+        possibleAbsent: allMembers.filter(m => m.status === 'notCheckedIn').length
+      };
 
+      filters.forEach(f => {
+        const count = counts[f.key] || 0;
         const btn = document.createElement('button');
         btn.className = 'filter-btn';
         if (f.key === currentFilter) btn.classList.add('active');
@@ -178,7 +177,7 @@
 
     async function loadReport() {
       const dateInput = document.getElementById('datePicker').value;
-      if (!dateInput) { alert('กรุณาเลือกวันที่'); return; }
+      if (!dateInput) return alert('กรุณาเลือกวันที่');
       const thaiDate = toThaiDate(dateInput);
 
       document.getElementById('loading').style.display = 'block';
@@ -188,7 +187,7 @@
         const url = `${API_URL}?action=teamReport&date=${encodeURIComponent(thaiDate)}`;
         const res = await fetch(url);
         const json = await res.json();
-        if (json.status !== 'ok') throw new Error(json.message || 'โหลดข้อมูลไม่สำเร็จ');
+        if (json.status !== 'ok') throw new Error(json.message);
 
         reportData = json.data;
         allMembers = json.data.members || [];
@@ -218,43 +217,33 @@
 
       let filtered = [...allMembers];
 
-      if (currentFilter === 'lateCheckIn') {
-        filtered = filtered.filter(m => m.checkinHour > 9);
-      }
-      else if (currentFilter === 'possibleAbsent') {
-        filtered = filtered.filter(m => m.status === 'notCheckedIn');
-      }
-      else if (currentFilter !== 'all') {
-        filtered = filtered.filter(m => m.status === currentFilter);
-      }
+      if (currentFilter === 'lateCheckIn') filtered = filtered.filter(m => m.checkinHour > 9);
+      else if (currentFilter === 'possibleAbsent') filtered = filtered.filter(m => m.status === 'notCheckedIn');
+      else if (currentFilter !== 'all') filtered = filtered.filter(m => m.status === currentFilter);
 
-      if (searchText) {
-        filtered = filtered.filter(m => m.displayName.toLowerCase().includes(searchText));
-      }
+      if (searchText) filtered = filtered.filter(m => m.displayName.toLowerCase().includes(searchText));
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="no-data">ไม่พบข้อมูลที่ตรงกัน</td></tr>`;
       } else {
         filtered.forEach((m, i) => {
-          let statusText = 'ยังไม่มา';
-          let statusClass = 'notCheckedIn';
+          let statusText = 'ยังไม่มา', statusClass = 'notCheckedIn';
           if (m.status === 'checkedOut') { statusText = 'ออกงานแล้ว'; statusClass = 'checkedOut'; }
           else if (m.status === 'checkedIn') { statusText = 'เข้างานแล้ว'; statusClass = 'checkedIn'; }
 
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${i + 1}</td>
-            <td><strong>${m.displayName}</strong></td>
-            <td>${m.checkinTime || '-'}</td>
-            <td>${m.checkoutTime || '-'}</td>
-            <td><span class="status ${statusClass}">${statusText}</span></td>
-          `;
-          tbody.appendChild(row);
+          tbody.innerHTML += `
+            <tr>
+              <td>${i + 1}</td>
+              <td><strong>${m.displayName}</strong></td>
+              <td>${m.checkinTime || '-'}</td>
+              <td>${m.checkoutTime || '-'}</td>
+              <td><span class="status ${statusClass}">${statusText}</span></td>
+            </tr>`;
         });
       }
 
       document.getElementById('report').style.display = 'block';
-      createFilterButtons(); // สำคัญ: อัปเดตจำนวนปุ่มทุกครั้ง
+      createFilterButtons(); // อัปเดตปุ่มทุกครั้ง
     }
 
     function exportToExcel() {
@@ -271,8 +260,7 @@
           'ชื่อ-สกุล': m.displayName,
           'Check In': m.checkinTime || '-',
           'Check Out': m.checkoutTime || '-',
-          'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' :
-                   m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
+          'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' : m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
         }));
 
       const ws = XLSX.utils.json_to_sheet(data);
@@ -281,17 +269,12 @@
       XLSX.writeFile(wb, `รายงาน_CheckInOut_${reportData.date}.xlsx`);
     }
 
-    // Event Listeners
     document.getElementById('searchInput').addEventListener('input', applyFilters);
     document.getElementById('datePicker').addEventListener('change', loadReport);
 
-    // โหลดวันนี้อัตโนมัติ
     window.onload = () => {
       const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      document.getElementById('datePicker').value = `${yyyy}-${mm}-${dd}`;
+      document.getElementById('datePicker').value = today.toISOString().split('T')[0];
       loadReport();
     };
   </script>
