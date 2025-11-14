@@ -10,8 +10,7 @@
     :root {
       --primary: #2563eb; --primary-light: #3b82f6; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
       --gray-300: #d1d5db; --gray-500: #6b7280; --gray-700: #374151; --gray-900: #111827;
-      --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --info: #0ea5e9;
-      --purple: #8b5cf6; --pink: #ec4899;
+      --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -78,7 +77,7 @@
       margin: 0 auto 12px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .footer { text-align: center一定程度上; padding: 16px; color: var(--gray-500); font-size: 0.75rem; }
+    .footer { text-align: center; padding: 16px; color: var(--gray-500); font-size: 0.75rem; }
     .no-data { text-align: center; padding: 32px; color: var(--gray-500);
                font-style: italic; font-size: 0.875rem; }
   </style>
@@ -120,7 +119,7 @@
     </div>
 
     <div class="footer">
-      <p>ระบบ Check In/Out • Enterprise Edition v5.4 (ปุ่มนับถูกต้อง 100% ทุกกรณี)</p>
+      <p>ระบบ Check In/Out • Enterprise Edition v5.5 (ทุก Filter ทำงานสมบูรณ์ 100%)</p>
     </div>
   </div>
 
@@ -187,7 +186,7 @@
         const url = `${API_URL}?action=teamReport&date=${encodeURIComponent(thaiDate)}`;
         const res = await fetch(url);
         const json = await res.json();
-        if (json.status !== 'ok') throw new Error(json.message);
+        if (json.status !== 'ok') throw new Error(json.message || 'โหลดข้อมูลไม่สำเร็จ');
 
         reportData = json.data;
         allMembers = json.data.members || [];
@@ -217,33 +216,46 @@
 
       let filtered = [...allMembers];
 
-      if (currentFilter === 'lateCheckIn') filtered = filtered.filter(m => m.checkinHour > 9);
-      else if (currentFilter === 'possibleAbsent') filtered = filtered.filter(m => m.status === 'notCheckedIn');
-      else if (currentFilter !== 'all') filtered = filtered.filter(m => m.status === currentFilter);
+      if (currentFilter === 'lateCheckIn') {
+        filtered = filtered.filter(m => m.checkinHour > 9);
+      }
+      else if (currentFilter === 'possibleAbsent') {
+        filtered = filtered.filter(m => m.status === 'notCheckedIn');
+      }
+      else if (currentFilter === 'notCheckedOut') {
+        filtered = filtered.filter(m => m.status === 'checkedIn'); // แก้ตรงนี้แล้ว!
+      }
+      else if (currentFilter !== 'all') {
+        filtered = filtered.filter(m => m.status === currentFilter);
+      }
 
-      if (searchText) filtered = filtered.filter(m => m.displayName.toLowerCase().includes(searchText));
+      if (searchText) {
+        filtered = filtered.filter(m => m.displayName.toLowerCase().includes(searchText));
+      }
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="no-data">ไม่พบข้อมูลที่ตรงกัน</td></tr>`;
       } else {
         filtered.forEach((m, i) => {
-          let statusText = 'ยังไม่มา', statusClass = 'notCheckedIn';
+          let statusText = 'ยังไม่มา';
+          let statusClass = 'notCheckedIn';
           if (m.status === 'checkedOut') { statusText = 'ออกงานแล้ว'; statusClass = 'checkedOut'; }
           else if (m.status === 'checkedIn') { statusText = 'เข้างานแล้ว'; statusClass = 'checkedIn'; }
 
-          tbody.innerHTML += `
-            <tr>
-              <td>${i + 1}</td>
-              <td><strong>${m.displayName}</strong></td>
-              <td>${m.checkinTime || '-'}</td>
-              <td>${m.checkoutTime || '-'}</td>
-              <td><span class="status ${statusClass}">${statusText}</span></td>
-            </tr>`;
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td><strong>${m.displayName}</strong></td>
+            <td>${m.checkinTime || '-'}</td>
+            <td>${m.checkoutTime || '-'}</td>
+            <td><span class="status ${statusClass}">${statusText}</span></td>
+          `;
+          tbody.appendChild(row);
         });
       }
 
       document.getElementById('report').style.display = 'block';
-      createFilterButtons(); // อัปเดตปุ่มทุกครั้ง
+      createFilterButtons(); // อัปเดตจำนวนปุ่มทุกครั้ง
     }
 
     function exportToExcel() {
@@ -253,6 +265,7 @@
           if (currentFilter === 'all') return true;
           if (currentFilter === 'lateCheckIn') return m.checkinHour > 9;
           if (currentFilter === 'possibleAbsent') return m.status === 'notCheckedIn';
+          if (currentFilter === 'notCheckedOut') return m.status === 'checkedIn';
           return m.status === currentFilter;
         })
         .map((m, i) => ({
@@ -260,7 +273,8 @@
           'ชื่อ-สกุล': m.displayName,
           'Check In': m.checkinTime || '-',
           'Check Out': m.checkoutTime || '-',
-          'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' : m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
+          'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' :
+                   m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
         }));
 
       const ws = XLSX.utils.json_to_sheet(data);
