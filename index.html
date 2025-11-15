@@ -619,8 +619,8 @@
           
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
-            updateStatus('All done for today.', 'Time attendance has been recorded.', 'completed',
-              `${getThaiDate()}<br><br>Check In: ${formatTime(s.checkinTime)} | Check Out: ${formatTime(s.checkoutTime)}`);
+            updateStatus('Completed for today.', 'Time attendance has been recorded.', 'completed',
+              `${getThaiDate()}<br><br>Check In: ${formatTime(s.checkinTime).replace(' น.', '')} | Check Out: ${formatTime(s.checkoutTime).replace(' น.', '')}`);
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
             updateStatus('ยินดีต้อนรับ!', 'คุณได้เช็คอินเรียบร้อยแล้ว', 'success',
