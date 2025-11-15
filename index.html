@@ -340,40 +340,60 @@
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
       return `วัน${dayNames[thaiTime.getDay()]}ที่ ${thaiTime.getDate()} ${monthNames[thaiTime.getMonth()]} ${thaiTime.getFullYear() + 543} เวลา ${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
     }
-    // แก้ไข formatTime() ให้รับ HH:mm จาก backend ได้ทันที
+    // แก้ไข formatTime() ให้รองรับ Date String จาก Backend
     function formatTime(timeStr) {
       if (!timeStr) return '-';
       
-      // ถ้าเป็น string และมี : แสดงว่าเป็น HH:mm หรือ HH:mm:ss อยู่แล้ว
-      if (typeof timeStr === 'string' && timeStr.includes(':')) {
+      debugLog('formatTime INPUT:', timeStr);
+      
+      // 1. ถ้าเป็น HH:mm หรือ HH:mm:ss อยู่แล้ว
+      if (typeof timeStr === 'string' && timeStr.includes(':') && !timeStr.includes(' ')) {
         const parts = timeStr.split(':');
         if (parts.length >= 2) {
           const hours = parts[0].padStart(2, '0');
           const minutes = parts[1].padStart(2, '0');
+          debugLog('formatTime OUTPUT (HH:mm):', `${hours}:${minutes} น.`);
           return `${hours}:${minutes} น.`;
         }
       }
       
-      // ถ้าเป็นตัวเลข (timestamp) ให้ convert
-      if (typeof timeStr === 'number') {
-        const date = new Date(timeStr);
-        if (!isNaN(date.getTime())) {
-          const thaiTime = new Date(date.getTime() + (7 * 3600000));
-          return `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+      // 2. ถ้าเป็น Date String เช่น "Sat Dec 30 1899 19:28 น."
+      if (typeof timeStr === 'string' && timeStr.includes(' ')) {
+        // หา pattern เวลา HH:mm ใน string
+        const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          const hours = timeMatch[1].padStart(2, '0');
+          const minutes = timeMatch[2];
+          debugLog('formatTime OUTPUT (extracted):', `${hours}:${minutes} น.`);
+          return `${hours}:${minutes} น.`;
         }
       }
       
-      // ถ้าเป็น ISO string
+      // 3. ถ้าเป็น ISO string
       if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('Z'))) {
         const date = new Date(timeStr);
         if (!isNaN(date.getTime())) {
           const thaiTime = new Date(date.getTime() + (7 * 3600000));
-          return `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+          const result = `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+          debugLog('formatTime OUTPUT (ISO):', result);
+          return result;
         }
       }
       
-      // ถ้าไม่ใช่รูปแบบใดเลย ให้ return ตัวเอง
-      return timeStr;
+      // 4. ถ้าเป็น Number (timestamp)
+      if (typeof timeStr === 'number') {
+        const date = new Date(timeStr);
+        if (!isNaN(date.getTime())) {
+          const thaiTime = new Date(date.getTime() + (7 * 3600000));
+          const result = `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+          debugLog('formatTime OUTPUT (timestamp):', result);
+          return result;
+        }
+      }
+      
+      // 5. ถ้าไม่ตรงอะไร
+      debugLog('formatTime OUTPUT (fallback):', timeStr);
+      return String(timeStr);
     }
     function getCurrentTime() {
       const now = new Date();
