@@ -617,7 +617,7 @@
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
             updateStatus('เสร็จสิ้นสำหรับวันนี้', 'คุณได้บันทึกเวลาเข้า-ออกงานเรียบร้อยแล้ว', 'completed',
-              `เข้างาน: ${formatTime(s.checkinTime)} | ออกงาน: ${formatTime(s.checkoutTime)}`, 'ขอบคุณสำหรับการทำงานวันนี้');
+              `${getThaiDate()}<br>เข้างาน: ${formatTime(s.checkinTime)} | ออกงาน: ${formatTime(s.checkoutTime)}`);
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
             updateStatus('ยินดีต้อนรับ!', 'คุณได้เช็คอินเรียบร้อยแล้ว', 'success',
