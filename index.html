@@ -342,26 +342,38 @@
     }
     // แก้ไข formatTime() ให้รับ HH:mm จาก backend ได้ทันที
     function formatTime(timeStr) {
-      if (!timeStr) return '';
-      // กรณี backend ส่ง HH:mm หรือ HH:mm:ss
+      if (!timeStr) return '-';
+      
+      // ถ้าเป็น string และมี : แสดงว่าเป็น HH:mm หรือ HH:mm:ss อยู่แล้ว
       if (typeof timeStr === 'string' && timeStr.includes(':')) {
         const parts = timeStr.split(':');
-        const hours = parts[0].padStart(2, '0');
-        const minutes = parts[1].padStart(2, '0');
-        return `${hours}:${minutes} น.`;
+        if (parts.length >= 2) {
+          const hours = parts[0].padStart(2, '0');
+          const minutes = parts[1].padStart(2, '0');
+          return `${hours}:${minutes} น.`;
+        }
       }
-      // กรณีฉุกเฉิน: ถ้าเป็น ISO string หรือ timestamp
-      let date;
-      if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('-'))) {
-        date = new Date(timeStr);
-      } else if (typeof timeStr === 'number') {
-        date = new Date(timeStr);
-      } else {
-        return '';
+      
+      // ถ้าเป็นตัวเลข (timestamp) ให้ convert
+      if (typeof timeStr === 'number') {
+        const date = new Date(timeStr);
+        if (!isNaN(date.getTime())) {
+          const thaiTime = new Date(date.getTime() + (7 * 3600000));
+          return `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+        }
       }
-      if (isNaN(date.getTime())) return '';
-      const thaiTime = new Date(date.getTime() + (7 * 3600000));
-      return `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+      
+      // ถ้าเป็น ISO string
+      if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('Z'))) {
+        const date = new Date(timeStr);
+        if (!isNaN(date.getTime())) {
+          const thaiTime = new Date(date.getTime() + (7 * 3600000));
+          return `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+        }
+      }
+      
+      // ถ้าไม่ใช่รูปแบบใดเลย ให้ return ตัวเอง
+      return timeStr;
     }
     function getCurrentTime() {
       const now = new Date();
@@ -524,8 +536,64 @@
         setLoading(true, 'กำลังตรวจสอบสถานะ...');
         const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
         const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
+        
+        // ============ DEBUG SECTION - ตรวจสอบ Backend Response ============
+        debugLog('=== BACKEND RESPONSE START ===');
+        debugLog('Full Response:', JSON.stringify(data, null, 2));
+        
         if (data.status === 'ok') {
           const s = data.todayStatus;
+          
+          // ตรวจสอบ Date ที่ส่งไป
+          debugLog('--- REQUEST DATE ---');
+          debugLog('Sent Date:', getThaiDate());
+          
+          // ตรวจสอบ checkinTime
+          debugLog('--- CHECK IN TIME ---');
+          debugLog('checkinTime RAW VALUE:', s.checkinTime);
+          debugLog('checkinTime TYPE:', typeof s.checkinTime);
+          debugLog('checkinTime AS STRING:', String(s.checkinTime));
+          if (s.checkinTime) {
+            debugLog('checkinTime LENGTH:', String(s.checkinTime).length);
+            debugLog('checkinTime HAS ":":', String(s.checkinTime).includes(':'));
+            debugLog('checkinTime HAS "/":', String(s.checkinTime).includes('/'));
+            debugLog('checkinTime HAS "T":', String(s.checkinTime).includes('T'));
+          }
+          debugLog('formatTime() RESULT:', formatTime(s.checkinTime));
+          
+          // ตรวจสอบ checkoutTime
+          debugLog('--- CHECK OUT TIME ---');
+          debugLog('checkoutTime RAW VALUE:', s.checkoutTime);
+          debugLog('checkoutTime TYPE:', typeof s.checkoutTime);
+          debugLog('checkoutTime AS STRING:', String(s.checkoutTime));
+          if (s.checkoutTime) {
+            debugLog('checkoutTime LENGTH:', String(s.checkoutTime).length);
+            debugLog('checkoutTime HAS ":":', String(s.checkoutTime).includes(':'));
+            debugLog('checkoutTime HAS "/":', String(s.checkoutTime).includes('/'));
+            debugLog('checkoutTime HAS "T":', String(s.checkoutTime).includes('T'));
+          }
+          debugLog('formatTime() RESULT:', formatTime(s.checkoutTime));
+          
+          // ตรวจสอบ status flags
+          debugLog('--- STATUS FLAGS ---');
+          debugLog('checkedIn:', s.checkedIn);
+          debugLog('checkedOut:', s.checkedOut);
+          
+          // ตรวจสอบ date/datetime fields ถ้ามี
+          if (s.date) {
+            debugLog('--- DATE FIELD ---');
+            debugLog('date VALUE:', s.date);
+            debugLog('date TYPE:', typeof s.date);
+          }
+          if (s.dateTime) {
+            debugLog('--- DATETIME FIELD ---');
+            debugLog('dateTime VALUE:', s.dateTime);
+            debugLog('dateTime TYPE:', typeof s.dateTime);
+          }
+          
+          debugLog('=== BACKEND RESPONSE END ===');
+          // ============ END DEBUG SECTION ============
+          
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
             updateStatus('เสร็จสิ้นสำหรับวันนี้', 'คุณได้บันทึกเวลาเข้า-ออกงานเรียบร้อยแล้ว', 'completed',
