@@ -150,7 +150,7 @@
       display: none;
     }
     button {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      background: #B8F416;
       color: #111827;
       border: none;
       padding: 15px 40px;
@@ -165,7 +165,8 @@
     }
     button:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(184, 244, 22, 0.4);
+      box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5);
+      background: #a0d911;
     }
     button:active:not(:disabled) {
       transform: translateY(0);
@@ -175,12 +176,13 @@
       cursor: not-allowed;
     }
     button.checkout {
-      background: linear-gradient(135deg, #7cb305 0%, #a0d911 100%);
-      box-shadow: 0 4px 12px rgba(124, 179, 5, 0.3);
-      color: white;
+      background: #B8F416;
+      box-shadow: 0 4px 12px rgba(184, 244, 22, 0.3);
+      color: #111827;
     }
     button.checkout:hover:not(:disabled) {
-      box-shadow: 0 6px 16px rgba(124, 179, 5, 0.4);
+      box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5);
+      background: #a0d911;
     }
     .icon {
       font-size: 24px;
@@ -401,9 +403,10 @@
         setTimeout(() => liff.closeWindow(), 3000);
         return;
       }
-      const icon = action === 'checkin' ? '✅' : '☑️';
+      const checkIcon = action === 'checkin' ? '✅' : '☑️';
+      const timeIcon = action === 'checkin' ? '🕣' : '🕠';
       const actionText = action === 'checkin' ? 'Check In' : 'Check Out';
-      const message = `${icon} ${actionText}\n${state.lineDisplayName} – ${actionText} Successful\n${formatLineDateTime()}`;
+      const message = `${checkIcon} ${state.lineDisplayName} – ${actionText} Successful\n${timeIcon} ${formatLineDateTime()}`;
       try {
         await liff.sendMessages([{ type: 'text', text: message }]);
         debugLog('ส่งข้อความสำเร็จ');
