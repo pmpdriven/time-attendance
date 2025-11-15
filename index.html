@@ -4,121 +4,177 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ระบบ Check In / Check Out</title>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    :root {
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
     }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Prompt', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
+      padding: 16px;
+      color: var(--gray-900);
     }
     .container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       padding: 40px;
       max-width: 500px;
       width: 100%;
-      animation: slideUp 0.5s ease-out;
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
     }
     .user-info {
       text-align: center;
-      color: #666;
-      margin-bottom: 30px;
-      font-size: 18px;
+      color: var(--gray-700);
+      margin-bottom: 24px;
+      font-size: 1.125rem;
       font-weight: 500;
     }
     .version {
       text-align: center;
-      color: #999;
-      font-size: 12px;
-      margin-top: 20px;
+      color: var(--gray-500);
+      font-size: 0.75rem;
+      margin-top: 24px;
       user-select: none;
     }
     .status-card {
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      background: var(--gray-100);
       border-radius: 12px;
-      padding: 25px;
+      padding: 28px;
       text-align: center;
-      min-height: 100px;
+      min-height: 120px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      animation: fadeIn 0.5s ease-out;
-      margin-bottom: 25px;
+      margin-bottom: 24px;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .status-card.loading   { background: #ebf0ff; }
+    .status-card.success   { background: #d1fae5; color: #065f46; }
+    .status-card.warning   { background: #fef3c7; color: #92400e; }
+    .status-card.error     { background: #fee2e2; color: #991b1b; }
+    .status-card.completed { background: #e0f2fe; color: #0c4a6e; }
+
+    .status-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
     }
-    .status-card.loading { background: linear-gradient(135deg, #e0e7ff 0%, #cfd9ff 100%); }
-    .status-card.success { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); }
-    .status-card.warning { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
-    .status-card.error { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
-    .status-card.completed { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
-    .status-text { font-size: 16px; color: #333; font-weight: 400; line-height: 1.6; }
-    .status-title { font-size: 20px; color: #333; font-weight: 600; margin-bottom: 10px; }
+    .status-text {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    .time-display {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--gray-300);
+    }
+    .instruction {
+      font-size: 0.875rem;
+      color: var(--gray-700);
+      margin-top: 16px;
+      padding: 14px;
+      background: var(--gray-100);
+      border-radius: 8px;
+      line-height: 1.6;
+      border: 1px solid var(--gray-200);
+    }
     .spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #667eea;
+      border: 3px solid var(--gray-200);
+      border-top: 3px solid var(--primary);
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       animation: spin 1s linear infinite;
-      margin-bottom: 15px;
+      margin-bottom: 16px;
     }
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      to { transform: rotate(360deg); }
     }
-    .time-display { font-size: 14px; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); }
-    .instruction { font-size: 15px; color: #555; margin-top: 10px; padding: 12px; background: rgba(255,255,255,0.5); border-radius: 8px; }
-    .button-container { min-height: 60px; display: flex; justify-content: center; align-items: center; }
+    .button-container {
+      min-height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
     .button-container.hidden { display: none; }
+
     button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--primary);
       color: white;
       border: none;
-      padding: 15px 40px;
-      font-size: 18px;
+      padding: 14px 32px;
+      font-size: 1rem;
+      font-weight: 500;
       border-radius: 12px;
       cursor: pointer;
-      font-family: 'Prompt', sans-serif;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-      min-width: 200px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);
+      min-width: 220px;
     }
     button:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      background: var(--primary-light);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
     }
-    button:active:not(:disabled) { transform: translateY(0); }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
     button.checkout {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+      background: var(--danger);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
     }
     button.checkout:hover:not(:disabled) {
-      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+      background: #f87171;
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
     }
-    .icon { font-size: 24px; margin-right: 8px; }
+
+    /* Debug Panel */
+    #debugLog {
+      margin-top: 24px;
+      padding: 16px;
+      background: var(--gray-100);
+      border-radius: 12px;
+      border: 1px solid var(--gray-300);
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--gray-700);
+    }
+    #debugLog > div:first-child {
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
     @media (max-width: 480px) {
-      .container { padding: 30px 20px; }
+      .container { padding: 32px 20px; }
       button { width: 100%; min-width: auto; }
     }
   </style>
@@ -126,19 +182,24 @@
 <body>
   <div class="container">
     <div class="user-info" id="userInfo">กำลังโหลด...</div>
+
     <div id="statusCard" class="status-card loading">
       <div class="spinner"></div>
       <div class="status-text">กำลังเริ่มต้นระบบ...</div>
     </div>
+
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn"></button>
     </div>
+
     <!-- Debug Log Panel -->
-    <div id="debugLog" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; display: block;">
-      <div style="font-weight: bold; margin-bottom: 10px; color: #667eea;">Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
+    <div id="debugLog">
+      <div>Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
     </div>
+
     <div class="version">Version 2.6.0 - แก้ไข formatTime() ถาวร</div>
   </div>
+
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
     // ============================================
@@ -194,7 +255,7 @@
     async function initializeLiff() {
       try {
         debugLog('เริ่มต้น LIFF...', { liffId: CONFIG.LIFF_ID });
-        await liff.init({ liffId: CONFIG.LIFF_ID });
+        await liff.init({ liffId: Platte.LIFF_ID });
         debugLog('LIFF init สำเร็จ');
         if (!liff.isLoggedIn()) {
           debugLog('ยังไม่ได้ Login, redirect...');
@@ -247,17 +308,14 @@
                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
       return `วัน${dayNames[thaiTime.getDay()]}ที่ ${thaiTime.getDate()} ${monthNames[thaiTime.getMonth()]} ${thaiTime.getFullYear() + 543} เวลา ${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
     }
-    // แก้ไข formatTime() ให้รับ HH:mm จาก backend ได้ทันที
     function formatTime(timeStr) {
       if (!timeStr) return '';
-      // กรณี backend ส่ง HH:mm หรือ HH:mm:ss
       if (typeof timeStr === 'string' && timeStr.includes(':')) {
         const parts = timeStr.split(':');
         const hours = parts[0].padStart(2, '0');
         const minutes = parts[1].padStart(2, '0');
         return `${hours}:${minutes} น.`;
       }
-      // กรณีฉุกเฉิน: ถ้าเป็น ISO string หรือ timestamp
       let date;
       if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('-'))) {
         date = new Date(timeStr);
