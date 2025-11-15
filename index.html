@@ -126,10 +126,13 @@
     }
     .time-display {
       font-size: 14px;
-      color: var(--gray-500);
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid var(--gray-200);
+      color: var(--gray-700);
+      margin-top: 12px;
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      font-weight: 500;
     }
     .instruction {
       font-size: 15px;
@@ -617,7 +620,7 @@
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
             updateStatus('เสร็จสิ้นสำหรับวันนี้', 'คุณได้บันทึกเวลาเข้า-ออกงานเรียบร้อยแล้ว', 'completed',
-              `${getThaiDate()}<br>เข้างาน: ${formatTime(s.checkinTime)} | ออกงาน: ${formatTime(s.checkoutTime)}`);
+              `${getThaiDate()}<br><br>เข้างาน: ${formatTime(s.checkinTime)} | ออกงาน: ${formatTime(s.checkoutTime)}`);
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
             updateStatus('ยินดีต้อนรับ!', 'คุณได้เช็คอินเรียบร้อยแล้ว', 'success',
