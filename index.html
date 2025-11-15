@@ -7,17 +7,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-light: #3b82f6;
+      --primary: #a0d911;
+      --primary-light: #b8f416;
+      --primary-dark: #7cb305;
       --gray-100: #f3f4f6;
       --gray-200: #e5e7eb;
       --gray-300: #d1d5db;
       --gray-500: #6b7280;
       --gray-700: #374151;
       --gray-900: #111827;
-      --success: #10b981;
+      --success: #52c41a;
       --danger: #ef4444;
-      --warning: #f59e0b;
+      --warning: #faad14;
     }
     * {
       margin: 0;
@@ -26,7 +27,7 @@
     }
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -79,23 +80,23 @@
       to { opacity: 1; }
     }
     .status-card.loading {
-      background: #e0e7ff;
+      background: #f6ffed;
       border-color: var(--primary-light);
     }
     .status-card.success {
-      background: #d1fae5;
+      background: #d9f7be;
       border-color: var(--success);
     }
     .status-card.warning {
-      background: #fef3c7;
+      background: #fffbe6;
       border-color: var(--warning);
     }
     .status-card.error {
-      background: #fee2e2;
+      background: #fff1f0;
       border-color: var(--danger);
     }
     .status-card.completed {
-      background: linear-gradient(135deg, var(--gray-100) 0%, #dbeafe 100%);
+      background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
       border-color: var(--primary);
     }
     .status-text {
@@ -150,21 +151,21 @@
     }
     button {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-      color: white;
+      color: #111827;
       border: none;
       padding: 15px 40px;
       font-size: 18px;
       border-radius: 8px;
       cursor: pointer;
       font-family: 'Inter', sans-serif;
-      font-weight: 500;
+      font-weight: 600;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 4px 12px rgba(184, 244, 22, 0.3);
       min-width: 200px;
     }
     button:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+      box-shadow: 0 6px 16px rgba(184, 244, 22, 0.4);
     }
     button:active:not(:disabled) {
       transform: translateY(0);
@@ -174,11 +175,12 @@
       cursor: not-allowed;
     }
     button.checkout {
-      background: linear-gradient(135deg, var(--danger) 0%, #f87171 100%);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      background: linear-gradient(135deg, #7cb305 0%, #a0d911 100%);
+      box-shadow: 0 4px 12px rgba(124, 179, 5, 0.3);
+      color: white;
     }
     button.checkout:hover:not(:disabled) {
-      box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+      box-shadow: 0 6px 16px rgba(124, 179, 5, 0.4);
     }
     .icon {
       font-size: 24px;
@@ -382,15 +384,26 @@
     // ============================================
     // LINE Message Reply
     // ============================================
+    function formatLineDateTime() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear();
+      const h = thaiTime.getHours().toString().padStart(2, '0');
+      const min = thaiTime.getMinutes().toString().padStart(2, '0');
+      return `${dayNames[thaiTime.getDay()]} ${d}/${m}/${y} • ${h}:${min}`;
+    }
     async function sendLineReplyMessage(action, dateTime) {
       if (!liff.isInClient()) {
         updateStatus('บันทึกสำเร็จ', 'แต่ต้องเปิดในแชท LINE เพื่อส่งข้อความ', 'warning', `วันที่ ${dateTime}`);
         setTimeout(() => liff.closeWindow(), 3000);
         return;
       }
-      const message = action === 'checkin'
-        ? `เช็คอินสำเร็จ!\n\nคุณ${state.lineDisplayName}\nวันที่ ${getThaiDateTimeLong()}\n\nขอให้วันนี้เป็นวันที่ดี`
-        : `เช็คเอาท์สำเร็จ!\n\nคุณ${state.lineDisplayName}\nวันที่ ${getThaiDateTimeLong()}\n\nขอบคุณที่ทำงานอย่างตั้งใจ\nพักผ่อนให้เต็มที่นะ`;
+      const icon = action === 'checkin' ? '✅' : '☑️';
+      const actionText = action === 'checkin' ? 'Check In' : 'Check Out';
+      const message = `${icon} ${actionText}\n${state.lineDisplayName} – ${actionText} Successful\n${formatLineDateTime()}`;
       try {
         await liff.sendMessages([{ type: 'text', text: message }]);
         debugLog('ส่งข้อความสำเร็จ');
