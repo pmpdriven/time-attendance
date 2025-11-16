@@ -633,11 +633,11 @@
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
             updateStatus('Welcome back!', 'You have already checked in', 'success',
-              `In: ${formatTime(s.checkinTime).replace(' น.', '')}`, `Press Check Out button (Current time: ${getCurrentTime().replace(' น.', '')})`);
+              `In: ${formatTime(s.checkinTime).replace(' น.', '')}`, `Current time: ${getCurrentTime().replace(' น.', '')}`);
           } else {
             showActionButton('checkin');
             updateStatus('Good morning!', 'You have not checked in today', 'warning',
-              `Date: ${getThaiDate()}`, `Press Check In button (Current time: ${getCurrentTime().replace(' น.', '')})`);
+              `${getThaiDateWithDay()}`, `Current time: ${getCurrentTime().replace(' น.', '')}`);
           }
         } else throw new Error(data.message || 'Invalid response');
       } catch (error) {
