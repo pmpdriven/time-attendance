@@ -634,7 +634,7 @@
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
             updateStatus('Welcome back!', 'You have already checked in', 'success',
-              `${getThaiDateWithDay()}<br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: -`, `Current time: ${getCurrentTime().replace(' น.', '')}`);
+              `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: -`, `Current time: ${getCurrentTime().replace(' น.', '')}`);
           } else {
             showActionButton('checkin');
             updateStatus('Good morning!', 'You have not checked in today', 'warning',
