@@ -324,6 +324,15 @@
       const y = thaiTime.getFullYear() + 543;
       return `${d}/${m}/${y}`;
     }
+    function getThaiDateWithDay() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear() + 543;
+      return `${dayNames[thaiTime.getDay()]} ${d}/${m}/${y}`;
+    }
     function getThaiDateTime() {
       const now = new Date();
       const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
@@ -620,7 +629,7 @@
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
             updateStatus('Completed for today.', 'Time attendance has been recorded.', 'completed',
-              `${getThaiDate()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: ${formatTime(s.checkoutTime).replace(' น.', '')}`);
+              `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: ${formatTime(s.checkoutTime).replace(' น.', '')}`);
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
             updateStatus('ยินดีต้อนรับ!', 'คุณได้เช็คอินเรียบร้อยแล้ว', 'success',
