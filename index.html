@@ -224,7 +224,7 @@
     <div class="user-info" id="userInfo">กำลังโหลด...</div>
     <div id="statusCard" class="status-card loading">
       <div class="spinner"></div>
-      <div class="status-text">กำลังเริ่มต้นระบบ...</div>
+      <div class="status-text">Initializing system...</div>
     </div>
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn"></button>
@@ -302,14 +302,14 @@
         state.lineDisplayName = profile.displayName || "ผู้ใช้";
         state.liffInitialized = true;
         debugLog('ดึง Profile สำเร็จ', { userId: state.lineUserId, displayName: state.lineDisplayName });
-        elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName}`;
+        elements.userInfo.textContent = `${state.lineDisplayName}`;
         return true;
       } catch (error) {
         debugLog('LIFF Error', error);
         state.lineUserId = "TEST_" + Date.now();
         state.lineDisplayName = "ผู้ใช้ทดสอบ";
         state.liffInitialized = false;
-        elements.userInfo.textContent = `สวัสดี, ${state.lineDisplayName} (โหมดทดสอบ)`;
+        elements.userInfo.textContent = `${state.lineDisplayName} (Test Mode)`;
         return true;
       }
     }
@@ -443,7 +443,7 @@
     }
     async function sendLineReplyMessage(action, dateTime) {
       if (!liff.isInClient()) {
-        updateStatus('บันทึกสำเร็จ', 'แต่ต้องเปิดในแชท LINE เพื่อส่งข้อความ', 'warning', `วันที่ ${dateTime}`);
+        updateStatus('Save successful', 'But must open in LINE chat to send message', 'warning', `Date: ${dateTime}`);
         setTimeout(() => liff.closeWindow(), 3000);
         return;
       }
@@ -454,18 +454,18 @@
       try {
         await liff.sendMessages([{ type: 'text', text: message }]);
         debugLog('ส่งข้อความสำเร็จ');
-        updateStatus('สำเร็จทั้งหมด!', 'บันทึกและส่งข้อความเรียบร้อย', 'success', `วันที่ ${dateTime}`);
+        updateStatus('All successful!', 'Saved and sent message', 'success', `Date: ${dateTime}`);
         setTimeout(() => liff.closeWindow(), 2000);
       } catch (err) {
         debugLog('Error ส่งข้อความ', err);
         let instruction = '';
         if (err.code === 'INVALID_ARGUMENT' || err.message.includes('permissions')) {
-          instruction = `ต้องเปิดสิทธิ์ "ส่งข้อความ" ใน LIFF\n\n1. ไป LINE Developers > LIFF > Edit\n2. เปิด "chat_message.write"\n3. บันทึก > ล็อกอินใหม่`;
+          instruction = `Need to enable "Send message" permission in LIFF\n\n1. Go to LINE Developers > LIFF > Edit\n2. Enable "chat_message.write"\n3. Save > Login again`;
         } else {
-          instruction = `เกิดข้อผิดพลาด: ${err.message || err.code}`;
+          instruction = `Error: ${err.message || err.code}`;
         }
-        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `วันที่ ${dateTime}`, instruction);
-        elements.actionBtn.textContent = 'ลองส่งใหม่';
+        updateStatus('Save successful', 'But cannot send message', 'warning', `Date: ${dateTime}`, instruction);
+        elements.actionBtn.textContent = 'Retry Send';
         elements.actionBtn.disabled = false;
         elements.buttonContainer.classList.remove('hidden');
         elements.actionBtn.onclick = () => sendLineReplyMessage(action, dateTime);
@@ -498,7 +498,7 @@
       if (instruction) content += `<div class="instruction">${instruction}</div>`;
       elements.statusCard.innerHTML = content;
     }
-    function setLoading(loading, message = 'กำลังดำเนินการ...') {
+    function setLoading(loading, message = 'Processing...') {
       state.isProcessing = loading;
       elements.actionBtn.disabled = loading;
       if (loading) {
@@ -532,7 +532,7 @@
     async function sendAction() {
       if (state.isProcessing || !state.currentAction) return;
       const action = state.currentAction;
-      setLoading(true, `กำลัง${action === 'checkin' ? 'เช็คอิน' : 'เช็คเอาท์'}...`);
+      setLoading(true, `${action === 'checkin' ? 'Checking in' : 'Checking out'}...`);
       hideActionButton();
       try {
         const location = await getLocation();
@@ -549,11 +549,11 @@
           body: JSON.stringify(payload)
         });
         if (result.status === 'ok') {
-          updateStatus('สำเร็จ!', `บันทึก${action === 'checkin' ? 'เข้างาน' : 'ออกงาน'}เรียบร้อย`, 'success', `วันที่ ${dateTime}`, 'กำลังส่งข้อความ...');
+          updateStatus('Success!', `${action === 'checkin' ? 'Check in' : 'Check out'} recorded successfully`, 'success', `Date: ${dateTime}`, 'Sending message...');
           await sendLineReplyMessage(action, dateTime);
           setTimeout(checkStatus, 2000);
         } else {
-          updateStatus('เกิดข้อผิดพลาด', result.message, 'error');
+          updateStatus('Error occurred', result.message, 'error');
           setLoading(false);
           setTimeout(() => showActionButton(action), 2000);
         }
@@ -565,7 +565,7 @@
     }
     async function checkStatus() {
       try {
-        setLoading(true, 'กำลังตรวจสอบสถานะ...');
+        setLoading(true, 'Checking status...');
         const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
         const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
         
@@ -632,12 +632,12 @@
               `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: ${formatTime(s.checkoutTime).replace(' น.', '')}`);
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
-            updateStatus('ยินดีต้อนรับ!', 'คุณได้เช็คอินเรียบร้อยแล้ว', 'success',
-              `เข้างาน: ${formatTime(s.checkinTime)}`, `กดปุ่ม Check Out (เวลาปัจจุบัน: ${getCurrentTime()})`);
+            updateStatus('Welcome back!', 'You have already checked in', 'success',
+              `In: ${formatTime(s.checkinTime).replace(' น.', '')}`, `Press Check Out button (Current time: ${getCurrentTime().replace(' น.', '')})`);
           } else {
             showActionButton('checkin');
-            updateStatus('สวัสดีตอนเช้า!', 'คุณยังไม่ได้เช็คอินวันนี้', 'warning',
-              `วันที่: ${getThaiDate()}`, `กดปุ่ม Check In (เวลาปัจจุบัน: ${getCurrentTime()})`);
+            updateStatus('Good morning!', 'You have not checked in today', 'warning',
+              `Date: ${getThaiDate()}`, `Press Check In button (Current time: ${getCurrentTime().replace(' น.', '')})`);
           }
         } else throw new Error(data.message || 'Invalid response');
       } catch (error) {
