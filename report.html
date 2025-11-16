@@ -107,11 +107,11 @@
       <table id="reportTable">
         <thead>
           <tr>
-            <th>ลำดับ</th>
-            <th>ชื่อ-สกุล</th>
+            <th>No.</th>
+            <th>Name</th>
             <th>Check In</th>
             <th>Check Out</th>
-            <th>สถานะ</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody id="reportBody"></tbody>
@@ -269,11 +269,11 @@
           return m.status === currentFilter;
         })
         .map((m, i) => ({
-          'ลำดับ': i + 1,
-          'ชื่อ-สกุล': m.displayName,
+          'No.': i + 1,
+          'Name': m.displayName,
           'Check In': m.checkinTime || '-',
           'Check Out': m.checkoutTime || '-',
-          'สถานะ': m.status === 'checkedOut' ? 'ออกงานแล้ว' :
+          'Status': m.status === 'checkedOut' ? 'ออกงานแล้ว' :
                    m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
         }));
 
