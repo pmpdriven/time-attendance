@@ -188,10 +188,6 @@
       box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5);
       background: #a0d911;
     }
-    .icon {
-      font-size: 24px;
-      margin-right: 8px;
-    }
     @media (max-width: 480px) {
       .container {
         padding: 30px 20px;
@@ -234,7 +230,7 @@
     <div id="debugLog">
       <div>Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
     </div>
-    <div class="version">Pilot Release v0.1 — Powered by DesignOps</div>
+    <div class="version">Pilot Release v0.2 — Powered by DesignOps</div>
   </div>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
@@ -242,7 +238,7 @@
     // ตั้งค่า
     // ============================================
     const CONFIG = {
-      API_URL: "https://script.google.com/macros/s/AKfycbxTBBxSbQVtZdqpSw-aYKpg5cBCsLrDe5Zgql4k3kL9yfYuQ1B4HleuKLkb1G4dodGi5Q/exec",
+      API_URL: "https://script.google.com/macros/s/AKfycbz8gzIwC5cXSoL3DIaX8DjRBI53R7vlLnaLZWmW1DMAXpkaTc6_W4TyY5HEcQgch69GHA/exec",
       LIFF_ID: "2008403464-kaXOK95X",
       DEBUG_MODE: false,
       MAX_RETRIES: 3,
@@ -345,21 +341,9 @@
       const s = thaiTime.getSeconds().toString().padStart(2, '0');
       return `${d}/${m}/${y} ${h}:${min}:${s}`;
     }
-    function getThaiDateTimeLong() {
-      const now = new Date();
-      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
-      const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-      const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-      return `วัน${dayNames[thaiTime.getDay()]}ที่ ${thaiTime.getDate()} ${monthNames[thaiTime.getMonth()]} ${thaiTime.getFullYear() + 543} เวลา ${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
-    }
-    // แก้ไข formatTime() ให้รองรับ Date String จาก Backend
     function formatTime(timeStr) {
       if (!timeStr) return '-';
-      
       debugLog('formatTime INPUT:', timeStr);
-      
-      // 1. ถ้าเป็น HH:mm หรือ HH:mm:ss อยู่แล้ว
       if (typeof timeStr === 'string' && timeStr.includes(':') && !timeStr.includes(' ')) {
         const parts = timeStr.split(':');
         if (parts.length >= 2) {
@@ -369,10 +353,7 @@
           return `${hours}:${minutes} น.`;
         }
       }
-      
-      // 2. ถ้าเป็น Date String เช่น "Sat Dec 30 1899 19:28 น."
       if (typeof timeStr === 'string' && timeStr.includes(' ')) {
-        // หา pattern เวลา HH:mm ใน string
         const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
         if (timeMatch) {
           const hours = timeMatch[1].padStart(2, '0');
@@ -381,8 +362,6 @@
           return `${hours}:${minutes} น.`;
         }
       }
-      
-      // 3. ถ้าเป็น ISO string
       if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('Z'))) {
         const date = new Date(timeStr);
         if (!isNaN(date.getTime())) {
@@ -392,8 +371,6 @@
           return result;
         }
       }
-      
-      // 4. ถ้าเป็น Number (timestamp)
       if (typeof timeStr === 'number') {
         const date = new Date(timeStr);
         if (!isNaN(date.getTime())) {
@@ -403,8 +380,6 @@
           return result;
         }
       }
-      
-      // 5. ถ้าไม่ตรงอะไร
       debugLog('formatTime OUTPUT (fallback):', timeStr);
       return String(timeStr);
     }
@@ -564,87 +539,107 @@
         setTimeout(checkStatus, 3000);
       }
     }
+    // ============================================
+    // ✅ แก้ไขฟังก์ชัน checkStatus() ให้เช็ค Location ก่อน
+    // ============================================
     async function checkStatus() {
       try {
-        setLoading(true, 'Checking status...');
-        const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
-        const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
+        setLoading(true, 'Getting your location...');
         
-        // ============ DEBUG SECTION - ตรวจสอบ Backend Response ============
-        debugLog('=== BACKEND RESPONSE START ===');
-        debugLog('Full Response:', JSON.stringify(data, null, 2));
+        // ✅ ขอ GPS ก่อน
+        let location;
+        try {
+          location = await getLocation();
+          debugLog('GPS Location:', location);
+        } catch (error) {
+          debugLog('GPS Error:', error);
+          hideActionButton();
+          updateStatus(
+            'ไม่สามารถอ่านตำแหน่งได้',
+            'กรุณาเปิด GPS และอนุญาตให้เข้าถึงตำแหน่ง',
+            'error',
+            '',
+            'ไปที่ Settings > Privacy > Location Services'
+          );
+          state.isProcessing = false;
+          return;
+        }
         
-        if (data.status === 'ok') {
+        // ✅ เช็คว่าอยู่ในพื้นที่หรือไม่
+        setLoading(true, 'Checking location...');
+        
+        const locationUrl = `${CONFIG.API_URL}?action=checkLocation&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}&lat=${location.lat}&lon=${location.lon}`;
+        
+        const data = await fetchWithRetry(locationUrl, { 
+          method: "GET", 
+          mode: "cors", 
+          cache: "no-cache" 
+        });
+        
+        debugLog('Location Check Response:', data);
+        
+        // ❌ ถ้าไม่อยู่ในพื้นที่
+        if (data.status === 'error') {
+          hideActionButton();
+          updateStatus(
+            '⚠️ อยู่นอกพื้นที่',
+            data.message,
+            'error',
+            '',
+            'กรุณาเข้าใกล้สถานที่ทำงาน'
+          );
+          state.isProcessing = false;
+          return;
+        }
+        
+        // ✅ อยู่ในพื้นที่ → แสดงสถานะปกติ
+        if (data.status === 'ok' && data.todayStatus) {
           const s = data.todayStatus;
           
-          // ตรวจสอบ Date ที่ส่งไป
-          debugLog('--- REQUEST DATE ---');
-          debugLog('Sent Date:', getThaiDate());
-          
-          // ตรวจสอบ checkinTime
-          debugLog('--- CHECK IN TIME ---');
-          debugLog('checkinTime RAW VALUE:', s.checkinTime);
-          debugLog('checkinTime TYPE:', typeof s.checkinTime);
-          debugLog('checkinTime AS STRING:', String(s.checkinTime));
-          if (s.checkinTime) {
-            debugLog('checkinTime LENGTH:', String(s.checkinTime).length);
-            debugLog('checkinTime HAS ":":', String(s.checkinTime).includes(':'));
-            debugLog('checkinTime HAS "/":', String(s.checkinTime).includes('/'));
-            debugLog('checkinTime HAS "T":', String(s.checkinTime).includes('T'));
-          }
-          debugLog('formatTime() RESULT:', formatTime(s.checkinTime));
-          
-          // ตรวจสอบ checkoutTime
-          debugLog('--- CHECK OUT TIME ---');
-          debugLog('checkoutTime RAW VALUE:', s.checkoutTime);
-          debugLog('checkoutTime TYPE:', typeof s.checkoutTime);
-          debugLog('checkoutTime AS STRING:', String(s.checkoutTime));
-          if (s.checkoutTime) {
-            debugLog('checkoutTime LENGTH:', String(s.checkoutTime).length);
-            debugLog('checkoutTime HAS ":":', String(s.checkoutTime).includes(':'));
-            debugLog('checkoutTime HAS "/":', String(s.checkoutTime).includes('/'));
-            debugLog('checkoutTime HAS "T":', String(s.checkoutTime).includes('T'));
-          }
-          debugLog('formatTime() RESULT:', formatTime(s.checkoutTime));
-          
-          // ตรวจสอบ status flags
-          debugLog('--- STATUS FLAGS ---');
-          debugLog('checkedIn:', s.checkedIn);
-          debugLog('checkedOut:', s.checkedOut);
-          
-          // ตรวจสอบ date/datetime fields ถ้ามี
-          if (s.date) {
-            debugLog('--- DATE FIELD ---');
-            debugLog('date VALUE:', s.date);
-            debugLog('date TYPE:', typeof s.date);
-          }
-          if (s.dateTime) {
-            debugLog('--- DATETIME FIELD ---');
-            debugLog('dateTime VALUE:', s.dateTime);
-            debugLog('dateTime TYPE:', typeof s.dateTime);
-          }
-          
-          debugLog('=== BACKEND RESPONSE END ===');
-          // ============ END DEBUG SECTION ============
+          // แสดงระยะห่างจากสำนักงาน
+          const distanceInfo = s.distance ? `📍 ระยะจาก PEARL BANGKOK: ${s.distance} ม.` : '';
           
           if (s.checkedIn && s.checkedOut) {
             hideActionButton();
-            updateStatus('Completed for today.', '', 'completed',
-              `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: ${formatTime(s.checkoutTime).replace(' น.', '')}`);
+            updateStatus(
+              'Completed for today.',
+              distanceInfo,
+              'completed',
+              `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: ${formatTime(s.checkoutTime).replace(' น.', '')}`
+            );
           } else if (s.checkedIn && !s.checkedOut) {
             showActionButton('checkout');
-            updateStatus('Ready to Check Out!', '', 'success',
-              `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: -`, `Current time: ${getCurrentTime().replace(' น.', '')}`);
+            updateStatus(
+              'Ready to Check Out!',
+              distanceInfo,
+              'success',
+              `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: -`,
+              `Current time: ${getCurrentTime().replace(' น.', '')}`
+            );
           } else {
             showActionButton('checkin');
-            updateStatus('Ready to Check In!', '', 'warning',
-              `${getThaiDateWithDay()}<br><br>In: - | Out: -`, `Current time: ${getCurrentTime().replace(' น.', '')}`);
+            updateStatus(
+              'Ready to Check In!',
+              distanceInfo,
+              'warning',
+              `${getThaiDateWithDay()}<br><br>In: - | Out: -`,
+              `Current time: ${getCurrentTime().replace(' น.', '')}`
+            );
           }
-        } else throw new Error(data.message || 'Invalid response');
+        } else {
+          throw new Error(data.message || 'Invalid response');
+        }
+        
       } catch (error) {
         debugLog('Error ใน checkStatus:', error);
         hideActionButton();
-        updateStatus('ไม่สามารถเชื่อมต่อ', 'กรุณาตรวจสอบ URL ของ Google Apps Script', 'error', '', `คลิก "Test" ใน Apps Script<br><small>${error.message}</small>`);
+        updateStatus(
+          'ไม่สามารถเชื่อมต่อ',
+          'กรุณาตรวจสอบ URL ของ Google Apps Script',
+          'error',
+          '',
+          `คลิก "Test" ใน Apps Script<br><small>${error.message}</small>`
+        );
       } finally {
         state.isProcessing = false;
       }
