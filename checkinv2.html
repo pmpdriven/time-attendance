@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบ Check In / Check Out</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #a0d911;
+      --primary-light: #b8f416;
+      --primary-dark: #7cb305;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --success: #52c41a;
+      --danger: #ef4444;
+      --warning: #faad14;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      animation: slideUp 0.5s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .user-info {
+      text-align: center;
+      color: var(--gray-700);
+      margin-bottom: 30px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .version {
+      text-align: center;
+      color: var(--gray-500);
+      font-size: 12px;
+      margin-top: 20px;
+      user-select: none;
+    }
+    .status-card {
+      background: var(--gray-100);
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.5s ease-out;
+      margin-bottom: 25px;
+      border: 1px solid var(--gray-200);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .status-card.loading {
+      background: #f6ffed;
+      border-color: var(--primary-light);
+    }
+    .status-card.success {
+      background: #d9f7be;
+      border-color: var(--success);
+    }
+    .status-card.warning {
+      background: #fffbe6;
+      border-color: var(--warning);
+    }
+    .status-card.error {
+      background: #fff1f0;
+      border-color: var(--danger);
+    }
+    .status-card.completed {
+      background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+      border-color: var(--primary);
+    }
+    .status-text {
+      font-size: 16px;
+      color: var(--gray-700);
+      font-weight: 400;
+      line-height: 1.6;
+    }
+    .status-title {
+      font-size: 20px;
+      color: var(--gray-900);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .spinner {
+      border: 3px solid var(--gray-200);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .time-display {
+      font-size: 13px;
+      color: var(--gray-700);
+      margin-top: 12px;
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      font-weight: 500;
+    }
+    .instruction {
+      font-size: 13px;
+      color: var(--gray-700);
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      font-weight: 500;
+    }
+    .button-container {
+      min-height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .button-container.hidden {
+      display: none;
+    }
+    button {
+      background: #B8F416;
+      color: #111827;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(184, 244, 22, 0.3);
+      min-width: 200px;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5);
+      background: #a0d911;
+    }
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    button.checkout {
+      background: #B8F416;
+      box-shadow: 0 4px 12px rgba(184, 244, 22, 0.3);
+      color: #111827;
+    }
+    button.checkout:hover:not(:disabled) {
+      box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5);
+      background: #a0d911;
+    }
+    .icon {
+      font-size: 24px;
+      margin-right: 8px;
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+      }
+      button {
+        width: 100%;
+        min-width: auto;
+      }
+    }
+    #debugLog {
+      margin-top: 20px;
+      padding: 15px;
+      background: var(--gray-100);
+      border-radius: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 11px;
+      display: none;
+      border: 1px solid var(--gray-200);
+    }
+    #debugLog > div:first-child {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="user-info" id="userInfo">กำลังโหลด...</div>
+    <div id="statusCard" class="status-card loading">
+      <div class="spinner"></div>
+      <div class="status-text">Initializing system...</div>
+    </div>
+    <div class="button-container hidden" id="buttonContainer">
+      <button id="actionBtn"></button>
+    </div>
+    <!-- Debug Log Panel -->
+    <div id="debugLog">
+      <div>Debug Log (อ่านจากบนลงล่าง = ล่าสุดก่อน)</div>
+    </div>
+    <div class="version">Pilot Release v0.1 — Powered by DesignOps</div>
+  </div>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    // ============================================
+    // ตั้งค่า
+    // ============================================
+    const CONFIG = {
+      API_URL: "https://script.google.com/macros/s/AKfycbxTBBxSbQVtZdqpSw-aYKpg5cBCsLrDe5Zgql4k3kL9yfYuQ1B4HleuKLkb1G4dodGi5Q/exec",
+      LIFF_ID: "2008403464-kaXOK95X",
+      DEBUG_MODE: false,
+      MAX_RETRIES: 3,
+      RETRY_DELAY: 2000
+    };
+    // ============================================
+    // Elements
+    // ============================================
+    const elements = {
+      actionBtn: document.getElementById("actionBtn"),
+      buttonContainer: document.getElementById("buttonContainer"),
+      statusCard: document.getElementById("statusCard"),
+      userInfo: document.getElementById("userInfo")
+    };
+    // ============================================
+    // State
+    // ============================================
+    const state = {
+      currentAction: null,
+      isProcessing: false,
+      lineUserId: null,
+      lineDisplayName: "ผู้ใช้",
+      liffInitialized: false
+    };
+    // ============================================
+    // Debug Functions
+    // ============================================
+    function debugLog(message, data = null) {
+      const timestamp = new Date().toLocaleTimeString('th-TH');
+      const logMessage = `[${timestamp}] ${message}`;
+      if (CONFIG.DEBUG_MODE) console.log(logMessage, data || '');
+      if (CONFIG.DEBUG_MODE) {
+        const debugDiv = document.getElementById('debugLog');
+        if (debugDiv) {
+          const logEntry = document.createElement('div');
+          logEntry.style.cssText = 'font-size: 11px; padding: 2px 0; color: #666; border-bottom: 1px solid #eee;';
+          logEntry.textContent = logMessage + (data ? ' | ' + JSON.stringify(data).substring(0, 100) : '');
+          debugDiv.insertBefore(logEntry, debugDiv.firstChild);
+          while (debugDiv.children.length > 20) debugDiv.removeChild(debugDiv.lastChild);
+        }
+      }
+    }
+    // ============================================
+    // LIFF Initialization
+    // ============================================
+    async function initializeLiff() {
+      try {
+        debugLog('เริ่มต้น LIFF...', { liffId: CONFIG.LIFF_ID });
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+        debugLog('LIFF init สำเร็จ');
+        if (!liff.isLoggedIn()) {
+          debugLog('ยังไม่ได้ Login, redirect...');
+          liff.login();
+          return false;
+        }
+        const profile = await liff.getProfile();
+        state.lineUserId = profile.userId;
+        state.lineDisplayName = profile.displayName || "ผู้ใช้";
+        state.liffInitialized = true;
+        debugLog('ดึง Profile สำเร็จ', { userId: state.lineUserId, displayName: state.lineDisplayName });
+        elements.userInfo.textContent = `${state.lineDisplayName}`;
+        return true;
+      } catch (error) {
+        debugLog('LIFF Error', error);
+        state.lineUserId = "TEST_" + Date.now();
+        state.lineDisplayName = "ผู้ใช้ทดสอบ";
+        state.liffInitialized = false;
+        elements.userInfo.textContent = `${state.lineDisplayName} (Test Mode)`;
+        return true;
+      }
+    }
+    // ============================================
+    // Date/Time Functions (Thailand)
+    // ============================================
+    function getThaiDate() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear() + 543;
+      return `${d}/${m}/${y}`;
+    }
+    function getThaiDateWithDay() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear() + 543;
+      return `${dayNames[thaiTime.getDay()]} ${d}/${m}/${y}`;
+    }
+    function getThaiDateTime() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear() + 543;
+      const h = thaiTime.getHours().toString().padStart(2, '0');
+      const min = thaiTime.getMinutes().toString().padStart(2, '0');
+      const s = thaiTime.getSeconds().toString().padStart(2, '0');
+      return `${d}/${m}/${y} ${h}:${min}:${s}`;
+    }
+    function getThaiDateTimeLong() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+      const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+      return `วัน${dayNames[thaiTime.getDay()]}ที่ ${thaiTime.getDate()} ${monthNames[thaiTime.getMonth()]} ${thaiTime.getFullYear() + 543} เวลา ${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
+    }
+    // แก้ไข formatTime() ให้รองรับ Date String จาก Backend
+    function formatTime(timeStr) {
+      if (!timeStr) return '-';
+      
+      debugLog('formatTime INPUT:', timeStr);
+      
+      // 1. ถ้าเป็น HH:mm หรือ HH:mm:ss อยู่แล้ว
+      if (typeof timeStr === 'string' && timeStr.includes(':') && !timeStr.includes(' ')) {
+        const parts = timeStr.split(':');
+        if (parts.length >= 2) {
+          const hours = parts[0].padStart(2, '0');
+          const minutes = parts[1].padStart(2, '0');
+          debugLog('formatTime OUTPUT (HH:mm):', `${hours}:${minutes} น.`);
+          return `${hours}:${minutes} น.`;
+        }
+      }
+      
+      // 2. ถ้าเป็น Date String เช่น "Sat Dec 30 1899 19:28 น."
+      if (typeof timeStr === 'string' && timeStr.includes(' ')) {
+        // หา pattern เวลา HH:mm ใน string
+        const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          const hours = timeMatch[1].padStart(2, '0');
+          const minutes = timeMatch[2];
+          debugLog('formatTime OUTPUT (extracted):', `${hours}:${minutes} น.`);
+          return `${hours}:${minutes} น.`;
+        }
+      }
+      
+      // 3. ถ้าเป็น ISO string
+      if (typeof timeStr === 'string' && (timeStr.includes('T') || timeStr.includes('Z'))) {
+        const date = new Date(timeStr);
+        if (!isNaN(date.getTime())) {
+          const thaiTime = new Date(date.getTime() + (7 * 3600000));
+          const result = `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+          debugLog('formatTime OUTPUT (ISO):', result);
+          return result;
+        }
+      }
+      
+      // 4. ถ้าเป็น Number (timestamp)
+      if (typeof timeStr === 'number') {
+        const date = new Date(timeStr);
+        if (!isNaN(date.getTime())) {
+          const thaiTime = new Date(date.getTime() + (7 * 3600000));
+          const result = `${thaiTime.getUTCHours().toString().padStart(2, '0')}:${thaiTime.getUTCMinutes().toString().padStart(2, '0')} น.`;
+          debugLog('formatTime OUTPUT (timestamp):', result);
+          return result;
+        }
+      }
+      
+      // 5. ถ้าไม่ตรงอะไร
+      debugLog('formatTime OUTPUT (fallback):', timeStr);
+      return String(timeStr);
+    }
+    function getCurrentTime() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      return `${thaiTime.getHours().toString().padStart(2, '0')}:${thaiTime.getMinutes().toString().padStart(2, '0')} น.`;
+    }
+    // ============================================
+    // GPS Functions
+    // ============================================
+    function getLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return reject('เบราว์เซอร์ไม่รองรับ GPS');
+        const options = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+        debugLog('กำลังขอ GPS...');
+        navigator.geolocation.getCurrentPosition(
+          pos => { debugLog('ได้ตำแหน่ง GPS', { lat: pos.coords.latitude, lon: pos.coords.longitude }); resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }); },
+          err => { debugLog('GPS Error', err); reject('ไม่สามารถอ่านตำแหน่งได้ กรุณาเปิด GPS'); },
+          options
+        );
+      });
+    }
+    // ============================================
+    // LINE Message Reply
+    // ============================================
+    function formatLineDateTime() {
+      const now = new Date();
+      const thaiTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const d = thaiTime.getDate().toString().padStart(2, '0');
+      const m = (thaiTime.getMonth() + 1).toString().padStart(2, '0');
+      const y = thaiTime.getFullYear();
+      const h = thaiTime.getHours().toString().padStart(2, '0');
+      const min = thaiTime.getMinutes().toString().padStart(2, '0');
+      return `${dayNames[thaiTime.getDay()]} ${d}/${m}/${y} • ${h}:${min}`;
+    }
+    async function sendLineReplyMessage(action, dateTime) {
+      if (!liff.isInClient()) {
+        updateStatus('Save successful', 'But must open in LINE chat to send message', 'warning', `Date: ${dateTime}`);
+        setTimeout(() => liff.closeWindow(), 3000);
+        return;
+      }
+      const checkIcon = action === 'checkin' ? '✅' : '☑️';
+      const timeIcon = action === 'checkin' ? '🕣' : '🕠';
+      const actionText = action === 'checkin' ? 'Check In' : 'Check Out';
+      const message = `${checkIcon} ${state.lineDisplayName} – ${actionText} Successful\n${timeIcon} ${formatLineDateTime()}`;
+      try {
+        await liff.sendMessages([{ type: 'text', text: message }]);
+        debugLog('ส่งข้อความสำเร็จ');
+        updateStatus('All successful!', 'Saved and sent message', 'success', `Date: ${dateTime}`);
+        setTimeout(() => liff.closeWindow(), 2000);
+      } catch (err) {
+        debugLog('Error ส่งข้อความ', err);
+        let instruction = '';
+        if (err.code === 'INVALID_ARGUMENT' || err.message.includes('permissions')) {
+          instruction = `Need to enable "Send message" permission in LIFF\n\n1. Go to LINE Developers > LIFF > Edit\n2. Enable "chat_message.write"\n3. Save > Login again`;
+        } else {
+          instruction = `Error: ${err.message || err.code}`;
+        }
+        updateStatus('Save successful', 'But cannot send message', 'warning', `Date: ${dateTime}`, instruction);
+        elements.actionBtn.textContent = 'Retry Send';
+        elements.actionBtn.disabled = false;
+        elements.buttonContainer.classList.remove('hidden');
+        elements.actionBtn.onclick = () => sendLineReplyMessage(action, dateTime);
+      }
+    }
+    // ============================================
+    // UI Functions
+    // ============================================
+    function showActionButton(action) {
+      state.currentAction = action;
+      elements.buttonContainer.classList.remove('hidden');
+      if (action === 'checkin') {
+        elements.actionBtn.className = '';
+        elements.actionBtn.innerHTML = 'Check In';
+      } else {
+        elements.actionBtn.className = 'checkout';
+        elements.actionBtn.innerHTML = 'Check Out';
+      }
+      elements.actionBtn.disabled = false;
+    }
+    function hideActionButton() {
+      elements.buttonContainer.classList.add('hidden');
+      state.currentAction = null;
+    }
+    function updateStatus(title, message, type = 'info', timeInfo = '', instruction = '') {
+      elements.statusCard.className = `status-card ${type}`;
+      let content = title ? `<div class="status-title">${title}</div>` : '';
+      content += `<div class="status-text">${message}</div>`;
+      if (timeInfo) content += `<div class="time-display">${timeInfo}</div>`;
+      if (instruction) content += `<div class="instruction">${instruction}</div>`;
+      elements.statusCard.innerHTML = content;
+    }
+    function setLoading(loading, message = 'Processing...') {
+      state.isProcessing = loading;
+      elements.actionBtn.disabled = loading;
+      if (loading) {
+        elements.statusCard.className = 'status-card loading';
+        elements.statusCard.innerHTML = `<div class="spinner"></div><div class="status-text">${message}</div>`;
+      }
+    }
+    // ============================================
+    // API with Retry
+    // ============================================
+    async function fetchWithRetry(url, options, retries = CONFIG.MAX_RETRIES) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          debugLog(`เชื่อมต่อ (${i + 1}/${retries})...`);
+          const response = await fetch(url, options);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const text = await response.text();
+          const data = JSON.parse(text);
+          debugLog('Parse JSON สำเร็จ', data);
+          return data;
+        } catch (error) {
+          debugLog(`ครั้งที่ ${i + 1} ล้มเหลว:`, error.message);
+          if (i === retries - 1) throw error;
+          await new Promise(r => setTimeout(r, CONFIG.RETRY_DELAY));
+        }
+      }
+    }
+    // ============================================
+    // Main Actions
+    // ============================================
+    async function sendAction() {
+      if (state.isProcessing || !state.currentAction) return;
+      const action = state.currentAction;
+      setLoading(true, `${action === 'checkin' ? 'Checking in' : 'Checking out'}...`);
+      hideActionButton();
+      try {
+        const location = await getLocation();
+        const dateTime = getThaiDateTime();
+        const payload = {
+          action, userId: state.lineUserId, displayName: state.lineDisplayName,
+          date: getThaiDate(), dateTime,
+          checkinLat: location.lat, checkinLon: location.lon,
+          checkoutLat: location.lat, checkoutLon: location.lon
+        };
+        const result = await fetchWithRetry(CONFIG.API_URL, {
+          method: "POST", mode: "cors", cache: "no-cache",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        if (result.status === 'ok') {
+          updateStatus('Success!', `${action === 'checkin' ? 'Check in' : 'Check out'} recorded successfully`, 'success', `Date: ${dateTime}`, 'Sending message...');
+          await sendLineReplyMessage(action, dateTime);
+          setTimeout(checkStatus, 2000);
+        } else {
+          updateStatus('Error occurred', result.message, 'error');
+          setLoading(false);
+          setTimeout(() => showActionButton(action), 2000);
+        }
+      } catch (error) {
+        debugLog('Error ใน sendAction:', error);
+        updateStatus('ไม่สามารถเชื่อมต่อได้', 'กรุณาตรวจสอบอินเทอร์เน็ต', 'error', '', 'หรือ URL ของ Google Apps Script');
+        setTimeout(checkStatus, 3000);
+      }
+    }
+    async function checkStatus() {
+      try {
+        setLoading(true, 'Checking status...');
+        const url = `${CONFIG.API_URL}?action=checkStatus&userId=${encodeURIComponent(state.lineUserId)}&date=${encodeURIComponent(getThaiDate())}`;
+        const data = await fetchWithRetry(url, { method: "GET", mode: "cors", cache: "no-cache" });
+        
+        // ============ DEBUG SECTION - ตรวจสอบ Backend Response ============
+        debugLog('=== BACKEND RESPONSE START ===');
+        debugLog('Full Response:', JSON.stringify(data, null, 2));
+        
+        if (data.status === 'ok') {
+          const s = data.todayStatus;
+          
+          // ตรวจสอบ Date ที่ส่งไป
+          debugLog('--- REQUEST DATE ---');
+          debugLog('Sent Date:', getThaiDate());
+          
+          // ตรวจสอบ checkinTime
+          debugLog('--- CHECK IN TIME ---');
+          debugLog('checkinTime RAW VALUE:', s.checkinTime);
+          debugLog('checkinTime TYPE:', typeof s.checkinTime);
+          debugLog('checkinTime AS STRING:', String(s.checkinTime));
+          if (s.checkinTime) {
+            debugLog('checkinTime LENGTH:', String(s.checkinTime).length);
+            debugLog('checkinTime HAS ":":', String(s.checkinTime).includes(':'));
+            debugLog('checkinTime HAS "/":', String(s.checkinTime).includes('/'));
+            debugLog('checkinTime HAS "T":', String(s.checkinTime).includes('T'));
+          }
+          debugLog('formatTime() RESULT:', formatTime(s.checkinTime));
+          
+          // ตรวจสอบ checkoutTime
+          debugLog('--- CHECK OUT TIME ---');
+          debugLog('checkoutTime RAW VALUE:', s.checkoutTime);
+          debugLog('checkoutTime TYPE:', typeof s.checkoutTime);
+          debugLog('checkoutTime AS STRING:', String(s.checkoutTime));
+          if (s.checkoutTime) {
+            debugLog('checkoutTime LENGTH:', String(s.checkoutTime).length);
+            debugLog('checkoutTime HAS ":":', String(s.checkoutTime).includes(':'));
+            debugLog('checkoutTime HAS "/":', String(s.checkoutTime).includes('/'));
+            debugLog('checkoutTime HAS "T":', String(s.checkoutTime).includes('T'));
+          }
+          debugLog('formatTime() RESULT:', formatTime(s.checkoutTime));
+          
+          // ตรวจสอบ status flags
+          debugLog('--- STATUS FLAGS ---');
+          debugLog('checkedIn:', s.checkedIn);
+          debugLog('checkedOut:', s.checkedOut);
+          
+          // ตรวจสอบ date/datetime fields ถ้ามี
+          if (s.date) {
+            debugLog('--- DATE FIELD ---');
+            debugLog('date VALUE:', s.date);
+            debugLog('date TYPE:', typeof s.date);
+          }
+          if (s.dateTime) {
+            debugLog('--- DATETIME FIELD ---');
+            debugLog('dateTime VALUE:', s.dateTime);
+            debugLog('dateTime TYPE:', typeof s.dateTime);
+          }
+          
+          debugLog('=== BACKEND RESPONSE END ===');
+          // ============ END DEBUG SECTION ============
+          
+          if (s.checkedIn && s.checkedOut) {
+            hideActionButton();
+            updateStatus('Completed for today.', '', 'completed',
+              `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: ${formatTime(s.checkoutTime).replace(' น.', '')}`);
+          } else if (s.checkedIn && !s.checkedOut) {
+            showActionButton('checkout');
+            updateStatus('Ready to Check Out!', '', 'success',
+              `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime).replace(' น.', '')} | Out: -`, `Current time: ${getCurrentTime().replace(' น.', '')}`);
+          } else {
+            showActionButton('checkin');
+            updateStatus('Ready to Check In!', '', 'warning',
+              `${getThaiDateWithDay()}<br><br>In: - | Out: -`, `Current time: ${getCurrentTime().replace(' น.', '')}`);
+          }
+        } else throw new Error(data.message || 'Invalid response');
+      } catch (error) {
+        debugLog('Error ใน checkStatus:', error);
+        hideActionButton();
+        updateStatus('ไม่สามารถเชื่อมต่อ', 'กรุณาตรวจสอบ URL ของ Google Apps Script', 'error', '', `คลิก "Test" ใน Apps Script<br><small>${error.message}</small>`);
+      } finally {
+        state.isProcessing = false;
+      }
+    }
+    // ============================================
+    // Event Listeners
+    // ============================================
+    elements.actionBtn.addEventListener("click", e => { e.preventDefault(); sendAction(); });
+    // ============================================
+    // Initialize App
+    // ============================================
+    async function initApp() {
+      debugLog('เริ่มต้นแอพ...');
+      const liffReady = await initializeLiff();
+      if (liffReady) {
+        await checkStatus();
+        setInterval(() => { if (!state.isProcessing) checkStatus(); }, 30000);
+      } else {
+        updateStatus('ไม่สามารถเริ่มต้นได้', 'กรุณาเปิดในแอพ LINE', 'error');
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+  </script>
+</body>
+</html>
