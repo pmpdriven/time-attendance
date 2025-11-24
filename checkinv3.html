@@ -113,7 +113,7 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn"></button>
     </div>
-    <div class="version">Firebase Edition v1.0 — Powered by DesignOps</div>
+    <div class="version">Firebase Edition v1.0.1 — Powered by DesignOps (Location Lock)</div>
   </div>
 
   <!-- Firebase SDK -->
@@ -121,9 +121,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <script>
     // ============================================
-    // ตำแหน่งสำนักงานที่อนุญาตให้ Check In/Out
+    // ตำแหน่งสำนักงาน (บังคับรัศมี 15 เมตร)
     // ============================================
     const OFFICE_LOCATION = {
       lat: 13.7780273,
@@ -131,32 +132,26 @@
       radius: 15  // เมตร
     };
 
-    // ฟังก์ชันคำนวณระยะทาง (Haversine formula) — แม่นยำสูง
     function calculateDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371000; // รัศมีโลก (เมตร)
+      const R = 6371000;
       const toRad = (deg) => deg * Math.PI / 180;
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c; // ระยะทางเป็นเมตร
+      return R * c;
     }
 
-    // ตรวจสอบว่าอยู่ในรัศมีที่กำหนดหรือไม่
     function isWithinOfficeRadius(userLat, userLon) {
-      const distance = calculateDistance(
-        userLat, userLon,
-        OFFICE_LOCATION.lat, OFFICE_LOCATION.lon
-      );
-      debugLog('ระยะห่างจากสำนักงาน', { distance: distance.toFixed(2) + ' เมตร' });
+      const distance = calculateDistance(userLat, userLon, OFFICE_LOCATION.lat, OFFICE_LOCATION.lon);
+      console.log(`ระยะห่างจากสำนักงาน: ${distance.toFixed(2)} เมตร`);
       return distance <= OFFICE_LOCATION.radius;
     }
 
     // ============================================
-    // Firebase Configuration
+    // Firebase Config
     // ============================================
     const firebaseConfig = {
       apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
@@ -169,18 +164,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ============================================
-    // Configuration
-    // ============================================
-    const CONFIG = {
-      LIFF_ID: "2008403464-kaXOK95X",
-      COLLECTION_NAME: "attendance",
-      DEBUG_MODE: true
-    };
+    const CONFIG = { LIFF_ID: "2008403464-kaXOK95X", COLLECTION_NAME: "attendance", DEBUG_MODE: true };
 
-    // ============================================
-    // Elements & State (เหมือนเดิม)
-    // ============================================
     const elements = {
       actionBtn: document.getElementById("actionBtn"),
       buttonContainer: document.getElementById("buttonContainer"),
@@ -188,81 +173,198 @@
       userInfo: document.getElementById("userInfo")
     };
 
-    const state = {
-      currentAction: null,
-      isProcessing: false,
-      lineUserId: null,
-      lineDisplayName: "ผู้ใช้",
-      liffInitialized: false
-    };
+    const state = { currentAction: null, isProcessing: false, lineUserId: null, lineDisplayName: "ผู้ใช้", liffInitialized: false };
 
-    // ============================================
-    // Debug Log
-    // ============================================
     function debugLog(message, data = null) {
-      const timestamp = new Date().toLocaleTimeString('th-TH');
       if (CONFIG.DEBUG_MODE) {
-        console.log(`[${timestamp}] ${message}`, data || '');
+        console.log(`[${new Date().toLocaleTimeString('th-TH')}] ${message}`, data || '');
       }
     }
 
     // ============================================
-    // LIFF & Other functions (เหมือนเดิมทั้งหมด)
-    // ... (initializeLiff, getThaiDate, getCurrentTime, formatTime ฯลฯ)
-    // ย่อเพื่อความกระชับ แต่จริง ๆ ยังคงเหมือนเดิม 100%
-
-    // (ใส่โค้ดเดิมทั้งหมดของฟังก์ชันเหล่านี้ตรงนี้ ไม่ได้ลบออก)
+    // LIFF Initialization
+    // ============================================
+    async function initializeLiff() {
+      try {
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+        if (!liff.isLoggedIn()) { liff.login(); return false; }
+        const profile = await liff.getProfile();
+        state.lineUserId = profile.userId;
+        state.lineDisplayName = profile.displayName || "ผู้ใช้";
+        state.liffInitialized = true;
+        elements.userInfo.textContent = state.lineDisplayName;
+        return true;
+      } catch (error) {
+        state.lineUserId = "TEST_" + Date.now();
+        state.lineDisplayName = "ผู้ใช้ทดสอบ";
+        elements.userInfo.textContent = `${state.lineDisplayName} (Test Mode)`;
+        return true;
+      }
+    }
 
     // ============================================
-    // GPS + ตรวจสอบตำแหน่ง (ปรับใหม่)
+    // Date/Time (Thailand)
+    // ============================================
+    function getThaiDate() {
+      const now = new Date();
+      const thai = new Date(now.getTime() + 7*3600000);
+      return `${thai.getDate().toString().padStart(2,'0')}/${(thai.getMonth()+1).toString().padStart(2,'0')}/${thai.getFullYear()+543}`;
+    }
+    function getThaiDateWithDay() {
+      const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+      const now = new Date();
+      const thai = new Date(now.getTime() + 7*3600000);
+      return `${days[thai.getDay()]} ${thai.getDate().toString().padStart(2,'0')}/${(thai.getMonth()+1).toString().padStart(2,'0')}/${thai.getFullYear()+543}`;
+    }
+    function getThaiDateTime() {
+      const now = new Date();
+      const thai = new Date(now.getTime() + 7*3600000);
+      return `${thai.getDate().toString().padStart(2,'0')}/${(thai.getMonth()+1).toString().padStart(2,'0')}/${thai.getFullYear()+543} ${thai.getHours().toString().padStart(2,'0')}:${thai.getMinutes().toString().padStart(2,'0')}`;
+    }
+    function getCurrentTime() {
+      const now = new Date();
+      const thai = new Date(now.getTime() + 7*3600000);
+      return `${thai.getHours().toString().padStart(2,'0')}:${thai.getMinutes().toString().padStart(2,'0')} น.`;
+    }
+    function formatTime(str) {
+      if (!str) return '-';
+      const parts = str.split(' ');
+      if (parts.length > 1) return parts[1];
+      return str;
+    }
+
+    // ============================================
+    // GPS + Location Lock
     // ============================================
     function getLocation() {
       return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          return reject('เบราว์เซอร์ไม่รองรับ GPS');
-        }
-        const options = {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
-        };
-        debugLog('กำลังขอตำแหน่ง GPS...');
+        if (!navigator.geolocation) return reject('เบราว์เซอร์ไม่รองรับ GPS');
+
         navigator.geolocation.getCurrentPosition(
           pos => {
-            const userLocation = {
-              lat: pos.coords.latitude,
-              lon: pos.coords.longitude,
-              accuracy: pos.coords.accuracy
-            };
-            debugLog('ได้ตำแหน่ง GPS', userLocation);
+            const userLat = pos.coords.latitude;
+            const userLon = pos.coords.longitude;
+            const accuracy = pos.coords.accuracy;
 
-            // ตรวจสอบว่าอยู่ในรัศมีสำนักงานหรือไม่
-            if (!isWithinOfficeRadius(userLocation.lat, userLocation.lon)) {
-              const distance = calculateDistance(
-                userLocation.lat, userLocation.lon,
-                OFFICE_LOCATION.lat, OFFICE_LOCATION.lon
-              ).toFixed(1);
-              reject(`คุณอยู่นอกพื้นที่สำนักงาน\nระยะห่าง: ${distance} เมตร\n(ต้องอยู่ใกล้กว่า ${OFFICE_LOCATION.radius} เมตร)`);
+            if (!isWithinOfficeRadius(userLat, userLon)) {
+              const dist = calculateDistance(userLat, userLon, OFFICE_LOCATION.lat, OFFICE_LOCATION.lon).toFixed(1);
+              reject(`คุณอยู่นอกพื้นที่สำนักงาน\nระยะห่าง: ${dist} เมตร\n(ต้องอยู่ในรัศมี ${OFFICE_LOCATION.radius} เมตร)`);
               return;
             }
 
-            resolve(userLocation);
+            resolve({ lat: userLat, lon: userLon });
           },
           err => {
-            debugLog('GPS Error', err);
             let msg = 'ไม่สามารถอ่านตำแหน่งได้';
             if (err.code === 1) msg = 'ไม่อนุญาตให้เข้าถึงตำแหน่ง';
             if (err.code === 2) msg = 'ไม่พบสัญญาณ GPS';
             if (err.code === 3) msg = 'ใช้เวลานานเกินไป';
-            reject(msg + '\nกรุณาเปิด GPS และอนุญาตตำแหน่ง');
+            reject(`${msg}\nกรุณาเปิด GPS และอนุญาตตำแหน่ง`);
           },
-          options
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       });
     }
 
     // ============================================
-    // Main Action (ไม่เปลี่ยน logic อื่น ๆ)
+    // LINE Message
+    // ============================================
+    function formatLineDateTime() {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const now = new Date();
+      const thai = new Date(now.getTime() + 7*3600000);
+      return `${days[thai.getDay()]} ${thai.getDate().toString().padStart(2,'0')}/${(thai.getMonth()+1).toString().padStart(2,'0')}/${thai.getFullYear()} • ${thai.getHours().toString().padStart(2,'0')}:${thai.getMinutes().toString().padStart(2,'0')}`;
+    }
+    async function sendLineReplyMessage(action, dateTime) {
+      if (!liff.isInClient()) {
+        updateStatus('บันทึกสำเร็จ', 'แต่ต้องเปิดใน LINE เพื่อส่งข้อความ', 'warning', `เวลา: ${dateTime}`);
+        setTimeout(() => liff.closeWindow(), 3000);
+        return;
+      }
+      const msg = action === 'checkin' ? 
+        `Check In สำเร็จ\nเวลา ${formatLineDateTime()}` : 
+        `Check Out สำเร็จ\nเวลา ${formatLineDateTime()}`;
+      try {
+        await liff.sendMessages([{ type: 'text', text: msg }]);
+        updateStatus('สำเร็จทุกอย่าง!', 'บันทึกและส่งข้อความเรียบร้อย', 'success', `เวลา: ${dateTime}`);
+        setTimeout(() => liff.closeWindow(), 2000);
+      } catch (err) {
+        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `เวลา: ${dateTime}`);
+        setTimeout(() => liff.closeWindow(), 3000);
+      }
+    }
+
+    // ============================================
+    // UI Functions
+    // ============================================
+    function showActionButton(action) {
+      state.currentAction = action;
+      elements.buttonContainer.classList.remove('hidden');
+      elements.actionBtn.className = action === 'checkout' ? 'checkout' : '';
+      elements.actionBtn.innerHTML = action === 'checkin' ? 'Check In' : 'Check Out';
+      elements.actionBtn.disabled = false;
+    }
+    function hideActionButton() {
+      elements.buttonContainer.classList.add('hidden');
+      state.currentAction = null;
+    }
+    function updateStatus(title, message, type = 'info', timeInfo = '', instruction = '') {
+      elements.statusCard.className = `status-card ${type}`;
+      let html = title ? `<div class="status-title">${title}</div>` : '';
+      html += `<div class="status-text">${message}</div>`;
+      if (timeInfo) html += `<div class="time-display">${timeInfo}</div>`;
+      if (instruction) html += `<div class="instruction">${instruction}</div>`;
+      elements.statusCard.innerHTML = html;
+    }
+    function setLoading(loading, msg = 'Processing...') {
+      state.isProcessing = loading;
+      elements.actionBtn.disabled = loading;
+      if (loading) {
+        elements.statusCard.className = 'status-card loading';
+        elements.statusCard.innerHTML = `<div class="spinner"></div><div class="status-text">${msg}</div>`;
+      }
+    }
+
+    // ============================================
+    // Firebase
+    // ============================================
+    async function saveToFirebase(action, location) {
+      const data = {
+        userId: state.lineUserId,
+        displayName: state.lineDisplayName,
+        action,
+        date: getThaiDate(),
+        dateTime: getThaiDateTime(),
+        latitude: location.lat,
+        longitude: location.lon,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      const docRef = await db.collection(CONFIG.COLLECTION_NAME).add(data);
+      return { success: true };
+    }
+
+    async function getTodayStatus() {
+      const today = getThaiDate();
+      const snapshot = await db.collection(CONFIG.COLLECTION_NAME)
+        .where('userId', '==', state.lineUserId)
+        .where('date', '==', today)
+        .get();
+
+      const docs = [];
+      snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+      docs.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+
+      let checkedIn = false, checkedOut = false, checkinTime = '', checkoutTime = '';
+      docs.forEach(d => {
+        if (d.action === 'checkin') { checkedIn = true; checkinTime = d.dateTime; }
+        if (d.action === 'checkout') { checkedOut = true; checkoutTime = d.dateTime; }
+      });
+
+      return { checkedIn, checkedOut, checkinTime, checkoutTime };
+    }
+
+    // ============================================
+    // Main Actions
     // ============================================
     async function sendAction() {
       if (state.isProcessing || !state.currentAction) return;
@@ -271,55 +373,53 @@
       hideActionButton();
 
       try {
-        const location = await getLocation();  // ← ที่นี่จะเช็คระยะทางอัตโนมัติ
+        const location = await getLocation();  // มีการตรวจรัศมีในนี้แล้ว
         const dateTime = getThaiDateTime();
-
         await saveToFirebase(action, location);
-        updateStatus(
-          'สำเร็จ!',
-          action === 'checkin' ? 'Check in บันทึกเรียบร้อย' : 'Check out บันทึกเรียบร้อย',
-          'success',
-          `เวลา: ${dateTime}`,
-          'กำลังส่งข้อความ...'
-        );
+        updateStatus('สำเร็จ!', action === 'checkin' ? 'Check In บันทึกแล้ว' : 'Check Out บันทึกแล้ว', 'success', `เวลา: ${dateTime}`, 'กำลังส่งข้อความ...');
         await sendLineReplyMessage(action, dateTime);
         setTimeout(checkStatus, 2000);
       } catch (error) {
-        debugLog('Error ใน sendAction:', error);
-        updateStatus(
-          'ไม่สำเร็จ',
-          error.message || error || 'เกิดข้อผิดพลาด',
-          'error'
-        );
+        updateStatus('ไม่สำเร็จ', error.message || error, 'error');
         setLoading(false);
         setTimeout(() => showActionButton(action), 2500);
       }
     }
 
-    // ============================================
-    // ส่วนที่เหลือเหมือนเดิมทุกอย่าง
-    // ============================================
-    // รวมถึง checkStatus(), initApp() และ event listeners
-    // (ไม่มีการเปลี่ยนแปลงใด ๆ นอกจากการเพิ่มตรวจสอบตำแหน่ง)
+    async function checkStatus() {
+      try {
+        setLoading(true, 'กำลังตรวจสอบสถานะ...');
+        const s = await getTodayStatus();
+        if (s.checkedIn && s.checkedOut) {
+          hideActionButton();
+          updateStatus('วันนี้เสร็จสิ้นแล้ว', '', 'completed', `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime)} | Out: ${formatTime(s.checkoutTime)}`);
+        } else if (s.checkedIn) {
+          showActionButton('checkout');
+          updateStatus('พร้อม Check Out!', '', 'success', `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime)} | Out: -`, `เวลาปัจจุบัน: ${getCurrentTime()}`);
+        } else {
+          showActionButton('checkin');
+          updateStatus('พร้อม Check In!', '', 'warning', `${getThaiDateWithDay()}<br><br>In: - | Out: -`, `เวลาปัจจุบัน: ${getCurrentTime()}`);
+        }
+      } catch (err) {
+        hideActionButton();
+        updateStatus('เชื่อมต่อไม่ได้', 'กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
+      } finally {
+        state.isProcessing = false;
+      }
+    }
 
-    // ... (โค้ดเดิมทั้งหมดของ checkStatus, initApp, event listeners ยังอยู่ครบ)
-
-    // ยกตัวอย่างส่วนท้าย (เหมือนเดิม)
-    elements.actionBtn.addEventListener("click", e => {
-      e.preventDefault();
-      sendAction();
-    });
+    // ============================================
+    // Start App
+    // ============================================
+    elements.actionBtn.addEventListener('click', e => { e.preventDefault(); sendAction(); });
 
     async function initApp() {
-      debugLog('เริ่มต้นแอพ...');
-      const liffReady = await initializeLiff();
-      if (liffReady) {
+      const ready = await initializeLiff();
+      if (ready) {
         await checkStatus();
-        setInterval(() => {
-          if (!state.isProcessing) checkStatus();
-        }, 30000);
+        setInterval(() => { if (!state.isProcessing) checkStatus(); }, 30000);
       } else {
-        updateStatus('ไม่สามารถเริ่มต้นได้', 'กรุณาเปิดในแอพ LINE', 'error');
+        updateStatus('เปิดใน LINE ไม่ได้', 'กรุณาเปิดผ่านแอป LINE', 'error');
       }
     }
 
@@ -328,11 +428,6 @@
     } else {
       initApp();
     }
-
-    // ==== ใส่ฟังก์ชันเดิมที่ตัดออกไปเพื่อความกระชับ ====
-    // (จริง ๆ ต้องคัดลอกทุกฟังก์ชันเดิมมาใส่ตรงนี้ทั้งหมด)
-    // แต่เพื่อไม่ให้ยาวเกินไป ผมขอสรุปว่าทุกอย่างเหมือนเดิม ยกเว้นส่วน GPS + การตรวจรัศมี
-
   </script>
 </body>
 </html>
