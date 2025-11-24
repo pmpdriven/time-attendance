@@ -209,7 +209,7 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn"></button>
     </div>
-    <div class="version">Firebase Edition v1.0 — Powered by DesignOps</div>
+    <div class="version">Firebase Edition v1.1 + Location Check — Powered by DesignOps</div>
   </div>
 
   <!-- Firebase SDK -->
@@ -242,7 +242,15 @@
     const CONFIG = {
       LIFF_ID: "2008403464-kaXOK95X",
       COLLECTION_NAME: "attendance",
-      DEBUG_MODE: true
+      DEBUG_MODE: true,
+      
+      // 📍 พิกัดสถานที่ทำงาน - PEARL BANGKOK
+      OFFICE_LOCATION: {
+        lat: 13.7780273,
+        lon: 100.5434656,
+        radius: 15,  // เมตร
+        name: "PEARL BANGKOK"
+      }
     };
 
     // ============================================
@@ -263,7 +271,8 @@
       isProcessing: false,
       lineUserId: null,
       lineDisplayName: "ผู้ใช้",
-      liffInitialized: false
+      liffInitialized: false,
+      currentLocation: null
     };
 
     // ============================================
@@ -312,6 +321,41 @@
         elements.userInfo.textContent = `${state.lineDisplayName} (Test Mode)`;
         return true;
       }
+    }
+
+    // ============================================
+    // Location Functions (Haversine Formula)
+    // ============================================
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // รัศมีโลก (เมตร)
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      
+      return R * c; // ระยะทางเป็นเมตร
+    }
+
+    function isInAllowedArea(lat, lon) {
+      const distance = calculateDistance(
+        CONFIG.OFFICE_LOCATION.lat,
+        CONFIG.OFFICE_LOCATION.lon,
+        lat,
+        lon
+      );
+      
+      debugLog(`📍 Distance from ${CONFIG.OFFICE_LOCATION.name}: ${distance.toFixed(2)} meters`);
+      
+      return {
+        allowed: distance <= CONFIG.OFFICE_LOCATION.radius,
+        distance: Math.round(distance),
+        maxDistance: CONFIG.OFFICE_LOCATION.radius
+      };
     }
 
     // ============================================
@@ -519,7 +563,6 @@
         const today = getThaiDate();
         debugLog('เช็คสถานะวันนี้:', today);
 
-        // ✅ แก้ไข: ลบ orderBy ออก เพื่อไม่ต้องสร้าง Index
         const snapshot = await db.collection(CONFIG.COLLECTION_NAME)
           .where('userId', '==', state.lineUserId)
           .where('date', '==', today)
@@ -530,19 +573,16 @@
         let checkedIn = false;
         let checkedOut = false;
 
-        // เรียงข้อมูลด้วย JavaScript แทน
         const docs = [];
         snapshot.forEach(doc => {
           docs.push({ id: doc.id, ...doc.data() });
         });
 
-        // เรียงตาม timestamp
         docs.sort((a, b) => {
           if (!a.timestamp || !b.timestamp) return 0;
           return a.timestamp.seconds - b.timestamp.seconds;
         });
 
-        // หา checkin/checkout ล่าสุด
         docs.forEach(data => {
           if (data.action === 'checkin') {
             checkedIn = true;
@@ -578,7 +618,24 @@
       hideActionButton();
 
       try {
+        // ✅ เช็ค Location อีกครั้งก่อนบันทึก
         const location = await getLocation();
+        const locationCheck = isInAllowedArea(location.lat, location.lon);
+
+        if (!locationCheck.allowed) {
+          debugLog('⚠️ ปฏิเสธ: อยู่นอกพื้นที่');
+          updateStatus(
+            '⚠️ อยู่นอกพื้นที่',
+            `คุณอยู่ห่างจาก${CONFIG.OFFICE_LOCATION.name} ${locationCheck.distance} เมตร`,
+            'error',
+            '',
+            `อนุญาตไม่เกิน ${locationCheck.maxDistance} เมตร`
+          );
+          setLoading(false);
+          setTimeout(checkStatus, 3000);
+          return;
+        }
+
         const dateTime = getThaiDateTime();
 
         // บันทึกลง Firebase
@@ -592,10 +649,7 @@
           'กำลังส่งข้อความ...'
         );
 
-        // ส่งข้อความไป LINE
         await sendLineReplyMessage(action, dateTime);
-
-        // Refresh สถานะ
         setTimeout(checkStatus, 2000);
 
       } catch (error) {
@@ -610,17 +664,64 @@
       }
     }
 
+    // ============================================
+    // ✅ แก้ไขฟังก์ชัน checkStatus() ให้เช็ค Location ก่อน
+    // ============================================
     async function checkStatus() {
       try {
-        setLoading(true, 'กำลังตรวจสอบสถานะ...');
-
+        setLoading(true, 'Getting your location...');
+        
+        // ✅ ขอ GPS ก่อน
+        let location;
+        try {
+          location = await getLocation();
+          debugLog('GPS Location:', location);
+        } catch (error) {
+          debugLog('GPS Error:', error);
+          hideActionButton();
+          updateStatus(
+            'ไม่สามารถอ่านตำแหน่งได้',
+            'กรุณาเปิด GPS และอนุญาตให้เข้าถึงตำแหน่ง',
+            'error',
+            '',
+            'ไปที่ Settings > Privacy > Location Services'
+          );
+          state.isProcessing = false;
+          return;
+        }
+        
+        // ✅ เช็คว่าอยู่ในพื้นที่หรือไม่
+        setLoading(true, 'Checking location...');
+        
+        const locationCheck = isInAllowedArea(location.lat, location.lon);
+        state.currentLocation = location;
+        
+        debugLog('Location Check:', locationCheck);
+        
+        // ❌ ถ้าไม่อยู่ในพื้นที่
+        if (!locationCheck.allowed) {
+          hideActionButton();
+          updateStatus(
+            '⚠️ อยู่นอกพื้นที่',
+            `คุณอยู่ห่างจาก${CONFIG.OFFICE_LOCATION.name} ${locationCheck.distance} เมตร`,
+            'error',
+            '',
+            `กรุณาเข้าใกล้สถานที่ทำงาน (ภายใน ${locationCheck.maxDistance} เมตร)`
+          );
+          state.isProcessing = false;
+          return;
+        }
+        
+        // ✅ อยู่ในพื้นที่ → ดึงสถานะจาก Firebase
         const status = await getTodayStatus();
-
+        
+        const distanceInfo = `📍 ระยะจาก ${CONFIG.OFFICE_LOCATION.name}: ${locationCheck.distance} ม.`;
+        
         if (status.checkedIn && status.checkedOut) {
           hideActionButton();
           updateStatus(
             'เสร็จสิ้นสำหรับวันนี้',
-            '',
+            distanceInfo,
             'completed',
             `${getThaiDateWithDay()}<br><br>In: ${formatTime(status.checkinTime)} | Out: ${formatTime(status.checkoutTime)}`
           );
@@ -628,7 +729,7 @@
           showActionButton('checkout');
           updateStatus(
             'พร้อม Check Out!',
-            '',
+            distanceInfo,
             'success',
             `${getThaiDateWithDay()}<br><br>In: ${formatTime(status.checkinTime)} | Out: -`,
             `เวลาปัจจุบัน: ${getCurrentTime().replace(' น.', '')}`
@@ -637,7 +738,7 @@
           showActionButton('checkin');
           updateStatus(
             'พร้อม Check In!',
-            '',
+            distanceInfo,
             'warning',
             `${getThaiDateWithDay()}<br><br>In: - | Out: -`,
             `เวลาปัจจุบัน: ${getCurrentTime().replace(' น.', '')}`
@@ -660,42 +761,4 @@
     }
 
     // ============================================
-    // Event Listeners
-    // ============================================
-    elements.actionBtn.addEventListener("click", e => {
-      e.preventDefault();
-      sendAction();
-    });
-
-    // ============================================
-    // Initialize App
-    // ============================================
-    async function initApp() {
-      debugLog('เริ่มต้นแอพ...');
-      
-      const liffReady = await initializeLiff();
-      
-      if (liffReady) {
-        await checkStatus();
-        
-        // Auto-refresh ทุก 30 วินาที
-        setInterval(() => {
-          if (!state.isProcessing) checkStatus();
-        }, 30000);
-      } else {
-        updateStatus(
-          'ไม่สามารถเริ่มต้นได้',
-          'กรุณาเปิดในแอพ LINE',
-          'error'
-        );
-      }
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-      initApp();
-    }
-  </script>
-</body>
-</html>
+    // Event
