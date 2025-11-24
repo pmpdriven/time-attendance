@@ -519,10 +519,10 @@
         const today = getThaiDate();
         debugLog('เช็คสถานะวันนี้:', today);
 
+        // ✅ แก้ไข: ลบ orderBy ออก เพื่อไม่ต้องสร้าง Index
         const snapshot = await db.collection(CONFIG.COLLECTION_NAME)
           .where('userId', '==', state.lineUserId)
           .where('date', '==', today)
-          .orderBy('timestamp', 'asc')
           .get();
 
         let checkinTime = '';
@@ -530,8 +530,20 @@
         let checkedIn = false;
         let checkedOut = false;
 
+        // เรียงข้อมูลด้วย JavaScript แทน
+        const docs = [];
         snapshot.forEach(doc => {
-          const data = doc.data();
+          docs.push({ id: doc.id, ...doc.data() });
+        });
+
+        // เรียงตาม timestamp
+        docs.sort((a, b) => {
+          if (!a.timestamp || !b.timestamp) return 0;
+          return a.timestamp.seconds - b.timestamp.seconds;
+        });
+
+        // หา checkin/checkout ล่าสุด
+        docs.forEach(data => {
           if (data.action === 'checkin') {
             checkedIn = true;
             checkinTime = data.dateTime;
