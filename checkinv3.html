@@ -93,10 +93,8 @@
       min-width: 200px;
     }
     button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5); background: #a0d911; }
-    button:active:not(:disabled) { transform: translateY(0); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
-    button.checkout { background: #B8F416; box-shadow: 0 4px 12px rgba(184, 244, 22, 0.3); color: #111827; }
-    button.checkout:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5); background: #a0d911; }
+    button.checkout { background: #B8F416; }
     @media (max-width: 480px) {
       .container { padding: 30px 20px; }
       button { width: 100%; min-width: auto; }
@@ -113,23 +111,19 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn"></button>
     </div>
-    <div class="version">Firebase Edition v1.0.1 — Powered by DesignOps (Location Lock)</div>
+    <div class="version">Firebase Edition v1.0.2 — Location Lock Active</div>
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <script>
-    // ============================================
-    // ตำแหน่งสำนักงาน (บังคับรัศมี 15 เมตร)
-    // ============================================
+    // ตำแหน่งสำนักงาน - รัศมี 15 เมตร
     const OFFICE_LOCATION = {
       lat: 13.7780273,
       lon: 100.5434656,
-      radius: 15  // เมตร
+      radius: 15
     };
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -139,20 +133,50 @@
       const dLon = toRad(lon2 - lon1);
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                 Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
+                Math.sin(dLon//2) * Math.sin(dLon/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       return R * c;
     }
 
-    function isWithinOfficeRadius(userLat, userLon) {
-      const distance = calculateDistance(userLat, userLon, OFFICE_LOCATION.lat, OFFICE_LOCATION.lon);
-      console.log(`ระยะห่างจากสำนักงาน: ${distance.toFixed(2)} เมตร`);
-      return distance <= OFFICE_LOCATION.radius;
+    async function checkLocationAndProceed() {
+      try {
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        });
+
+        const distance = calculateDistance(
+          pos.coords.latitude, pos.coords.longitude,
+          OFFICE_LOCATION.lat, OFFICE_LOCATION.lon
+        );
+
+        if (distance > OFFICE_LOCATION.radius) {
+          hideActionButton();
+          updateStatus(
+            'อยู่นอกพื้นที่ทำงาน',
+            `คุณอยู่ห่างจากสำนักงาน \( {distance.toFixed(1)} เมตร\nต้องอยู่ในระยะไม่เกิน \){OFFICE_LOCATION.radius} เมตร`,
+            'error'
+          );
+          return false;
+        }
+
+        // อยู่ในรัศมี → อนุญาตให้ดำเนินการต่อ
+        return true;
+      } catch (err) {
+        hideActionButton();
+        let msg = 'ไม่สามารถตรวจสอบตำแหน่งได้';
+        if (err.code === 1) msg = 'ไม่อนุญาตให้เข้าถึงตำแหน่ง';
+        if (err.code === 2) msg = 'ไม่พบสัญญาณ GPS';
+        if (err.code === 3) msg = 'หมดเวลาในการค้นหาตำแหน่ง';
+        updateStatus('เปิด GPS ไม่ได้', msg + '\nกรุณาเปิด GPS และอนุญาตตำแหน่ง', 'error');
+        return false;
+      }
     }
 
-    // ============================================
-    // Firebase Config
-    // ============================================
+    // Firebase & Config
     const firebaseConfig = {
       apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
       authDomain: "time-attendance-807c5.firebaseapp.com",
@@ -164,7 +188,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const CONFIG = { LIFF_ID: "2008403464-kaXOK95X", COLLECTION_NAME: "attendance", DEBUG_MODE: true };
+    const CONFIG = { LIFF_ID: "2008403464-kaXOK95X", COLLECTION_NAME: "attendance" };
 
     const elements = {
       actionBtn: document.getElementById("actionBtn"),
@@ -173,163 +197,100 @@
       userInfo: document.getElementById("userInfo")
     };
 
-    const state = { currentAction: null, isProcessing: false, lineUserId: null, lineDisplayName: "ผู้ใช้", liffInitialized: false };
+    const state = { currentAction: null, isProcessing: false, lineUserId: null, lineDisplayName: "ผู้ใช้" };
 
-    function debugLog(message, data = null) {
-      if (CONFIG.DEBUG_MODE) {
-        console.log(`[${new Date().toLocaleTimeString('th-TH')}] ${message}`, data || '');
-      }
+    // ฟังก์ชันเวลาไทย
+    function getThaiDate() {
+      const d = new Date(Date.now() + 7*3600000);
+      return `\( {d.getDate().toString().padStart(2,'0')}/ \){(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()+543}`;
     }
+    function getThaiDateWithDay() {
+      const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+      const d = new Date(Date.now() + 7*3600000);
+      return `\( {days[d.getDay()]} \){d.getDate().toString().padStart(2,'0')}/\( {(d.getMonth()+1).toString().padStart(2,'0')}/ \){d.getFullYear()+543}`;
+    }
+    function getThaiDateTime() {
+      const d = new Date(Date.now() + 7*3600000);
+      return `\( {d.getDate().toString().padStart(2,'0')}/ \){(d.getMonth()+1).toString().padStart(2,'0')}/\( {d.getFullYear()+543} \){d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+    function getCurrentTime() {
+      const d = new Date(Date.now() + 7*3600000);
+      return `\( {d.getHours().toString().padStart(2,'0')}: \){d.getMinutes().toString().padStart(2,'0')} น.`;
+    }
+    function formatTime(t) { return t ? t.split(' ')[1] || t : '-'; }
 
-    // ============================================
-    // LIFF Initialization
-    // ============================================
+    // LIFF Init
     async function initializeLiff() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
         if (!liff.isLoggedIn()) { liff.login(); return false; }
-        const profile = await liff.getProfile();
-        state.lineUserId = profile.userId;
-        state.lineDisplayName = profile.displayName || "ผู้ใช้";
-        state.liffInitialized = true;
+        const p = await liff.getProfile();
+        state.lineUserId = p.userId;
+        state.lineDisplayName = p.displayName || "ผู้ใช้";
         elements.userInfo.textContent = state.lineDisplayName;
         return true;
-      } catch (error) {
+      } catch (e) {
         state.lineUserId = "TEST_" + Date.now();
         state.lineDisplayName = "ผู้ใช้ทดสอบ";
-        elements.userInfo.textContent = `${state.lineDisplayName} (Test Mode)`;
+        elements.userInfo.textContent = state.lineDisplayName + " (ทดสอบ)";
         return true;
       }
     }
 
-    // ============================================
-    // Date/Time (Thailand)
-    // ============================================
-    function getThaiDate() {
-      const now = new Date();
-      const thai = new Date(now.getTime() + 7*3600000);
-      return `${thai.getDate().toString().padStart(2,'0')}/${(thai.getMonth()+1).toString().padStart(2,'0')}/${thai.getFullYear()+543}`;
-    }
-    function getThaiDateWithDay() {
-      const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
-      const now = new Date();
-      const thai = new Date(now.getTime() + 7*3600000);
-      return `${days[thai.getDay()]} ${thai.getDate().toString().padStart(2,'0')}/${(thai.getMonth()+1).toString().padStart(2,'0')}/${thai.getFullYear()+543}`;
-    }
-    function getThaiDateTime() {
-      const now = new Date();
-      const thai = new Date(now.getTime() + 7*3600000);
-      return `${thai.getDate().toString().padStart(2,'0')}/${(thai.getMonth()+1).toString().padStart(2,'0')}/${thai.getFullYear()+543} ${thai.getHours().toString().padStart(2,'0')}:${thai.getMinutes().toString().padStart(2,'0')}`;
-    }
-    function getCurrentTime() {
-      const now = new Date();
-      const thai = new Date(now.getTime() + 7*3600000);
-      return `${thai.getHours().toString().padStart(2,'0')}:${thai.getMinutes().toString().padStart(2,'0')} น.`;
-    }
-    function formatTime(str) {
-      if (!str) return '-';
-      const parts = str.split(' ');
-      if (parts.length > 1) return parts[1];
-      return str;
-    }
-
-    // ============================================
-    // GPS + Location Lock
-    // ============================================
-    function getLocation() {
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) return reject('เบราว์เซอร์ไม่รองรับ GPS');
-
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            const userLat = pos.coords.latitude;
-            const userLon = pos.coords.longitude;
-            const accuracy = pos.coords.accuracy;
-
-            if (!isWithinOfficeRadius(userLat, userLon)) {
-              const dist = calculateDistance(userLat, userLon, OFFICE_LOCATION.lat, OFFICE_LOCATION.lon).toFixed(1);
-              reject(`คุณอยู่นอกพื้นที่สำนักงาน\nระยะห่าง: ${dist} เมตร\n(ต้องอยู่ในรัศมี ${OFFICE_LOCATION.radius} เมตร)`);
-              return;
-            }
-
-            resolve({ lat: userLat, lon: userLon });
-          },
-          err => {
-            let msg = 'ไม่สามารถอ่านตำแหน่งได้';
-            if (err.code === 1) msg = 'ไม่อนุญาตให้เข้าถึงตำแหน่ง';
-            if (err.code === 2) msg = 'ไม่พบสัญญาณ GPS';
-            if (err.code === 3) msg = 'ใช้เวลานานเกินไป';
-            reject(`${msg}\nกรุณาเปิด GPS และอนุญาตตำแหน่ง`);
-          },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
-      });
-    }
-
-    // ============================================
-    // LINE Message
-    // ============================================
-    function formatLineDateTime() {
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const now = new Date();
-      const thai = new Date(now.getTime() + 7*3600000);
-      return `${days[thai.getDay()]} ${thai.getDate().toString().padStart(2,'0')}/${(thai.getMonth()+1).toString().padStart(2,'0')}/${thai.getFullYear()} • ${thai.getHours().toString().padStart(2,'0')}:${thai.getMinutes().toString().padStart(2,'0')}`;
-    }
-    async function sendLineReplyMessage(action, dateTime) {
-      if (!liff.isInClient()) {
-        updateStatus('บันทึกสำเร็จ', 'แต่ต้องเปิดใน LINE เพื่อส่งข้อความ', 'warning', `เวลา: ${dateTime}`);
-        setTimeout(() => liff.closeWindow(), 3000);
-        return;
-      }
-      const msg = action === 'checkin' ? 
-        `Check In สำเร็จ\nเวลา ${formatLineDateTime()}` : 
-        `Check Out สำเร็จ\nเวลา ${formatLineDateTime()}`;
-      try {
-        await liff.sendMessages([{ type: 'text', text: msg }]);
-        updateStatus('สำเร็จทุกอย่าง!', 'บันทึกและส่งข้อความเรียบร้อย', 'success', `เวลา: ${dateTime}`);
-        setTimeout(() => liff.closeWindow(), 2000);
-      } catch (err) {
-        updateStatus('บันทึกสำเร็จ', 'แต่ส่งข้อความไม่ได้', 'warning', `เวลา: ${dateTime}`);
-        setTimeout(() => liff.closeWindow(), 3000);
-      }
-    }
-
-    // ============================================
     // UI Functions
-    // ============================================
     function showActionButton(action) {
       state.currentAction = action;
       elements.buttonContainer.classList.remove('hidden');
       elements.actionBtn.className = action === 'checkout' ? 'checkout' : '';
-      elements.actionBtn.innerHTML = action === 'checkin' ? 'Check In' : 'Check Out';
+      elements.actionBtn.textContent = action === 'checkin' ? 'Check In' : 'Check Out';
       elements.actionBtn.disabled = false;
     }
     function hideActionButton() {
       elements.buttonContainer.classList.add('hidden');
       state.currentAction = null;
     }
-    function updateStatus(title, message, type = 'info', timeInfo = '', instruction = '') {
+    function updateStatus(title, msg, type = 'info', extra = '') {
       elements.statusCard.className = `status-card ${type}`;
       let html = title ? `<div class="status-title">${title}</div>` : '';
-      html += `<div class="status-text">${message}</div>`;
-      if (timeInfo) html += `<div class="time-display">${timeInfo}</div>`;
-      if (instruction) html += `<div class="instruction">${instruction}</div>`;
+      html += `<div class="status-text">${msg}</div>`;
+      if (extra) html += `<div class="instruction">${extra}</div>`;
       elements.statusCard.innerHTML = html;
     }
-    function setLoading(loading, msg = 'Processing...') {
-      state.isProcessing = loading;
-      elements.actionBtn.disabled = loading;
-      if (loading) {
-        elements.statusCard.className = 'status-card loading';
-        elements.statusCard.innerHTML = `<div class="spinner"></div><div class="status-text">${msg}</div>`;
-      }
+
+    // Firebase Functions
+    async function getTodayStatus() {
+      const today = getThaiDate();
+      const snap = await db.collection(CONFIG.COLLECTION_NAME)
+        .where('userId', '==', state.lineUserId)
+        .where('date', '==', today)
+        .get();
+
+      const docs = [];
+      snap.forEach(d => docs.push(d.data()));
+      docs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+
+      let inTime = '', outTime = '', checkedIn = false, checkedOut = false;
+      docs.forEach(d => {
+        if (d.action === 'checkin') { checkedIn = true; inTime = d.dateTime; }
+        if (d.action === 'checkout') { checkedOut = true; outTime = d.dateTime; }
+      });
+      return { checkedIn, checkedOut, inTime, outTime };
     }
 
-    // ============================================
-    // Firebase
-    // ============================================
-    async function saveToFirebase(action, location) {
-      const data = {
+    async function saveAction(action) {
+      const location = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const dist = calculateDistance(pos.coords.latitude, pos.coords.longitude, OFFICE_LOCATION.lat, OFFICE_LOCATION.lon);
+            if (dist > OFFICE_LOCATION.radius) return reject(`อยู่นอกพื้นที่ (${dist.toFixed(1)}ม.)`);
+            resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+          },
+          () => reject('ไม่สามารถอ่านตำแหน่งได้'),
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+
+      await db.collection(CONFIG.COLLECTION_NAME).add({
         userId: state.lineUserId,
         displayName: state.lineDisplayName,
         action,
@@ -338,95 +299,75 @@
         latitude: location.lat,
         longitude: location.lon,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      const docRef = await db.collection(CONFIG.COLLECTION_NAME).add(data);
-      return { success: true };
-    }
-
-    async function getTodayStatus() {
-      const today = getThaiDate();
-      const snapshot = await db.collection(CONFIG.COLLECTION_NAME)
-        .where('userId', '==', state.lineUserId)
-        .where('date', '==', today)
-        .get();
-
-      const docs = [];
-      snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
-      docs.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
-
-      let checkedIn = false, checkedOut = false, checkinTime = '', checkoutTime = '';
-      docs.forEach(d => {
-        if (d.action === 'checkin') { checkedIn = true; checkinTime = d.dateTime; }
-        if (d.action === 'checkout') { checkedOut = true; checkoutTime = d.dateTime; }
       });
-
-      return { checkedIn, checkedOut, checkinTime, checkoutTime };
     }
 
-    // ============================================
-    // Main Actions
-    // ============================================
-    async function sendAction() {
-      if (state.isProcessing || !state.currentAction) return;
-      const action = state.currentAction;
-      setLoading(true, action === 'checkin' ? 'กำลัง Check In...' : 'กำลัง Check Out...');
-      hideActionButton();
+    // ฟังก์ชันหลัก: เช็คสถานะ + เช็คตำแหน่งก่อนแสดงปุ่ม
+    async function checkStatus() {
+      updateStatus('กำลังตรวจสอบตำแหน่ง...', 'กรุณารอสักครู่', 'loading');
+
+      const inRange = await checkLocationAndProceed();
+      if (!inRange) return; // ถ้าออกนอกพื้นที่ จะซ่อนปุ่มและแจ้งแล้ว
 
       try {
-        const location = await getLocation();  // มีการตรวจรัศมีในนี้แล้ว
-        const dateTime = getThaiDateTime();
-        await saveToFirebase(action, location);
-        updateStatus('สำเร็จ!', action === 'checkin' ? 'Check In บันทึกแล้ว' : 'Check Out บันทึกแล้ว', 'success', `เวลา: ${dateTime}`, 'กำลังส่งข้อความ...');
-        await sendLineReplyMessage(action, dateTime);
-        setTimeout(checkStatus, 2000);
-      } catch (error) {
-        updateStatus('ไม่สำเร็จ', error.message || error, 'error');
-        setLoading(false);
-        setTimeout(() => showActionButton(action), 2500);
+        const s = await getTodayStatus();
+
+        if (s.checkedIn && s.checkedOut) {
+          hideActionButton();
+          updateStatus('วันนี้เสร็จสิ้นแล้ว', '', 'completed',
+            `\( {getThaiDateWithDay()}<br>In: \){formatTime(s.inTime)} | Out: ${formatTime(s.outTime)}`);
+        } else if (s.checkedIn) {
+          showActionButton('checkout');
+          updateStatus('พร้อม Check Out!', '', 'success',
+            `\( {getThaiDateWithDay()}<br>In: \){formatTime(s.inTime)} | Out: -<br>เวลาปัจจุบัน: ${getCurrentTime()}`);
+        } else {
+          showActionButton('checkin');
+          updateStatus('พร้อม Check In!', '', 'warning',
+            `\( {getThaiDateWithDay()}<br>In: - | Out: -<br>เวลาปัจจุบัน: \){getCurrentTime()}`);
+        }
+      } catch (e) {
+        hideActionButton();
+        updateStatus('เชื่อมต่อไม่ได้', 'กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
       }
     }
 
-    async function checkStatus() {
+    // กดปุ่ม Check In/Out
+    async function doAction() {
+      if (state.isProcessing) return;
+      state.isProcessing = true;
+      elements.actionBtn.disabled = true;
+
       try {
-        setLoading(true, 'กำลังตรวจสอบสถานะ...');
-        const s = await getTodayStatus();
-        if (s.checkedIn && s.checkedOut) {
-          hideActionButton();
-          updateStatus('วันนี้เสร็จสิ้นแล้ว', '', 'completed', `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime)} | Out: ${formatTime(s.checkoutTime)}`);
-        } else if (s.checkedIn) {
-          showActionButton('checkout');
-          updateStatus('พร้อม Check Out!', '', 'success', `${getThaiDateWithDay()}<br><br>In: ${formatTime(s.checkinTime)} | Out: -`, `เวลาปัจจุบัน: ${getCurrentTime()}`);
-        } else {
-          showActionButton('checkin');
-          updateStatus('พร้อม Check In!', '', 'warning', `${getThaiDateWithDay()}<br><br>In: - | Out: -`, `เวลาปัจจุบัน: ${getCurrentTime()}`);
+        await saveAction(state.currentAction);
+        const msg = state.currentAction === 'checkin' ? 'Check In สำเร็จ' : 'Check Out สำเร็จ';
+        if (liff.isInClient()) {
+          await liff.sendMessages([{ type: 'text', text: `\( {msg}\n \){new Date().toLocaleString('th-TH')}` }]);
         }
+        updateStatus('สำเร็จ!', msg, 'success', `เวลา: ${getThaiDateTime()}`);
+        setTimeout(() => { liff.closeWindow(); }, 2000);
       } catch (err) {
-        hideActionButton();
-        updateStatus('เชื่อมต่อไม่ได้', 'กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
-      } finally {
+        updateStatus('ไม่สำเร็จ', err.message || err, 'error');
+        elements.actionBtn.disabled = false;
         state.isProcessing = false;
       }
     }
 
-    // ============================================
-    // Start App
-    // ============================================
-    elements.actionBtn.addEventListener('click', e => { e.preventDefault(); sendAction(); });
+    // เริ่มต้น
+    elements.actionBtn.addEventListener('click', doAction);
 
-    async function initApp() {
+    async function init() {
       const ready = await initializeLiff();
       if (ready) {
         await checkStatus();
-        setInterval(() => { if (!state.isProcessing) checkStatus(); }, 30000);
-      } else {
-        updateStatus('เปิดใน LINE ไม่ได้', 'กรุณาเปิดผ่านแอป LINE', 'error');
+        // รีเฟรชทุก 20 วินาที เพื่อเช็คตำแหน่งใหม่
+        setInterval(checkStatus, 20000);
       }
     }
 
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
+      document.addEventListener('DOMContentLoaded', init);
     } else {
-      initApp();
+      init();
     }
   </script>
 </body>
