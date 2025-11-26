@@ -156,7 +156,7 @@
       return new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
     }
     // ============================================================
-    const OFFICE_LOCATION = { lat: 13.7780273, lon: 100.5434656, radius: 15 };
+    const OFFICE_LOCATION = { lat: 13.7780273, lon: 100.5434656, radius: 10 };
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const toRad = x => x * Math.PI / 180;
