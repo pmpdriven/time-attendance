@@ -109,7 +109,7 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">Pilot Release V0.1 - Powered by DesignOps</div>
+    <div class="version">Pilot Release V0.1.1 - Powered by DesignOps</div>
   </div>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -252,10 +252,10 @@
         } else if (s.checkedIn) {
           showButton('checkout');
           const inTimeOnly = s.inTime.split(' ')[1];
-          updateStatus('Ready to Check Out!', `${getFormattedDate()}\nIn: ${inTimeOnly} | Out: -\nCurrent time: ${getFormattedTime()}`, 'success');
+          updateStatus('Ready to Check Out!', `${getFormattedDate()}<br>In: ${inTimeOnly} | Out: -<br>Current time: ${getFormattedTime()}`, 'success');
         } else {
           showButton('checkin');
-          updateStatus('Ready to Check In!', `${getFormattedDate()}\nCurrent time: ${getFormattedTime()}`, 'warning');
+          updateStatus('Ready to Check In!', `${getFormattedDate()}<br>Current time: ${getFormattedTime()}`, 'warning');
         }
       } catch (err) {
         hideButton();
