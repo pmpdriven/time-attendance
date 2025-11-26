@@ -3,21 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ระบบ Check In / Check Out</title>
+  <title>Check In/Out System</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #a0d911;
       --primary-light: #b8f416;
-      --primary-dark: #7cb305;
       --gray-100: #f3f4f6;
       --gray-200: #e5e7eb;
-      --gray-300: #d1d5db;
-      --gray-500: #6b7280;
       --gray-700: #374151;
       --gray-900: #111827;
       --success: #52c41a;
-      --danger: #ef4444;
       --warning: #faad14;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,13 +29,11 @@
     .container {
       background: white;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       padding: 40px;
       max-width: 500px;
       width: 100%;
-      animation: slideUp 0.5s ease-out;
     }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     .user-info { text-align: center; color: var(--gray-700); margin-bottom: 30px; font-size: 18px; font-weight: 500; }
     .version { text-align: center; color: var(--gray-500); font-size: 12px; margin-top: 20px; user-select: none; }
     .status-card {
@@ -47,93 +41,93 @@
       border-radius: 12px;
       padding: 25px;
       text-align: center;
-      min-height: 100px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      animation: fadeIn 0.5s ease-out;
-      margin-bottom: 25px;
       border: 1px solid var(--gray-200);
+      margin-bottom: 25px;
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .status-card.loading { background: #f6ffed; border-color: var(--primary-light); }
     .status-card.success { background: #d9f7be; border-color: var(--success); }
     .status-card.warning { background: #fffbe6; border-color: var(--warning); }
-    .status-card.error { background: #fff1f0; border-color: var(--danger); }
     .status-card.completed { background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%); border-color: var(--primary); }
-    .status-text { font-size: 16px; color: var(--gray-700); font-weight: 400; line-height: 1.6; }
-    .status-title { font-size: 20px; color: var(--gray-900); font-weight: 600; margin-bottom: 10px; }
-    .spinner {
-      border: 3px solid var(--gray-200);
-      border-top: 3px solid var(--primary);
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 15px;
+    .status-title { font-size: 20px; color: var(--gray-900); font-weight: 600; margin-bottom: 15px; }
+    .info-box {
+      background: white; border-radius: 12px; padding: 14px; margin: 12px 0;
+      font-size: 14px; color: var(--gray-700); font-weight: 500; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .button-container { min-height: 60px; display: flex; justify-content: center; align-items: center; }
-    .button-container.hidden { display: none; }
+    .button-container { display: flex; justify-content: center; margin-top: 10px; }
     button {
-      background: #B8F416;
-      color: #111827;
-      border: none;
-      padding: 15px 40px;
-      font-size: 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: 'Inter', sans-serif;
-      font-weight: 600;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(184, 244, 22, 0.3);
-      min-width: 200px;
+      background: #B8F416; color: #111827; border: none; padding: 16px 40px;
+      font-size: 18px; border-radius: 12px; cursor: pointer; font-weight: 600;
+      min-width: 220px; box-shadow: 0 4px 12px rgba(184,244,22,0.3);
+      transition: all 0.2s;
     }
-    button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5); background: #a0d911; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    button.checkout { background: #B8F416; }
-    @media (max-width: 480px) {
-      .container { padding: 30px 20px; }
-      button { width: 100%; min-width: auto; }
-    }
+    button:hover { background: #a0d911; transform: translateY(-2px); }
+    @media (max-width: 480px) { .container { padding: 30px 20px; } button { width: 100%; } }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="user-info" id="userInfo">กำลังโหลด...</div>
-    <div id="statusCard" class="status-card loading">
-      <div class="spinner"></div>
-      <div class="status-text">กำลังเริ่มต้นระบบ...</div>
+    
+    <div id="statusCard" class="status-card warning">
+      <div class="status-title" id="statusTitle">กำลังตรวจสอบ...</div>
+      <div class="info-box" id="dateBox">กำลังโหลดวันที่...</div>
+      <div class="info-box" id="timeBox">In: - | Out: -</div>
+      <div class="info-box" id="currentTimeBox">Current time: --:--</div>
     </div>
+
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">V2.1.1 Final Fix – Year</div>
+
+    <div class="version">Pilot Release v0.1 — Powered by DesignOps</div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <script>
-    // ============ แก้ปีให้ถูกต้อง 100% (ไม่ +543 อีก) ============
-    const thOptions = { timeZone: 'Asia/Bangkok', hour12: false };
-    const thDateTimeFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-    const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit' });
+    // เวลาไทย + วันภาษาอังกฤษย่อ
+    const daysTH = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const thDateFormatter = new Intl.DateTimeFormat('th-TH', {
+      timeZone: 'Asia/Bangkok',
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
 
-    function getThaiDateTime() {
-      return thDateTimeFormatter.format(new Date());  // ได้เลยแบบ 26/11/2568 08:48
-    }
-
-    function getThaiDateOnly() {
-      return thDateOnlyFormatter.format(new Date());  // ได้ 26/11/2568
+    function getThaiDisplayDate() {
+      const now = new Date();
+      const parts = thDateFormatter.formatToParts(now);
+      const obj = {};
+      parts.forEach(p => obj[p.type] = p.value);
+      const dateStr = `${obj.day}/${obj.month}/${parseInt(obj.year)}`;
+      const dayName = daysTH[now.getDay()];
+      return `${dayName} ${dateStr}`;
     }
 
     function getCurrentThaiTime() {
-      return new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
+      return new Date().toLocaleTimeString('th-TH', {
+        timeZone: 'Asia/Bangkok',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
     }
-    // ============================================================
+
+    function getThaiDateOnly() {
+      const d = new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear() + 543;
+      return `${day}/${month}/${year}`;
+    }
+
+    function getThaiDateTime() {
+      const time = getCurrentThaiTime();
+      const dateOnly = getThaiDateOnly();
+      return `${dateOnly} ${time}`;
+    }
 
     const OFFICE_LOCATION = { lat: 13.7780273, lon: 100.5434656, radius: 15 };
 
@@ -149,8 +143,6 @@
 
     async function getCurrentLocation() {
       return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) return reject("ไม่รองรับ GPS");
-
         navigator.geolocation.getCurrentPosition(
           pos => {
             const dist = getDistance(pos.coords.latitude, pos.coords.longitude, OFFICE_LOCATION.lat, OFFICE_LOCATION.lon);
@@ -160,7 +152,7 @@
               resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
             }
           },
-          () => reject("ไม่สามารถอ่านตำแหน่งได้\nกรุณาเปิด GPS และอนุญาตตำแหน่ง"),
+          () => reject("ไม่สามารถอ่านตำแหน่งได้\nกรุณาเปิด GPS และอนุญาตใน LINE"),
           { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
         );
       });
@@ -180,39 +172,30 @@
     const CONFIG = { LIFF_ID: "2008403464-kaXOK95X", COLLECTION_NAME: "attendance" };
 
     const elements = {
-      actionBtn: document.getElementById("actionBtn"),
-      buttonContainer: document.getElementById("buttonContainer"),
+      userInfo: document.getElementById("userInfo"),
       statusCard: document.getElementById("statusCard"),
-      userInfo: document.getElementById("userInfo")
+      statusTitle: document.getElementById("statusTitle"),
+      dateBox: document.getElementById("dateBox"),
+      timeBox: document.getElementById("timeBox"),
+      currentTimeBox: document.getElementById("currentTimeBox"),
+      buttonContainer: document.getElementById("buttonContainer"),
+      actionBtn: document.getElementById("actionBtn")
     };
 
-    const state = { currentAction: null, isProcessing: false, lineUserId: null, lineDisplayName: "ผู้ใช้" };
+    const state = { lineUserId: null, lineDisplayName: "ผู้ใช้", currentAction: null, isProcessing: false };
 
+    // LIFF
     async function initLiff() {
-      try {
-        await liff.init({ liffId: CONFIG.LIFF_ID });
-        if (!liff.isLoggedIn()) { liff.login(); return false; }
-        const profile = await liff.getProfile();
-        state.lineUserId = profile.userId;
-        state.lineDisplayName = profile.displayName || "ผู้ใช้";
-        elements.userInfo.textContent = state.lineDisplayName;
-        return true;
-      } catch (e) {
-        state.lineUserId = "TEST_" + Date.now();
-        state.lineDisplayName = "ผู้ใช้ทดสอบ";
-        elements.userInfo.textContent = state.lineDisplayName + " (ทดสอบ)";
-        return true;
-      }
+      await liff.init({ liffId: CONFIG.LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return false; }
+      const profile = await liff.getProfile();
+      state.lineUserId = profile.userId;
+      state.lineDisplayName = profile.displayName || "ผู้ใช้";
+      elements.userInfo.textContent = state.lineDisplayName;
+      return true;
     }
 
-    function updateStatus(title, msg = '', type = 'info') {
-      elements.statusCard.className = `status-card ${type}`;
-      elements.statusCard.innerHTML = `
-        ${title ? `<div class="status-title">${title}</div>` : ''}
-        ${msg ? `<div class="status-text">${msg}</div>` : ''}
-      `;
-    }
-
+    // ดึงสถานะวันนี้
     async function getTodayStatus() {
       const today = getThaiDateOnly();
       const snap = await db.collection(CONFIG.COLLECTION_NAME)
@@ -220,92 +203,101 @@
         .where('date', '==', today)
         .get();
 
-      let checkedIn = false, checkedOut = false, inTime = '', outTime = '';
+      let inTime = '-', outTime = '-';
       snap.forEach(doc => {
         const d = doc.data();
-        if (d.action === 'checkin') { checkedIn = true; inTime = d.dateTime; }
-        if (d.action === 'checkout') { checkedOut = true; outTime = d.dateTime; }
+        if (d.action === 'checkin') inTime = d.dateTime.split(' ')[1];
+        if (d.action === 'checkout') outTime = d.dateTime.split(' ')[1];
       });
-      return { checkedIn, checkedOut, inTime, outTime };
+      return { checkedIn: inTime !== '-', checkedOut: outTime !== '-', inTime, outTime };
     }
 
-    async function checkLocationAndStatus() {
-      updateStatus('กำลังตรวจสอบตำแหน่ง...', 'กรุณารอสักครู่', 'loading');
+    // อัปเดต UI
+    async function updateUI() {
+      elements.dateBox.textContent = getThaiDisplayDate();
+      elements.currentTimeBox.textContent = `Current time: ${getCurrentThaiTime()}`;
 
       try {
-        await getCurrentLocation();
+        await getCurrentLocation(); // เช็คตำแหน่งก่อน
         const s = await getTodayStatus();
 
         if (s.checkedIn && s.checkedOut) {
-          hideButton();
-          updateStatus('วันนี้เสร็จสิ้นแล้ว', `In: ${s.inTime.split(' ')[1]} | Out: ${s.outTime.split(' ')[1]}`, 'completed');
+          elements.statusCard.className = "status-card completed";
+          elements.statusTitle.textContent = "วันนี้เสร็จสิ้นแล้ว!";
+          elements.timeBox.textContent = `In: ${s.inTime} | Out: ${s.outTime}`;
+          elements.buttonContainer.classList.add("hidden");
         } else if (s.checkedIn) {
-          showButton('checkout');
-          updateStatus('พร้อม Check Out!', `In: ${s.inTime.split(' ')[1]}\nเวลาปัจจุบัน: ${getCurrentThaiTime()}`, 'success');
+          elements.statusCard.className = "status-card success";
+          elements.statusTitle.textContent = "Ready to Check Out!";
+          elements.timeBox.textContent = `In: ${s.inTime} | Out: -`;
+          elements.actionBtn.textContent = "Check Out";
+          state.currentAction = "checkout";
+          elements.buttonContainer.classList.remove("hidden");
         } else {
-          showButton('checkin');
-          updateStatus('พร้อม Check In!', `เวลาปัจจุบัน: ${getCurrentThaiTime()}`, 'warning');
+          elements.statusCard.className = "status-card warning";
+          elements.statusTitle.textContent = "Ready to Check In!";
+          elements.timeBox.textContent = "In: - | Out: -";
+          elements.actionBtn.textContent = "Check In";
+          state.currentAction = "checkin";
+          elements.buttonContainer.classList.remove("hidden");
         }
       } catch (err) {
-        hideButton();
-        updateStatus('อยู่นอกพื้นที่สำนักงาน', err, 'error');
+        elements.statusCard.className = "status-card";
+        elements.statusTitle.textContent = "อยู่นอกพื้นที่สำนักงาน";
+        elements.timeBox.textContent = err;
+        elements.buttonContainer.classList.add("hidden");
       }
     }
 
-    function showButton(action) {
-      state.currentAction = action;
-      elements.buttonContainer.classList.remove('hidden');
-      elements.actionBtn.textContent = action === 'checkin' ? 'Check In' : 'Check Out';
-      elements.actionBtn.disabled = false;
-    }
-    function hideButton() {
-      elements.buttonContainer.classList.add('hidden');
-      state.currentAction = null;
-    }
-
+    // กดปุ่ม
     async function performAction() {
       if (state.isProcessing) return;
       state.isProcessing = true;
       elements.actionBtn.disabled = true;
-      updateStatus('กำลังบันทึก...', 'กรุณารอสักครู่', 'loading');
 
       try {
         const location = await getCurrentLocation();
-        const nowThai = getThaiDateTime();  // 26/11/2568 08:48 ← ถูกต้องแล้ว
+        const nowFull = getThaiDateTime();
+        const timeOnly = getCurrentThaiTime();
+        const displayDate = getThaiDisplayDate();
 
         await db.collection(CONFIG.COLLECTION_NAME).add({
           userId: state.lineUserId,
           displayName: state.lineDisplayName,
           action: state.currentAction,
-          date: getThaiDateOnly(),      // 26/11/2568
-          dateTime: nowThai,            // 26/11/2568 08:48
+          date: getThaiDateOnly(),
+          dateTime: nowFull,
           latitude: location.lat,
           longitude: location.lon,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        const actionText = state.currentAction === 'checkin' ? 'Check In' : 'Check Out';
+        const emoji = state.currentAction === "checkin" ? "Check In" : "Check Out";
+        const msg = `${emoji} ${state.lineDisplayName} - ${state.currentAction === "checkin" ? "Check In" : "Check Out"} Successful\n   ${displayDate} • ${timeOnly}`;
+
         if (liff.isInClient()) {
-          await liff.sendMessages([{ type: 'text', text: `${actionText} สำเร็จ\n${nowThai}` }]);
+          await liff.sendMessages([{ type: 'text', text: msg }]);
         }
 
-        updateStatus('สำเร็จ!', `${actionText} บันทึกแล้ว`, 'success');
-        setTimeout(() => liff.closeWindow(), 2000);
-
+        setTimeout(() => liff.closeWindow(), 1500);
       } catch (err) {
-        updateStatus('ไม่สำเร็จ', err, 'error');
+        alert("เกิดข้อผิดพลาด: " + err);
         elements.actionBtn.disabled = false;
         state.isProcessing = false;
       }
     }
 
-    elements.actionBtn.addEventListener('click', performAction);
+    // เริ่มต้น
+    elements.actionBtn.addEventListener("click", performAction);
 
     async function start() {
       const ok = await initLiff();
       if (ok) {
-        await checkLocationAndStatus();
-        setInterval(checkLocationAndStatus, 20000);
+        await updateUI();
+        setInterval(() => {
+          elements.currentTimeBox.textContent = `Current time: ${getCurrentThaiTime()}`;
+          updateUI();
+        }, 20000);
       }
     }
 
