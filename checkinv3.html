@@ -41,7 +41,7 @@
     }
     @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     .user-info { text-align: center; color: var(--gray-700); margin-bottom: 30px; font-size: 18px; font-weight: 500; }
-    .version { text-align: center; color: var(--gray-500); font-size: 12px; margin-top: 20px; user-select:: none; }
+    .version { text-align: center; color: var(--gray-500); font-size: 12px; margin-top: 20px; user-select: none; }
     .status-card {
       background: var(--gray-100);
       border-radius: 12px;
@@ -74,8 +74,6 @@
       margin-bottom: 15px;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .time-display { font-size: 13px; color: var(--gray-700); margin-top: 12px; padding: 12px; background: white; border-radius: 8px; border: 1px solid var(--gray-200); font-weight: 500; }
-    .instruction { font-size: 13px; color: var(--gray-700); margin-top: 10px; padding: 10px 12px; background: white; border-radius: 8px; border: 1px solid var(--gray-200); font-weight: 500; }
     .button-container { min-height: 60px; display: flex; justify-content: center; align-items: center; }
     .button-container.hidden { display: none; }
     button {
@@ -111,7 +109,7 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">V2.1 Location Lock & Time</div>
+    <div class="version">V2.1.1 Final Fix – Year</div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -119,54 +117,21 @@
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <script>
-    // ================== แก้เวลาไทยให้ถูกต้อง 100% ==================
-    // ใช้ Intl.DateTimeFormat ที่แม่นยำที่สุด (ไม่ว่ามือถือตั้งเวลายังไงก็ถูก)
-    const thFormatter = new Intl.DateTimeFormat('th-TH', {
-      timeZone: 'Asia/Bangkok',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-
-    const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', {
-      timeZone: 'Asia/Bangkok',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-
-    function getThaiNow() {
-      return new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' });
-    }
+    // ============ แก้ปีให้ถูกต้อง 100% (ไม่ +543 อีก) ============
+    const thOptions = { timeZone: 'Asia/Bangkok', hour12: false };
+    const thDateTimeFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit' });
 
     function getThaiDateTime() {
-      const date = new Date();
-      const parts = thFormatter.formatToParts(date);
-      const obj = {};
-      parts.forEach(p => obj[p.type] = p.value);
-      const buddhistYear = parseInt(obj.year) + 543;
-      return `${obj.day}/${obj.month}/${buddhistYear} ${obj.hour}:${obj.minute}`;
+      return thDateTimeFormatter.format(new Date());  // ได้เลยแบบ 26/11/2568 08:48
     }
 
     function getThaiDateOnly() {
-      const date = new Date();
-      const parts = thDateOnlyFormatter.formatToParts(date);
-      const obj = {};
-      parts.forEach(p => obj[p.type] = p.value);
-      const buddhistYear = parseInt(obj.year) + 543;
-      return `${obj.day}/${obj.month}/${buddhistYear}`;
+      return thDateOnlyFormatter.format(new Date());  // ได้ 26/11/2568
     }
 
     function getCurrentThaiTime() {
-      const date = new Date();
-      return date.toLocaleTimeString('th-TH', {
-        timeZone: 'Asia/Bangkok',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) + ' น.';
+      return new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
     }
     // ============================================================
 
@@ -195,13 +160,12 @@
               resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
             }
           },
-          err => reject(err.code === 3 ? "หมดเวลารอตำแหน่ง\nลองกดอีกครั้ง" : "ไม่สามารถอ่านตำแหน่งได้\nกรุณาเปิด GPS"),
+          () => reject("ไม่สามารถอ่านตำแหน่งได้\nกรุณาเปิด GPS และอนุญาตตำแหน่ง"),
           { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
         );
       });
     }
 
-    // Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
       authDomain: "time-attendance-807c5.firebaseapp.com",
@@ -307,14 +271,14 @@
 
       try {
         const location = await getCurrentLocation();
-        const nowThai = getThaiDateTime();   // เวลาไทยถูกต้อง 100%
+        const nowThai = getThaiDateTime();  // 26/11/2568 08:48 ← ถูกต้องแล้ว
 
         await db.collection(CONFIG.COLLECTION_NAME).add({
           userId: state.lineUserId,
           displayName: state.lineDisplayName,
           action: state.currentAction,
-          date: getThaiDateOnly(),
-          dateTime: nowThai,
+          date: getThaiDateOnly(),      // 26/11/2568
+          dateTime: nowThai,            // 26/11/2568 08:48
           latitude: location.lat,
           longitude: location.lon,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -322,17 +286,14 @@
 
         const actionText = state.currentAction === 'checkin' ? 'Check In' : 'Check Out';
         if (liff.isInClient()) {
-          await liff.sendMessages([{
-            type: 'text',
-            text: `${actionText} สำเร็จ\n${nowThai}`
-          }]);
+          await liff.sendMessages([{ type: 'text', text: `${actionText} สำเร็จ\n${nowThai}` }]);
         }
 
         updateStatus('สำเร็จ!', `${actionText} บันทึกแล้ว`, 'success');
         setTimeout(() => liff.closeWindow(), 2000);
 
       } catch (err) {
-        updateStatus('ไม่สำเร็จ', err.message || err, 'error');
+        updateStatus('ไม่สำเร็จ', err, 'error');
         elements.actionBtn.disabled = false;
         state.isProcessing = false;
       }
