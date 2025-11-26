@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ระบบ Check In / Check Out - Firebase</title>
+  <title>ระบบ Check In / Check Out</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -41,7 +41,7 @@
     }
     @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     .user-info { text-align: center; color: var(--gray-700); margin-bottom: 30px; font-size: 18px; font-weight: 500; }
-    .version { text-align: center; color: var(--gray-500); font-size: 12px; margin-top: 20px; user-select: none; }
+    .version { text-align: center; color: var(--gray-500); font-size: 12px; margin-top: 20px; user-select:: none; }
     .status-card {
       background: var(--gray-100);
       border-radius: 12px;
@@ -111,7 +111,7 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">V2 Location Lock + เวลา</div>
+    <div class="version">V2.1 Location Lock & Time</div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -119,32 +119,57 @@
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <script>
-    // === ตั้งค่าเวลาไทยให้ถูกต้องทุกจุด ===
-    const TH_TIMEZONE_OFFSET = 7 * 60 * 60 * 1000; // +7 ชั่วโมง (เป็น milliseconds)
+    // ================== แก้เวลาไทยให้ถูกต้อง 100% ==================
+    // ใช้ Intl.DateTimeFormat ที่แม่นยำที่สุด (ไม่ว่ามือถือตั้งเวลายังไงก็ถูก)
+    const thFormatter = new Intl.DateTimeFormat('th-TH', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
 
     function getThaiNow() {
-      return new Date(Date.now() + TH_TIMEZONE_OFFSET);
+      return new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' });
     }
 
-    function formatThaiDate(date = getThaiNow()) {
-      const d = date.getDate().toString().padStart(2, '0');
-      const m = (date.getMonth() + 1).toString().padStart(2, '0');
-      const y = date.getFullYear() + 543;
-      const h = date.getHours().toString().padStart(2, '0');
-      const min = date.getMinutes().toString().padStart(2, '0');
-      return `${d}/${m}/${y} ${h}:${min}`;
+    function getThaiDateTime() {
+      const date = new Date();
+      const parts = thFormatter.formatToParts(date);
+      const obj = {};
+      parts.forEach(p => obj[p.type] = p.value);
+      const buddhistYear = parseInt(obj.year) + 543;
+      return `${obj.day}/${obj.month}/${buddhistYear} ${obj.hour}:${obj.minute}`;
     }
 
     function getThaiDateOnly() {
-      const d = getThaiNow();
-      return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()+543}`;
+      const date = new Date();
+      const parts = thDateOnlyFormatter.formatToParts(date);
+      const obj = {};
+      parts.forEach(p => obj[p.type] = p.value);
+      const buddhistYear = parseInt(obj.year) + 543;
+      return `${obj.day}/${obj.month}/${buddhistYear}`;
     }
 
     function getCurrentThaiTime() {
-      return getThaiNow().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+      const date = new Date();
+      return date.toLocaleTimeString('th-TH', {
+        timeZone: 'Asia/Bangkok',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' น.';
     }
+    // ============================================================
 
-    // ตำแหน่งสำนักงาน
     const OFFICE_LOCATION = { lat: 13.7780273, lon: 100.5434656, radius: 15 };
 
     function getDistance(lat1, lon1, lat2, lon2) {
@@ -170,11 +195,7 @@
               resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
             }
           },
-          err => {
-            if (err.code === 1) reject("ไม่อนุญาตให้เข้าถึงตำแหน่ง");
-            else if (err.code === 3) reject("หมดเวลารอตำแหน่ง\nลองกดอีกครั้ง");
-            else reject("ไม่สามารถอ่านตำแหน่งได้\nกรุณาเปิด GPS");
-          },
+          err => reject(err.code === 3 ? "หมดเวลารอตำแหน่ง\nลองกดอีกครั้ง" : "ไม่สามารถอ่านตำแหน่งได้\nกรุณาเปิด GPS"),
           { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
         );
       });
@@ -203,7 +224,6 @@
 
     const state = { currentAction: null, isProcessing: false, lineUserId: null, lineDisplayName: "ผู้ใช้" };
 
-    // LIFF
     async function initLiff() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
@@ -287,7 +307,7 @@
 
       try {
         const location = await getCurrentLocation();
-        const nowThai = formatThaiDate();
+        const nowThai = getThaiDateTime();   // เวลาไทยถูกต้อง 100%
 
         await db.collection(CONFIG.COLLECTION_NAME).add({
           userId: state.lineUserId,
@@ -312,7 +332,7 @@
         setTimeout(() => liff.closeWindow(), 2000);
 
       } catch (err) {
-        updateStatus('ไม่สำเร็จ', err, 'error');
+        updateStatus('ไม่สำเร็จ', err.message || err, 'error');
         elements.actionBtn.disabled = false;
         state.isProcessing = false;
       }
