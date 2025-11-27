@@ -109,7 +109,7 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">Pilot Release V0.1.2 - Powered by DesignOps</div>
+    <div class="version">Pilot Release V0.1.3 - Powered by DesignOps</div>
   </div>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -156,7 +156,7 @@
       return new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }) + ' น.';
     }
     // ============================================================
-    const OFFICE_LOCATION = { lat: 13.7780273, lon: 100.5434656, radius: 10 };
+    const OFFICE_LOCATION = { lat: 13.7780273, lon: 100.5434656, radius: 15 };
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const toRad = x => x * Math.PI / 180;
@@ -291,8 +291,14 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         const actionText = state.currentAction === 'checkin' ? 'Check In' : 'Check Out';
+        const emoji = state.currentAction === 'checkin' ? '✅' : '☑️';
+        const timeEmoji = state.currentAction === 'checkin' ? '🕣' : '🕠';
+        const timeOnly = getFormattedTime();
         if (liff.isInClient()) {
-          await liff.sendMessages([{ type: 'text', text: `${actionText} สำเร็จ\n${nowThai}` }]);
+          await liff.sendMessages([{ 
+            type: 'text', 
+            text: `${emoji} ${state.lineDisplayName} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}\n-------`
+          }]);
         }
         updateStatus('Success!', `${actionText} recorded`, 'success');
         setTimeout(() => liff.closeWindow(), 2000);
