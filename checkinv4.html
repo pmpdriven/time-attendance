@@ -110,17 +110,17 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">Pilot Release V0.1.6 - Powered by DesignOps</div>
+    <div class="version">Pilot Release V0.2.0 - Powered by DesignOps</div>
   </div>
-
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
+    // ============ ฟังก์ชันวันเวลา ============
     const thOptions = { timeZone: 'Asia/Bangkok', hour12: false };
     const thDateTimeFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
     const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit' });
-
+    
     function getGreeting() {
       const hour = new Date().getHours();
       if (hour >= 5 && hour < 12) return 'Morning';
@@ -128,6 +128,7 @@
       if (hour >= 17 && hour < 21) return 'Evening';
       return 'Night';
     }
+    
     function getFormattedDate() {
       const date = new Date();
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -137,16 +138,25 @@
       const y = date.getFullYear();
       return `${day} ${d}/${m}/${y}`;
     }
+    
     function getFormattedTime() {
       const date = new Date();
       const h = String(date.getHours()).padStart(2, '0');
       const min = String(date.getMinutes()).padStart(2, '0');
       return `${h}:${min}`;
     }
-    function getThaiDateTime() { return thDateTimeFormatter.format(new Date()); }
-    function getThaiDateOnly() { return thDateOnlyFormatter.format(new Date()); }
+    
+    function getThaiDateTime() {
+      return thDateTimeFormatter.format(new Date());
+    }
+    
+    function getThaiDateOnly() {
+      return thDateOnlyFormatter.format(new Date());
+    }
 
+    // ============ ฟังก์ชัน GPS ============
     const OFFICE_LOCATION = { lat: 13.7780273, lon: 100.5434656, radius: 10 };
+    
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const toRad = x => x * Math.PI / 180;
@@ -156,6 +166,7 @@
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     }
+    
     async function getCurrentLocation() {
       return new Promise((resolve, reject) => {
         if (!navigator.geolocation) return reject("GPS not supported");
@@ -174,6 +185,7 @@
       });
     }
 
+    // ============ Firebase Config ============
     const firebaseConfig = {
       apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
       authDomain: "time-attendance-807c5.firebaseapp.com",
@@ -184,97 +196,76 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const CONFIG = { LIFF_ID: "2008403464-kaXOK95X", COLLECTION_NAME: "attendance" };
 
+    const CONFIG = { LIFF_ID: "2008403464-kaXOK95X" };
+    
     const elements = {
       actionBtn: document.getElementById("actionBtn"),
       buttonContainer: document.getElementById("buttonContainer"),
       statusCard: document.getElementById("statusCard"),
       userInfo: document.getElementById("userInfo")
     };
-
-    const state = {
-      currentAction: null,
-      isProcessing: false,
-      lineUserId: null,
-      lineDisplayName: "User",
-      memberData: null,
-      userTeams: [] // ทีมที่ผู้ใช้สังกัด
+    
+    const state = { 
+      currentAction: null, 
+      isProcessing: false, 
+      lineUserId: null, 
+      userDisplayName: "User",
+      memberData: null
     };
 
+    // ============ ดึงข้อมูล Member จาก Firebase ============
+    async function getMemberData(userId) {
+      try {
+        const docRef = db.collection('members').doc(userId);
+        const doc = await docRef.get();
+        
+        if (doc.exists) {
+          return doc.data();
+        }
+        return null;
+      } catch (error) {
+        console.error("Error getting member data:", error);
+        return null;
+      }
+    }
+
+    // ============ LIFF Init ============
     async function initLiff() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
-        if (!liff.isLoggedIn()) { liff.login(); return false; }
+        if (!liff.isLoggedIn()) { 
+          liff.login(); 
+          return false; 
+        }
+        
         const profile = await liff.getProfile();
         state.lineUserId = profile.userId;
-        state.lineDisplayName = profile.displayName || "User";
-        elements.userInfo.textContent = `${getGreeting()}, ${state.lineDisplayName}`;
+        
+        // ดึงข้อมูล member จาก Firebase
+        state.memberData = await getMemberData(state.lineUserId);
+        
+        if (state.memberData && state.memberData.nickname) {
+          state.userDisplayName = state.memberData.nickname;
+        } else if (state.memberData && state.memberData.firstName) {
+          state.userDisplayName = state.memberData.firstName;
+        } else {
+          state.userDisplayName = profile.displayName || "User";
+        }
+        
+        elements.userInfo.textContent = `${getGreeting()}, ${state.userDisplayName}`;
         return true;
       } catch (e) {
+        console.error("LIFF Init Error:", e);
+        // Test Mode
         state.lineUserId = "TEST_" + Date.now();
-        state.lineDisplayName = "Test User";
-        elements.userInfo.textContent = `${getGreeting()}, ${state.lineDisplayName} (Test)`;
+        state.userDisplayName = "Test User";
+        elements.userInfo.textContent = `${getGreeting()}, ${state.userDisplayName} (Test)`;
         return true;
       }
     }
 
-    // ดึงข้อมูล member + ทีมที่สังกัด
-    async function loadMemberData() {
-      const memberDoc = await db.collection("members").doc(state.lineUserId).get();
-      if (!memberDoc.exists) {
-        throw "คุณยังไม่ได้ลงทะเบียนในระบบ\nกรุณาติดต่อผู้ดูแล";
-      }
-      state.memberData = memberDoc.data();
-      const teamIds = state.memberData.teamIds || [];
-      state.userTeams = [];
-
-      for (const teamId of teamIds) {
-        const teamDoc = await db.collection("teams").doc(teamId).get();
-        if (teamDoc.exists) {
-          const data = teamDoc.data();
-          if (data.memberIds && data.memberIds.includes(state.lineUserId)) {
-            state.userTeams.push({ id: teamId, name: data.name });
-          }
-        }
-      }
-
-      if (state.userTeams.length === 0) {
-        throw "คุณไม่มีสิทธิ์ Check-in/out ในทีมใด ๆ\nกรุณาติดต่อผู้ดูแล";
-      }
-    }
-
-    // เลือกทีม (แสดงครั้งแรก หรือถ้ายังไม่มีใน localStorage)
-    async function chooseTeam() {
-      return new Promise((resolve) => {
-        let selected = localStorage.getItem("selectedTeamId");
-        if (selected && state.userTeams.some(t => t.id === selected)) {
-          resolve(selected);
-          return;
-        }
-
-        const buttons = state.userTeams.map(t =>
-          `<button style="display:block;width:100%;padding:16px;margin:8px 0;background:#B8F416;color:#111;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;" onclick="selectTeam('${t.id}')">${t.name}</button>`
-        ).join('');
-
-        const overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-        overlay.innerHTML = `
-          <div style="background:white;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center;">
-            <h3 style="margin-bottom:20px;color:#111;">เลือกทีมของคุณ</h3>
-            ${buttons}
-          </div>
-        `;
-        document.body.appendChild(overlay);
-
-        window.selectTeam = (teamId) => {
-          localStorage.setItem("selectedTeamId", teamId);
-          document.body.removeChild(overlay);
-          resolve(teamId);
-        };
-      });
-    }
-
+    // ============ UI Functions ============
     function updateStatus(title, msg = '', type = 'info') {
       elements.statusCard.className = `status-card ${type}`;
       elements.statusCard.innerHTML = `
@@ -283,44 +274,56 @@
       `;
     }
 
+    // ============ ตรวจสอบสถานะวันนี้ ============
     async function getTodayStatus() {
       const today = getThaiDateOnly();
-      const snap = await db.collection(CONFIG.COLLECTION_NAME)
+      const snap = await db.collection('attendance')
         .where('userId', '==', state.lineUserId)
         .where('date', '==', today)
         .get();
+      
       let checkedIn = false, checkedOut = false, inTime = '', outTime = '';
+      
       snap.forEach(doc => {
         const d = doc.data();
-        if (d.action === 'checkin') { checkedIn = true; inTime = d.dateTime; }
-        if (d.action === 'checkout') { checkedOut = true; outTime = d.dateTime; }
+        if (d.action === 'checkin') { 
+          checkedIn = true; 
+          inTime = d.dateTime; 
+        }
+        if (d.action === 'checkout') { 
+          checkedOut = true; 
+          outTime = d.dateTime; 
+        }
       });
+      
       return { checkedIn, checkedOut, inTime, outTime };
     }
 
+    // ============ ตรวจสอบ Location และ Status ============
     async function checkLocationAndStatus() {
-      updateStatus('กำลังตรวจสอบสิทธิ์...', 'กรุณารอสักครู่', 'loading');
+      updateStatus('Checking location...', 'Please wait', 'loading');
+      elements.userInfo.textContent = `${getGreeting()}, ${state.userDisplayName}`;
+      
       try {
-        await loadMemberData(); // ตรวจสอบ member + teams
         await getCurrentLocation();
-
         const s = await getTodayStatus();
+        
         if (s.checkedIn && s.checkedOut) {
           hideButton();
           const inTimeOnly = s.inTime.split(' ')[1];
           const outTimeOnly = s.outTime.split(' ')[1];
-          updateStatus('วันนี้เสร็จสิ้นแล้ว', `${getFormattedDate()}<br><span class="time-badge">In: ${inTimeOnly} | Out: ${outTimeOnly}</span>`, 'completed');
+          updateStatus('Today completed', `${getFormattedDate()}<br><span class="time-badge">In: ${inTimeOnly} | Out: ${outTimeOnly}</span>`, 'completed');
         } else if (s.checkedIn) {
           showButton('checkout');
           const inTimeOnly = s.inTime.split(' ')[1];
-          updateStatus('พร้อม Check Out', `${getFormattedDate()}<br>In: ${inTimeOnly}<br><span class="time-badge">เวลา: ${getFormattedTime()}</span>`, 'success');
+          updateStatus('Ready to Check Out!', `${getFormattedDate()}<br>In: ${inTimeOnly} | Out: -<br><span class="time-badge">Current time: ${getFormattedTime()}</span>`, 'success');
         } else {
           showButton('checkin');
-          updateStatus('พร้อม Check In', `${getFormattedDate()}<br><span class="time-badge">เวลา: ${getFormattedTime()}</span>`, 'warning');
+          updateStatus('Ready to Check In!', `${getFormattedDate()}<br><span class="time-badge">Current time: ${getFormattedTime()}</span>`, 'warning');
         }
       } catch (err) {
         hideButton();
-        updateStatus('ไม่มีสิทธิ์เข้าใช้งาน', err.toString(), 'error');
+        updateStatus('Outside office area', err, 'error');
       }
     }
 
@@ -330,36 +333,27 @@
       elements.actionBtn.textContent = action === 'checkin' ? 'Check In' : 'Check Out';
       elements.actionBtn.disabled = false;
     }
+    
     function hideButton() {
       elements.buttonContainer.classList.add('hidden');
       state.currentAction = null;
     }
 
+    // ============ บันทึก Check In/Out ============
     async function performAction() {
       if (state.isProcessing) return;
       state.isProcessing = true;
       elements.actionBtn.disabled = true;
-      updateStatus('กำลังบันทึก...', 'กรุณารอสักครู่', 'loading');
-
+      updateStatus('Saving...', 'Please wait', 'loading');
+      
       try {
         const location = await getCurrentLocation();
-        const selectedTeamId = await chooseTeam(); // บังคับเลือกทีมทุกครั้งก่อนบันทึก
-        const teamDoc = await db.collection("teams").doc(selectedTeamId).get();
-        if (!teamDoc.exists || !teamDoc.data().memberIds.includes(state.lineUserId)) {
-          throw "คุณไม่มีสิทธิ์ในทีมนี้";
-        }
-
-        const fullName = state.memberData ? 
-          `${state.memberData.firstName || ''} ${state.memberData.lastName || ''}`.trim() || state.lineDisplayName 
-          : state.lineDisplayName;
-
         const nowThai = getThaiDateTime();
-        await db.collection(CONFIG.COLLECTION_NAME).add({
+        
+        // บันทึกลง attendance collection
+        await db.collection('attendance').add({
           userId: state.lineUserId,
-          displayName: state.lineDisplayName,
-          fullName: fullName,
-          teamId: selectedTeamId,
-          teamName: teamDoc.data().name,
+          displayName: state.userDisplayName,
           action: state.currentAction,
           date: getThaiDateOnly(),
           dateTime: nowThai,
@@ -367,19 +361,24 @@
           longitude: location.lon,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-
+        
         const actionText = state.currentAction === 'checkin' ? 'Check In' : 'Check Out';
+        const emoji = state.currentAction === 'checkin' ? '✅' : '☑️';
+        const timeEmoji = state.currentAction === 'checkin' ? '🕣' : '🕠';
+        const timeOnly = getFormattedTime();
+        
+        // ส่งข้อความ LINE
         if (liff.isInClient()) {
-          await liff.sendMessages([{
-            type: 'text',
-            text: `Check In/Out สำเร็จ\n${state.lineDisplayName} (${fullName})\nทีม: ${teamDoc.data().name}\n${getFormattedDate()} • ${getFormattedTime()}`
+          await liff.sendMessages([{ 
+            type: 'text', 
+            text: `${emoji} ${state.userDisplayName} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}`
           }]);
         }
-
-        updateStatus('สำเร็จ!', `${actionText} บันทึกแล้ว`, 'success');
+        
+        updateStatus('Success!', `${actionText} recorded`, 'success');
         setTimeout(() => liff.closeWindow(), 2000);
       } catch (err) {
-        updateStatus('เกิดข้อผิดพลาด', err.toString(), 'error');
+        updateStatus('Failed', err, 'error');
         elements.actionBtn.disabled = false;
         state.isProcessing = false;
       }
@@ -387,6 +386,7 @@
 
     elements.actionBtn.addEventListener('click', performAction);
 
+    // ============ Start Application ============
     async function start() {
       const ok = await initLiff();
       if (ok) {
@@ -394,6 +394,7 @@
         setInterval(checkLocationAndStatus, 20000);
       }
     }
+    
     start();
   </script>
 </body>
