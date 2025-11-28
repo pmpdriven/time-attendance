@@ -40,7 +40,28 @@
       animation: slideUp 0.5s ease-out;
     }
     @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-    .user-info { text-align: center; color: var(--gray-700); margin-bottom: 30px; font-size: 18px; font-weight: 500; }
+    .user-info { 
+      text-align: center; 
+      color: var(--gray-700); 
+      margin-bottom: 10px; 
+      font-size: 18px; 
+      font-weight: 500; 
+    }
+    .user-details {
+      text-align: center;
+      color: var(--gray-500);
+      font-size: 14px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .user-details .badge {
+      display: inline-block;
+      background: var(--gray-100);
+      padding: 4px 12px;
+      border-radius: 12px;
+      margin: 2px;
+      font-size: 12px;
+    }
     .version { text-align: center; color: var(--gray-500); font-size: 12px; margin-top: 20px; user-select: none; }
     .status-card {
       background: var(--gray-100);
@@ -103,6 +124,7 @@
 <body>
   <div class="container">
     <div class="user-info" id="userInfo">Loading...</div>
+    <div class="user-details" id="userDetails"></div>
     <div id="statusCard" class="status-card loading">
       <div class="spinner"></div>
       <div class="status-text">Initializing system...</div>
@@ -110,23 +132,23 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">Pilot Release V0.2.0 - Powered by DesignOps</div>
+    <div class="version">Pilot Release V0.2.0 - Enhanced Security</div>
   </div>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
-    // ============ ฟังก์ชันวันเวลา ============
+    // ============ Date/Time Functions ============
     const thOptions = { timeZone: 'Asia/Bangkok', hour12: false };
     const thDateTimeFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
     const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit' });
     
     function getGreeting() {
       const hour = new Date().getHours();
-      if (hour >= 5 && hour < 12) return 'Morning';
-      if (hour >= 12 && hour < 17) return 'Afternoon';
-      if (hour >= 17 && hour < 21) return 'Evening';
-      return 'Night';
+      if (hour >= 5 && hour < 12) return 'Good Morning';
+      if (hour >= 12 && hour < 17) return 'Good Afternoon';
+      if (hour >= 17 && hour < 21) return 'Good Evening';
+      return 'Good Night';
     }
     
     function getFormattedDate() {
@@ -154,8 +176,8 @@
       return thDateOnlyFormatter.format(new Date());
     }
 
-    // ============ ฟังก์ชัน GPS ============
-    const OFFICE_LOCATION = { lat: 13.7780273, lon: 100.5434656, radius: 10 };
+    // ============ GPS Functions ============
+    const OFFICE_LOCATION = { lat: 13.617040, lon: 100.523087, radius: 300 };
     
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371000;
@@ -185,7 +207,7 @@
       });
     }
 
-    // ============ Firebase Config ============
+    // ============ Firebase Configuration ============
     const firebaseConfig = {
       apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
       authDomain: "time-attendance-807c5.firebaseapp.com",
@@ -197,40 +219,35 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const CONFIG = { LIFF_ID: "2008403464-kaXOK95X" };
-    
+    // ============ Configuration ============
+    const CONFIG = { 
+      LIFF_ID: "2008403464-kaXOK95X", 
+      COLLECTION_ATTENDANCE: "attendance",
+      COLLECTION_MEMBERS: "members",
+      COLLECTION_TEAMS: "teams"
+    };
+
+    // ============ DOM Elements ============
     const elements = {
       actionBtn: document.getElementById("actionBtn"),
       buttonContainer: document.getElementById("buttonContainer"),
       statusCard: document.getElementById("statusCard"),
-      userInfo: document.getElementById("userInfo")
+      userInfo: document.getElementById("userInfo"),
+      userDetails: document.getElementById("userDetails")
     };
-    
+
+    // ============ Application State ============
     const state = { 
       currentAction: null, 
       isProcessing: false, 
       lineUserId: null, 
-      userDisplayName: "User",
-      memberData: null
+      lineDisplayName: "User",
+      memberData: null,
+      teamData: null,
+      hasAccess: false
     };
 
-    // ============ ดึงข้อมูล Member จาก Firebase ============
-    async function getMemberData(userId) {
-      try {
-        const docRef = db.collection('members').doc(userId);
-        const doc = await docRef.get();
-        
-        if (doc.exists) {
-          return doc.data();
-        }
-        return null;
-      } catch (error) {
-        console.error("Error getting member data:", error);
-        return null;
-      }
-    }
-
-    // ============ LIFF Init ============
+    // ============ LIFF Authentication ============
     async function initLiff() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
@@ -238,34 +255,88 @@
           liff.login(); 
           return false; 
         }
-        
         const profile = await liff.getProfile();
         state.lineUserId = profile.userId;
-        
-        // ดึงข้อมูล member จาก Firebase
-        state.memberData = await getMemberData(state.lineUserId);
-        
-        if (state.memberData && state.memberData.nickname) {
-          state.userDisplayName = state.memberData.nickname;
-        } else if (state.memberData && state.memberData.firstName) {
-          state.userDisplayName = state.memberData.firstName;
-        } else {
-          state.userDisplayName = profile.displayName || "User";
-        }
-        
-        elements.userInfo.textContent = `${getGreeting()}, ${state.userDisplayName}`;
+        state.lineDisplayName = profile.displayName || "User";
         return true;
       } catch (e) {
-        console.error("LIFF Init Error:", e);
-        // Test Mode
-        state.lineUserId = "TEST_" + Date.now();
-        state.userDisplayName = "Test User";
-        elements.userInfo.textContent = `${getGreeting()}, ${state.userDisplayName} (Test)`;
+        console.warn("LIFF init failed, using test mode:", e);
+        state.lineUserId = "U17814d04672b1adfcd8fe146d8bcb343"; // Test User ID
+        state.lineDisplayName = "Test User";
         return true;
       }
     }
 
-    // ============ UI Functions ============
+    // ============ Member Access Control ============
+    async function checkMemberAccess() {
+      try {
+        // ตรวจสอบว่า userId นี้มีอยู่ใน members collection หรือไม่
+        const memberDoc = await db.collection(CONFIG.COLLECTION_MEMBERS).doc(state.lineUserId).get();
+        
+        if (!memberDoc.exists) {
+          state.hasAccess = false;
+          return {
+            hasAccess: false,
+            message: "Access Denied",
+            detail: "You are not registered in the system.\nPlease contact HR department."
+          };
+        }
+
+        // ดึงข้อมูล member
+        state.memberData = memberDoc.data();
+        state.hasAccess = true;
+
+        // ดึงข้อมูล teams ที่ member สังกัด
+        if (state.memberData.teamIds && state.memberData.teamIds.length > 0) {
+          const teamPromises = state.memberData.teamIds.map(teamId => 
+            db.collection(CONFIG.COLLECTION_TEAMS).doc(teamId).get()
+          );
+          const teamDocs = await Promise.all(teamPromises);
+          state.teamData = teamDocs
+            .filter(doc => doc.exists)
+            .map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        return {
+          hasAccess: true,
+          message: "Access Granted",
+          memberData: state.memberData,
+          teamData: state.teamData
+        };
+      } catch (error) {
+        console.error("Error checking member access:", error);
+        state.hasAccess = false;
+        return {
+          hasAccess: false,
+          message: "System Error",
+          detail: "Cannot verify your access rights.\nPlease try again later."
+        };
+      }
+    }
+
+    // ============ Display Member Information ============
+    function displayMemberInfo() {
+      if (!state.memberData) return;
+
+      const { firstName, lastName, nickname, position, phone } = state.memberData;
+      const displayName = nickname || firstName || state.lineDisplayName;
+      
+      elements.userInfo.textContent = `${getGreeting()}, ${displayName}`;
+      
+      let detailsHTML = '';
+      if (position) {
+        detailsHTML += `<span class="badge">👤 ${position}</span>`;
+      }
+      if (state.teamData && state.teamData.length > 0) {
+        state.teamData.forEach(team => {
+          detailsHTML += `<span class="badge">🏢 ${team.name}</span>`;
+        });
+      }
+      
+      elements.userDetails.innerHTML = detailsHTML;
+    }
+
+    // ============ Status Display ============
     function updateStatus(title, msg = '', type = 'info') {
       elements.statusCard.className = `status-card ${type}`;
       elements.statusCard.innerHTML = `
@@ -274,16 +345,15 @@
       `;
     }
 
-    // ============ ตรวจสอบสถานะวันนี้ ============
+    // ============ Get Today's Attendance Status ============
     async function getTodayStatus() {
       const today = getThaiDateOnly();
-      const snap = await db.collection('attendance')
+      const snap = await db.collection(CONFIG.COLLECTION_ATTENDANCE)
         .where('userId', '==', state.lineUserId)
         .where('date', '==', today)
         .get();
       
       let checkedIn = false, checkedOut = false, inTime = '', outTime = '';
-      
       snap.forEach(doc => {
         const d = doc.data();
         if (d.action === 'checkin') { 
@@ -299,84 +369,130 @@
       return { checkedIn, checkedOut, inTime, outTime };
     }
 
-    // ============ ตรวจสอบ Location และ Status ============
+    // ============ Check Location and Status ============
     async function checkLocationAndStatus() {
-      updateStatus('Checking location...', 'Please wait', 'loading');
-      elements.userInfo.textContent = `${getGreeting()}, ${state.userDisplayName}`;
+      updateStatus('Verifying access...', 'Please wait', 'loading');
       
       try {
+        // ขั้นตอนที่ 1: ตรวจสอบสิทธิ์การเข้าถึง
+        const accessResult = await checkMemberAccess();
+        
+        if (!accessResult.hasAccess) {
+          hideButton();
+          updateStatus(accessResult.message, accessResult.detail, 'error');
+          elements.userInfo.textContent = `${getGreeting()}, ${state.lineDisplayName}`;
+          return;
+        }
+
+        // แสดงข้อมูล member
+        displayMemberInfo();
+
+        // ขั้นตอนที่ 2: ตรวจสอบ GPS
+        updateStatus('Checking location...', 'Please wait', 'loading');
         await getCurrentLocation();
+        
+        // ขั้นตอนที่ 3: ตรวจสอบสถานะการลงเวลา
         const s = await getTodayStatus();
         
         if (s.checkedIn && s.checkedOut) {
           hideButton();
           const inTimeOnly = s.inTime.split(' ')[1];
           const outTimeOnly = s.outTime.split(' ')[1];
-          updateStatus('Today completed', `${getFormattedDate()}<br><span class="time-badge">In: ${inTimeOnly} | Out: ${outTimeOnly}</span>`, 'completed');
+          updateStatus(
+            'Today Completed', 
+            `${getFormattedDate()}<br><span class="time-badge">In: ${inTimeOnly} | Out: ${outTimeOnly}</span>`, 
+            'completed'
+          );
         } else if (s.checkedIn) {
           showButton('checkout');
           const inTimeOnly = s.inTime.split(' ')[1];
-          updateStatus('Ready to Check Out!', `${getFormattedDate()}<br>In: ${inTimeOnly} | Out: -<br><span class="time-badge">Current time: ${getFormattedTime()}</span>`, 'success');
+          updateStatus(
+            'Ready to Check Out!', 
+            `${getFormattedDate()}<br>In: ${inTimeOnly} | Out: -<br><span class="time-badge">Current time: ${getFormattedTime()}</span>`, 
+            'success'
+          );
         } else {
           showButton('checkin');
-          updateStatus('Ready to Check In!', `${getFormattedDate()}<br><span class="time-badge">Current time: ${getFormattedTime()}</span>`, 'warning');
+          updateStatus(
+            'Ready to Check In!', 
+            `${getFormattedDate()}<br><span class="time-badge">Current time: ${getFormattedTime()}</span>`, 
+            'warning'
+          );
         }
       } catch (err) {
         hideButton();
-        updateStatus('Outside office area', err, 'error');
+        updateStatus('Outside Office Area', err, 'error');
       }
     }
 
+    // ============ Button Control ============
     function showButton(action) {
       state.currentAction = action;
       elements.buttonContainer.classList.remove('hidden');
       elements.actionBtn.textContent = action === 'checkin' ? 'Check In' : 'Check Out';
       elements.actionBtn.disabled = false;
     }
-    
+
     function hideButton() {
       elements.buttonContainer.classList.add('hidden');
       state.currentAction = null;
     }
 
-    // ============ บันทึก Check In/Out ============
+    // ============ Perform Check In/Out Action ============
     async function performAction() {
       if (state.isProcessing) return;
+      if (!state.hasAccess) {
+        updateStatus('Access Denied', 'You do not have permission to use this system', 'error');
+        return;
+      }
+
       state.isProcessing = true;
       elements.actionBtn.disabled = true;
       updateStatus('Saving...', 'Please wait', 'loading');
-      
+
       try {
         const location = await getCurrentLocation();
         const nowThai = getThaiDateTime();
         
-        // บันทึกลง attendance collection
-        await db.collection('attendance').add({
+        // สร้างข้อมูลที่จะบันทึก - ใช้ข้อมูลจาก memberData
+        const attendanceData = {
           userId: state.lineUserId,
-          displayName: state.userDisplayName,
+          displayName: state.memberData.nickname || state.memberData.firstName || state.lineDisplayName,
           action: state.currentAction,
           date: getThaiDateOnly(),
           dateTime: nowThai,
           latitude: location.lat,
           longitude: location.lon,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
+        };
+
+        // บันทึกลง Firestore
+        await db.collection(CONFIG.COLLECTION_ATTENDANCE).add(attendanceData);
+
+        // ส่งข้อความแจ้งเตือนใน Line
         const actionText = state.currentAction === 'checkin' ? 'Check In' : 'Check Out';
         const emoji = state.currentAction === 'checkin' ? '✅' : '☑️';
         const timeEmoji = state.currentAction === 'checkin' ? '🕣' : '🕠';
         const timeOnly = getFormattedTime();
-        
-        // ส่งข้อความ LINE
+        const displayName = state.memberData.nickname || state.memberData.firstName || state.lineDisplayName;
+        const position = state.memberData.position ? ` (${state.memberData.position})` : '';
+
         if (liff.isInClient()) {
           await liff.sendMessages([{ 
             type: 'text', 
-            text: `${emoji} ${state.userDisplayName} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}`
+            text: `${emoji} ${displayName}${position} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}`
           }]);
         }
-        
+
         updateStatus('Success!', `${actionText} recorded`, 'success');
-        setTimeout(() => liff.closeWindow(), 2000);
+        setTimeout(() => {
+          if (liff.isInClient()) {
+            liff.closeWindow();
+          } else {
+            checkLocationAndStatus(); // รีเฟรชสถานะใหม่
+          }
+        }, 2000);
+
       } catch (err) {
         updateStatus('Failed', err, 'error');
         elements.actionBtn.disabled = false;
@@ -384,17 +500,19 @@
       }
     }
 
+    // ============ Event Listeners ============
     elements.actionBtn.addEventListener('click', performAction);
 
-    // ============ Start Application ============
+    // ============ Application Start ============
     async function start() {
       const ok = await initLiff();
       if (ok) {
         await checkLocationAndStatus();
-        setInterval(checkLocationAndStatus, 20000);
+        // Auto-refresh every 30 seconds
+        setInterval(checkLocationAndStatus, 30000);
       }
     }
-    
+
     start();
   </script>
 </body>
