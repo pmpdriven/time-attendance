@@ -39,7 +39,10 @@
       width: 100%;
       animation: slideUp 0.5s ease-out;
     }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { 
+      from { opacity: 0; transform: translateY(30px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
     .user-info { 
       text-align: center; 
       color: var(--gray-700); 
@@ -62,7 +65,13 @@
       margin: 2px;
       font-size: 12px;
     }
-    .version { text-align: center; color: var(--gray-500); font-size: 12px; margin-top: 20px; user-select: none; }
+    .version { 
+      text-align: center; 
+      color: var(--gray-500); 
+      font-size: 12px; 
+      margin-top: 20px; 
+      user-select: none; 
+    }
     .status-card {
       background: var(--gray-100);
       border-radius: 12px;
@@ -77,15 +86,50 @@
       margin-bottom: 25px;
       border: 1px solid var(--gray-200);
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .status-card.loading { background: #f6ffed; border-color: var(--primary-light); }
-    .status-card.success { background: #d9f7be; border-color: var(--success); }
-    .status-card.warning { background: #fffbe6; border-color: var(--warning); }
-    .status-card.error { background: #fff1f0; border-color: var(--danger); }
-    .status-card.completed { background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%); border-color: var(--primary); }
-    .status-text { font-size: 16px; color: var(--gray-700); font-weight: 400; line-height: 1.6; }
-    .status-title { font-size: 20px; color: var(--gray-900); font-weight: 600; margin-bottom: 10px; }
-    .time-badge { background: rgba(160, 217, 17, 0.15); padding: 8px 16px; border-radius: 8px; display: inline-block; font-weight: 500; margin-top: 5px; }
+    @keyframes fadeIn { 
+      from { opacity: 0; } 
+      to { opacity: 1; } 
+    }
+    .status-card.loading { 
+      background: #f6ffed; 
+      border-color: var(--primary-light); 
+    }
+    .status-card.success { 
+      background: #d9f7be; 
+      border-color: var(--success); 
+    }
+    .status-card.warning { 
+      background: #fffbe6; 
+      border-color: var(--warning); 
+    }
+    .status-card.error { 
+      background: #fff1f0; 
+      border-color: var(--danger); 
+    }
+    .status-card.completed { 
+      background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%); 
+      border-color: var(--primary); 
+    }
+    .status-text { 
+      font-size: 16px; 
+      color: var(--gray-700); 
+      font-weight: 400; 
+      line-height: 1.6; 
+    }
+    .status-title { 
+      font-size: 20px; 
+      color: var(--gray-900); 
+      font-weight: 600; 
+      margin-bottom: 10px; 
+    }
+    .time-badge { 
+      background: rgba(160, 217, 17, 0.15); 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      display: inline-block; 
+      font-weight: 500; 
+      margin-top: 5px; 
+    }
     .spinner {
       border: 3px solid var(--gray-200);
       border-top: 3px solid var(--primary);
@@ -95,9 +139,19 @@
       animation: spin 1s linear infinite;
       margin-bottom: 15px;
     }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .button-container { min-height: 60px; display: flex; justify-content: center; align-items: center; }
-    .button-container.hidden { display: none; }
+    @keyframes spin { 
+      0% { transform: rotate(0deg); } 
+      100% { transform: rotate(360deg); } 
+    }
+    .button-container { 
+      min-height: 60px; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+    }
+    .button-container.hidden { 
+      display: none; 
+    }
     button {
       background: #B8F416;
       color: #111827;
@@ -112,9 +166,15 @@
       box-shadow: 0 4px 12px rgba(184, 244, 22, 0.3);
       min-width: 200px;
     }
-    button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5); background: #a0d911; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    button.checkout { background: #B8F416; }
+    button:hover:not(:disabled) { 
+      transform: translateY(-2px); 
+      box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5); 
+      background: #a0d911; 
+    }
+    button:disabled { 
+      opacity: 0.6; 
+      cursor: not-allowed; 
+    }
     @media (max-width: 480px) {
       .container { padding: 30px 20px; }
       button { width: 100%; min-width: auto; }
@@ -132,16 +192,36 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">Pilot Release V0.2.0 - Enhanced Security</div>
+    <div class="version">v2.0 Final - Firebase Auth Enabled</div>
   </div>
+  
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  
+  <!-- Line LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  
   <script>
-    // ============ Date/Time Functions ============
+    // ============================================
+    // 📅 DATE & TIME FUNCTIONS
+    // ============================================
     const thOptions = { timeZone: 'Asia/Bangkok', hour12: false };
-    const thDateTimeFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-    const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', { ...thOptions, year: 'numeric', month: '2-digit', day: '2-digit' });
+    const thDateTimeFormatter = new Intl.DateTimeFormat('th-TH', { 
+      ...thOptions, 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', { 
+      ...thOptions, 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit' 
+    });
     
     function getGreeting() {
       const hour = new Date().getHours();
@@ -176,8 +256,14 @@
       return thDateOnlyFormatter.format(new Date());
     }
 
-    // ============ GPS Functions ============
-    const OFFICE_LOCATION = { lat: 13.617040, lon: 100.523087, radius: 300 };
+    // ============================================
+    // 📍 GPS LOCATION FUNCTIONS
+    // ============================================
+    const OFFICE_LOCATION = { 
+      lat: 13.7780273, 
+      lon: 100.5434656, 
+      radius: 10 
+    };
     
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371000;
@@ -191,14 +277,26 @@
     
     async function getCurrentLocation() {
       return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) return reject("GPS not supported");
+        if (!navigator.geolocation) {
+          return reject("GPS not supported");
+        }
+        
         navigator.geolocation.getCurrentPosition(
           pos => {
-            const dist = getDistance(pos.coords.latitude, pos.coords.longitude, OFFICE_LOCATION.lat, OFFICE_LOCATION.lon);
+            const dist = getDistance(
+              pos.coords.latitude, 
+              pos.coords.longitude, 
+              OFFICE_LOCATION.lat, 
+              OFFICE_LOCATION.lon
+            );
+            
             if (dist > OFFICE_LOCATION.radius) {
               reject(`Out of range\nDistance: ${dist.toFixed(1)} meters`);
             } else {
-              resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+              resolve({ 
+                lat: pos.coords.latitude, 
+                lon: pos.coords.longitude 
+              });
             }
           },
           () => reject("Cannot access location\nPlease enable GPS and allow location access"),
@@ -207,7 +305,9 @@
       });
     }
 
-    // ============ Firebase Configuration ============
+    // ============================================
+    // 🔥 FIREBASE CONFIGURATION
+    // ============================================
     const firebaseConfig = {
       apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
       authDomain: "time-attendance-807c5.firebaseapp.com",
@@ -216,10 +316,14 @@
       messagingSenderId: "1018740462032",
       appId: "1:1018740462032:web:6b86ff04a238d550ab29d5"
     };
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
-    // ============ Configuration ============
+    // ============================================
+    // ⚙️ CONFIGURATION
+    // ============================================
     const CONFIG = { 
       LIFF_ID: "2008403464-kaXOK95X", 
       COLLECTION_ATTENDANCE: "attendance",
@@ -227,7 +331,9 @@
       COLLECTION_TEAMS: "teams"
     };
 
-    // ============ DOM Elements ============
+    // ============================================
+    // 🎨 DOM ELEMENTS
+    // ============================================
     const elements = {
       actionBtn: document.getElementById("actionBtn"),
       buttonContainer: document.getElementById("buttonContainer"),
@@ -236,42 +342,84 @@
       userDetails: document.getElementById("userDetails")
     };
 
-    // ============ Application State ============
+    // ============================================
+    // 💾 APPLICATION STATE
+    // ============================================
     const state = { 
-      currentAction: null, 
-      isProcessing: false, 
-      lineUserId: null, 
-      lineDisplayName: "User",
-      memberData: null,
-      teamData: null,
-      hasAccess: false
+      currentAction: null,           // "checkin" or "checkout"
+      isProcessing: false,           // กำลังประมวลผลหรือไม่
+      lineUserId: null,              // Line User ID
+      lineDisplayName: "User",       // Line Display Name
+      memberData: null,              // ข้อมูลจาก members collection
+      teamData: null,                // ข้อมูลจาก teams collection
+      hasAccess: false,              // มีสิทธิ์เข้าใช้งานหรือไม่
+      firebaseUser: null             // Firebase User Object
     };
 
-    // ============ LIFF Authentication ============
+    // ============================================
+    // 🔐 FIREBASE AUTHENTICATION
+    // ============================================
+    async function signInToFirebase() {
+      try {
+        // Sign in แบบ Anonymous
+        const result = await auth.signInAnonymously();
+        state.firebaseUser = result.user;
+        console.log("✅ Firebase Auth: Signed in", result.user.uid);
+        return true;
+      } catch (error) {
+        console.error("❌ Firebase Auth Error:", error);
+        updateStatus('Authentication Failed', 'Cannot sign in to Firebase', 'error');
+        return false;
+      }
+    }
+
+    // ============================================
+    // 🔑 LINE LIFF AUTHENTICATION
+    // ============================================
     async function initLiff() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
+        
         if (!liff.isLoggedIn()) { 
           liff.login(); 
           return false; 
         }
+        
         const profile = await liff.getProfile();
         state.lineUserId = profile.userId;
         state.lineDisplayName = profile.displayName || "User";
+        
+        console.log("✅ Line LIFF: Authenticated", state.lineUserId);
+        
+        // Sign in to Firebase หลัง LIFF สำเร็จ
+        const authSuccess = await signInToFirebase();
+        if (!authSuccess) {
+          return false;
+        }
+        
         return true;
+        
       } catch (e) {
-        console.warn("LIFF init failed, using test mode:", e);
-        state.lineUserId = "U17814d04672b1adfcd8fe146d8bcb343"; // Test User ID
+        console.warn("⚠️ LIFF init failed, using test mode:", e);
+        
+        // Test Mode
+        state.lineUserId = "U17814d04672b1adfcd8fe146d8bcb343";
         state.lineDisplayName = "Test User";
+        
+        // Test mode ก็ต้อง sign in Firebase
+        await signInToFirebase();
         return true;
       }
     }
 
-    // ============ Member Access Control ============
+    // ============================================
+    // 🛡️ MEMBER ACCESS CONTROL
+    // ============================================
     async function checkMemberAccess() {
       try {
-        // ตรวจสอบว่า userId นี้มีอยู่ใน members collection หรือไม่
-        const memberDoc = await db.collection(CONFIG.COLLECTION_MEMBERS).doc(state.lineUserId).get();
+        const memberDoc = await db.collection(CONFIG.COLLECTION_MEMBERS)
+          .doc(state.lineUserId)
+          .get();
         
         if (!memberDoc.exists) {
           state.hasAccess = false;
@@ -286,7 +434,9 @@
         state.memberData = memberDoc.data();
         state.hasAccess = true;
 
-        // ดึงข้อมูล teams ที่ member สังกัด
+        console.log("✅ Member Data:", state.memberData);
+
+        // ดึงข้อมูล teams
         if (state.memberData.teamIds && state.memberData.teamIds.length > 0) {
           const teamPromises = state.memberData.teamIds.map(teamId => 
             db.collection(CONFIG.COLLECTION_TEAMS).doc(teamId).get()
@@ -295,6 +445,8 @@
           state.teamData = teamDocs
             .filter(doc => doc.exists)
             .map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          console.log("✅ Team Data:", state.teamData);
         }
 
         return {
@@ -303,8 +455,9 @@
           memberData: state.memberData,
           teamData: state.teamData
         };
+        
       } catch (error) {
-        console.error("Error checking member access:", error);
+        console.error("❌ Error checking member access:", error);
         state.hasAccess = false;
         return {
           hasAccess: false,
@@ -314,19 +467,23 @@
       }
     }
 
-    // ============ Display Member Information ============
+    // ============================================
+    // 🎨 DISPLAY MEMBER INFORMATION
+    // ============================================
     function displayMemberInfo() {
       if (!state.memberData) return;
 
-      const { firstName, lastName, nickname, position, phone } = state.memberData;
+      const { firstName, lastName, nickname, position } = state.memberData;
       const displayName = nickname || firstName || state.lineDisplayName;
       
       elements.userInfo.textContent = `${getGreeting()}, ${displayName}`;
       
       let detailsHTML = '';
+      
       if (position) {
         detailsHTML += `<span class="badge">👤 ${position}</span>`;
       }
+      
       if (state.teamData && state.teamData.length > 0) {
         state.teamData.forEach(team => {
           detailsHTML += `<span class="badge">🏢 ${team.name}</span>`;
@@ -336,24 +493,43 @@
       elements.userDetails.innerHTML = detailsHTML;
     }
 
-    // ============ Status Display ============
+    // ============================================
+    // 📊 STATUS DISPLAY
+    // ============================================
     function updateStatus(title, msg = '', type = 'info') {
       elements.statusCard.className = `status-card ${type}`;
-      elements.statusCard.innerHTML = `
-        ${title ? `<div class="status-title">${title}</div>` : ''}
-        ${msg ? `<div class="status-text">${msg}</div>` : ''}
-      `;
+      
+      let content = '';
+      
+      if (type === 'loading') {
+        content = `
+          <div class="spinner"></div>
+          ${title ? `<div class="status-title">${title}</div>` : ''}
+          ${msg ? `<div class="status-text">${msg}</div>` : ''}
+        `;
+      } else {
+        content = `
+          ${title ? `<div class="status-title">${title}</div>` : ''}
+          ${msg ? `<div class="status-text">${msg}</div>` : ''}
+        `;
+      }
+      
+      elements.statusCard.innerHTML = content;
     }
 
-    // ============ Get Today's Attendance Status ============
+    // ============================================
+    // 📋 GET TODAY'S ATTENDANCE STATUS
+    // ============================================
     async function getTodayStatus() {
       const today = getThaiDateOnly();
+      
       const snap = await db.collection(CONFIG.COLLECTION_ATTENDANCE)
         .where('userId', '==', state.lineUserId)
         .where('date', '==', today)
         .get();
       
       let checkedIn = false, checkedOut = false, inTime = '', outTime = '';
+      
       snap.forEach(doc => {
         const d = doc.data();
         if (d.action === 'checkin') { 
@@ -369,12 +545,23 @@
       return { checkedIn, checkedOut, inTime, outTime };
     }
 
-    // ============ Check Location and Status ============
+    // ============================================
+    // 🔍 CHECK LOCATION AND STATUS
+    // ============================================
     async function checkLocationAndStatus() {
       updateStatus('Verifying access...', 'Please wait', 'loading');
       
       try {
-        // ขั้นตอนที่ 1: ตรวจสอบสิทธิ์การเข้าถึง
+        // ตรวจสอบว่า sign in Firebase แล้วหรือยัง
+        if (!state.firebaseUser) {
+          const authSuccess = await signInToFirebase();
+          if (!authSuccess) {
+            updateStatus('Authentication Required', 'Please refresh the page', 'error');
+            return;
+          }
+        }
+
+        // ตรวจสอบสิทธิ์การเข้าถึง
         const accessResult = await checkMemberAccess();
         
         if (!accessResult.hasAccess) {
@@ -387,11 +574,11 @@
         // แสดงข้อมูล member
         displayMemberInfo();
 
-        // ขั้นตอนที่ 2: ตรวจสอบ GPS
+        // ตรวจสอบ GPS
         updateStatus('Checking location...', 'Please wait', 'loading');
         await getCurrentLocation();
         
-        // ขั้นตอนที่ 3: ตรวจสอบสถานะการลงเวลา
+        // ตรวจสอบสถานะการลงเวลา
         const s = await getTodayStatus();
         
         if (s.checkedIn && s.checkedOut) {
@@ -419,13 +606,16 @@
             'warning'
           );
         }
+        
       } catch (err) {
         hideButton();
         updateStatus('Outside Office Area', err, 'error');
       }
     }
 
-    // ============ Button Control ============
+    // ============================================
+    // 🎛️ BUTTON CONTROL
+    // ============================================
     function showButton(action) {
       state.currentAction = action;
       elements.buttonContainer.classList.remove('hidden');
@@ -438,9 +628,12 @@
       state.currentAction = null;
     }
 
-    // ============ Perform Check In/Out Action ============
+    // ============================================
+    // ✅ PERFORM CHECK IN/OUT ACTION
+    // ============================================
     async function performAction() {
       if (state.isProcessing) return;
+      
       if (!state.hasAccess) {
         updateStatus('Access Denied', 'You do not have permission to use this system', 'error');
         return;
@@ -451,10 +644,11 @@
       updateStatus('Saving...', 'Please wait', 'loading');
 
       try {
+        // ตรวจสอบ GPS อีกครั้ง
         const location = await getCurrentLocation();
         const nowThai = getThaiDateTime();
         
-        // สร้างข้อมูลที่จะบันทึก - ใช้ข้อมูลจาก memberData
+        // สร้างข้อมูล attendance
         const attendanceData = {
           userId: state.lineUserId,
           displayName: state.memberData.nickname || state.memberData.firstName || state.lineDisplayName,
@@ -466,8 +660,12 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
+        console.log("📝 Saving attendance:", attendanceData);
+
         // บันทึกลง Firestore
         await db.collection(CONFIG.COLLECTION_ATTENDANCE).add(attendanceData);
+
+        console.log("✅ Attendance saved successfully");
 
         // ส่งข้อความแจ้งเตือนใน Line
         const actionText = state.currentAction === 'checkin' ? 'Check In' : 'Check Out';
@@ -482,37 +680,56 @@
             type: 'text', 
             text: `${emoji} ${displayName}${position} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}`
           }]);
+          
+          console.log("📨 Line message sent");
         }
 
         updateStatus('Success!', `${actionText} recorded`, 'success');
+        
         setTimeout(() => {
           if (liff.isInClient()) {
             liff.closeWindow();
           } else {
-            checkLocationAndStatus(); // รีเฟรชสถานะใหม่
+            // ถ้าไม่ได้อยู่ใน Line → รีเฟรชสถานะ
+            state.isProcessing = false;
+            checkLocationAndStatus();
           }
         }, 2000);
 
       } catch (err) {
-        updateStatus('Failed', err, 'error');
+        console.error("❌ Error performing action:", err);
+        updateStatus('Failed', err.message || err, 'error');
         elements.actionBtn.disabled = false;
         state.isProcessing = false;
       }
     }
 
-    // ============ Event Listeners ============
+    // ============================================
+    // 🎧 EVENT LISTENERS
+    // ============================================
     elements.actionBtn.addEventListener('click', performAction);
 
-    // ============ Application Start ============
+    // ============================================
+    // 🚀 APPLICATION START
+    // ============================================
     async function start() {
+      console.log("🚀 Starting application...");
+      
       const ok = await initLiff();
+      
       if (ok) {
         await checkLocationAndStatus();
-        // Auto-refresh every 30 seconds
+        
+        // Auto-refresh ทุก 30 วินาที
         setInterval(checkLocationAndStatus, 30000);
+        
+        console.log("✅ Application started successfully");
+      } else {
+        console.error("❌ Application failed to start");
       }
     }
 
+    // เริ่มต้นแอปพลิเคชัน
     start();
   </script>
 </body>
