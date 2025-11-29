@@ -62,6 +62,30 @@
       margin: 2px;
       font-size: 12px;
     }
+    .auth-badge {
+      text-align: center;
+      margin-bottom: 15px;
+      padding: 8px;
+      background: linear-gradient(135deg, #d9f7be 0%, #f6ffed 100%);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--gray-700);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .auth-badge .indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
     .version { text-align: center; color: var(--gray-500); font-size: 12px; margin-top: 20px; user-select: none; }
     .status-card {
       background: var(--gray-100);
@@ -114,7 +138,6 @@
     }
     button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(184, 244, 22, 0.5); background: #a0d911; }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
-    button.checkout { background: #B8F416; }
     @media (max-width: 480px) {
       .container { padding: 30px 20px; }
       button { width: 100%; min-width: auto; }
@@ -125,6 +148,10 @@
   <div class="container">
     <div class="user-info" id="userInfo">Loading...</div>
     <div class="user-details" id="userDetails"></div>
+    <div class="auth-badge" id="authBadge" style="display: none;">
+      <span class="indicator"></span>
+      <span>🔐 Authenticated with Firebase</span>
+    </div>
     <div id="statusCard" class="status-card loading">
       <div class="spinner"></div>
       <div class="status-text">Initializing system...</div>
@@ -132,11 +159,15 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">V0.3.1 - Fixed Access Control</div>
+    <div class="version">V1.0.0 - Firebase Authentication Enabled</div>
   </div>
+
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <script>
     // ============ Date/Time Functions ============
     const thOptions = { timeZone: 'Asia/Bangkok', hour12: false };
@@ -228,6 +259,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
     // ============ Configuration ============
     const CONFIG = { 
@@ -244,7 +276,8 @@
       buttonContainer: document.getElementById("buttonContainer"),
       statusCard: document.getElementById("statusCard"),
       userInfo: document.getElementById("userInfo"),
-      userDetails: document.getElementById("userDetails")
+      userDetails: document.getElementById("userDetails"),
+      authBadge: document.getElementById("authBadge")
     };
 
     // ============ Application State ============
@@ -256,7 +289,8 @@
       memberData: null,
       teamData: null,
       hasAccess: false,
-      locationData: null
+      locationData: null,
+      isAuthenticated: false
     };
 
     // ============ Error Logging Function ============
@@ -270,11 +304,38 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           userAgent: navigator.userAgent,
           platform: navigator.platform,
+          authenticated: state.isAuthenticated,
           ...additionalData
         });
         console.error(`[${functionName}] Error logged:`, error);
       } catch (logErr) {
         console.error('Failed to log error:', logErr);
+      }
+    }
+
+    // ============ Firebase Anonymous Authentication ============
+    async function authenticateWithFirebase() {
+      try {
+        updateStatus('🔐 Authenticating...', 'Setting up secure connection', 'loading');
+        
+        // Sign in anonymously with LINE User ID as custom data
+        const userCredential = await auth.signInAnonymously();
+        state.isAuthenticated = true;
+        
+        console.log('Firebase Auth successful:', userCredential.user.uid);
+        elements.authBadge.style.display = 'flex';
+        
+        return true;
+      } catch (error) {
+        console.error('Firebase authentication failed:', error);
+        await logError('authenticateWithFirebase', error);
+        
+        updateStatus(
+          '🔐 Authentication Failed', 
+          'Cannot establish secure connection.\nPlease try again later.', 
+          'error'
+        );
+        return false;
       }
     }
 
@@ -371,10 +432,20 @@
     // ============ Status Display ============
     function updateStatus(title, msg = '', type = 'info') {
       elements.statusCard.className = `status-card ${type}`;
-      elements.statusCard.innerHTML = `
-        ${title ? `<div class="status-title">${title}</div>` : ''}
-        ${msg ? `<div class="status-text">${msg}</div>` : ''}
-      `;
+      let content = '';
+      
+      if (type === 'loading') {
+        content += '<div class="spinner"></div>';
+      }
+      
+      if (title) {
+        content += `<div class="status-title">${title}</div>`;
+      }
+      if (msg) {
+        content += `<div class="status-text">${msg}</div>`;
+      }
+      
+      elements.statusCard.innerHTML = content;
     }
 
     // ============ Get Today's Attendance Status ============
@@ -507,6 +578,10 @@
         updateStatus('🚫 Access Denied', 'You do not have permission to use this system', 'error');
         return;
       }
+      if (!state.isAuthenticated) {
+        updateStatus('🔐 Authentication Required', 'Please wait while we authenticate...', 'warning');
+        return;
+      }
 
       state.isProcessing = true;
       elements.actionBtn.disabled = true;
@@ -525,6 +600,7 @@
 
         const location = await getCurrentLocation();
         const nowThai = getThaiDateTime();
+        const currentUser = auth.currentUser;
         
         const attendanceData = {
           userId: state.lineUserId,
@@ -536,6 +612,7 @@
           longitude: location.lon,
           accuracy: location.accuracy || null,
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          firebaseUid: currentUser ? currentUser.uid : null,
           device: {
             userAgent: navigator.userAgent,
             platform: navigator.platform,
@@ -555,7 +632,7 @@
         if (liff.isInClient()) {
           await liff.sendMessages([{ 
             type: 'text', 
-            text: `${emoji} ${displayName}${position} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}`
+            text: `${emoji} ${displayName}${position} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}\n🔐 Secured with Firebase Auth`
           }]);
         }
 
@@ -585,11 +662,14 @@
 
     // ============ Application Start ============
     async function start() {
-      const ok = await initLiff();
-      if (ok) {
-        await checkLocationAndStatus();
-        setInterval(checkLocationAndStatus, 30000);
-      }
+      const liffOk = await initLiff();
+      if (!liffOk) return;
+
+      const authOk = await authenticateWithFirebase();
+      if (!authOk) return;
+
+      await checkLocationAndStatus();
+      setInterval(checkLocationAndStatus, 30000);
     }
 
     start();
