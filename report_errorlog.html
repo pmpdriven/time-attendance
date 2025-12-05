@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Error Log Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #a0d911;
+      --primary-light: #b8f416;
+      --primary-dark: #7cb305;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --success: #52c41a;
+      --danger: #ef4444;
+      --warning: #faad14;
+      --info: #3b82f6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh; padding: 20px; color: var(--gray-900);
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header {
+      background: linear-gradient(135deg, #475569, #64748b);
+      color: white; padding: 24px; border-radius: 16px; margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    .header h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 8px; }
+    .header p { font-size: 0.875rem; opacity: 0.9; }
+
+    .controls {
+      background: white; border-radius: 16px; padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 24px;
+    }
+    .controls-row {
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    }
+    .date-range {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .form-input {
+      padding: 10px 12px; font-size: 0.875rem;
+      border: 1px solid var(--gray-300); border-radius: 8px;
+      font-family: inherit;
+    }
+    .btn {
+      padding: 10px 20px; font-size: 0.875rem; border: none;
+      border-radius: 8px; cursor: pointer; font-family: inherit;
+      font-weight: 600; transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--primary-light); color: var(--gray-900);
+    }
+    .btn-primary:hover {
+      background: var(--primary); transform: translateY(-1px);
+    }
+    .btn-success {
+      background: var(--success); color: white;
+    }
+    .btn-success:hover {
+      background: #059669; transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+      .controls-row { flex-direction: column; }
+      .controls-row > * { width: 100%; }
+      .date-range { flex-direction: column; }
+    }
+
+    .stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: white; border-radius: 12px; padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .stat-label {
+      font-size: 0.875rem; color: var(--gray-500);
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 2rem; font-weight: 600; color: var(--gray-900);
+    }
+    .stat-card.error .stat-value { color: var(--danger); }
+    .stat-card.warning .stat-value { color: var(--warning); }
+    .stat-card.success .stat-value { color: var(--success); }
+
+    .log-container {
+      background: white; border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden;
+    }
+    .log-list {
+      max-height: 700px; overflow-y: auto;
+    }
+    .log-item {
+      padding: 16px 20px; border-bottom: 1px solid var(--gray-200);
+      transition: background 0.2s;
+    }
+    .log-item:hover { background: var(--gray-100); }
+    .log-header {
+      display: flex; justify-content: space-between; align-items: start;
+      margin-bottom: 12px; gap: 12px;
+    }
+    .log-title {
+      font-weight: 600; font-size: 0.9375rem; color: var(--gray-900);
+      margin-bottom: 4px;
+    }
+    .log-function {
+      font-size: 0.8125rem; color: var(--gray-600);
+      font-family: 'Courier New', monospace;
+    }
+    .log-actions {
+      display: flex; gap: 8px; flex-shrink: 0;
+    }
+    .btn-small {
+      padding: 6px 12px; font-size: 0.75rem; border: none;
+      border-radius: 6px; cursor: pointer; font-family: inherit;
+      font-weight: 500; transition: all 0.2s;
+    }
+    .btn-info {
+      background: var(--info); color: white;
+    }
+    .btn-info:hover {
+      background: #2563eb; transform: translateY(-1px);
+    }
+    .log-details {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px; margin-bottom: 12px;
+    }
+    .log-detail {
+      font-size: 0.8125rem;
+    }
+    .log-detail-label {
+      color: var(--gray-500); margin-bottom: 2px;
+    }
+    .log-detail-value {
+      color: var(--gray-900); font-weight: 500;
+    }
+    .log-error {
+      background: #fef2f2; border-left: 3px solid var(--danger);
+      padding: 12px; border-radius: 6px; font-size: 0.8125rem;
+      color: var(--danger); font-family: 'Courier New', monospace;
+      word-break: break-word;
+    }
+    .log-meta {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+    }
+    .meta-badge {
+      padding: 4px 10px; border-radius: 12px; font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .meta-badge.platform {
+      background: #e0e7ff; color: #3730a3;
+    }
+    .meta-badge.auth {
+      background: #d1fae5; color: #065f46;
+    }
+    .meta-badge.no-auth {
+      background: #fee2e2; color: #991b1b;
+    }
+
+    .loading {
+      text-align: center; padding: 60px; color: var(--gray-500);
+    }
+    .spinner {
+      border: 3px solid var(--gray-200);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%; width: 40px; height: 40px;
+      animation: spin 1s linear infinite; margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center; padding: 80px 20px; color: var(--gray-500);
+    }
+    .empty-state-icon {
+      font-size: 4rem; margin-bottom: 16px; opacity: 0.5;
+    }
+
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 1000; align-items: center;
+      justify-content: center; padding: 20px;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: white; border-radius: 16px; padding: 24px;
+      max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      font-size: 1.25rem; font-weight: 600; margin-bottom: 20px;
+    }
+    .modal-body {
+      margin-bottom: 20px;
+    }
+    .modal-footer {
+      display: flex; gap: 12px; justify-content: flex-end;
+    }
+    .btn-secondary {
+      background: var(--gray-300); color: var(--gray-900);
+    }
+    .btn-secondary:hover {
+      background: var(--gray-400);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Error Log Viewer</h1>
+      <p>ติดตาม error และจัดการข้อมูล members จาก log</p>
+    </div>
+
+    <div class="controls">
+      <div class="controls-row">
+        <div class="date-range">
+          <input type="date" id="startDate" class="form-input" />
+          <span>ถึง</span>
+          <input type="date" id="endDate" class="form-input" />
+        </div>
+        <button class="btn btn-primary" onclick="loadLogs()">โหลดข้อมูล</button>
+        <button class="btn btn-success" onclick="exportToExcel()">📥 Export Excel</button>
+      </div>
+    </div>
+
+    <div class="stats" id="stats" style="display: none;">
+      <div class="stat-card error">
+        <div class="stat-label">Total Errors</div>
+        <div class="stat-value" id="totalErrors">0</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-label">Unique Users</div>
+        <div class="stat-value" id="uniqueUsers">0</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-label">Authenticated</div>
+        <div class="stat-value" id="authenticated">0</div>
+      </div>
+    </div>
+
+    <div class="log-container">
+      <div id="logList" class="log-list">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>เลือกวันที่และกด "โหลดข้อมูล"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Member Modal -->
+  <div id="addMemberModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">➕ เพิ่มสมาชิกจาก Log</div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px;">LINE User ID</label>
+          <input type="text" id="modalUserId" class="form-input" style="width: 100%;" readonly />
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px;">Display Name</label>
+          <input type="text" id="modalDisplayName" class="form-input" style="width: 100%;" readonly />
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px;">ชื่อ (First Name) *</label>
+          <input type="text" id="modalFirstName" class="form-input" style="width: 100%;" required />
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px;">นามสกุล (Last Name) *</label>
+          <input type="text" id="modalLastName" class="form-input" style="width: 100%;" required />
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px;">ชื่อเล่น (Nickname)</label>
+          <input type="text" id="modalNickname" class="form-input" style="width: 100%;" />
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px;">เบอร์โทร (Phone) *</label>
+          <input type="tel" id="modalPhone" class="form-input" style="width: 100%;" required />
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px;">ตำแหน่ง (Position) *</label>
+          <input type="text" id="modalPosition" class="form-input" style="width: 100%;" required />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="addMemberFromLog()">เพิ่มสมาชิก</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
+      authDomain: "time-attendance-807c5.firebaseapp.com",
+      projectId: "time-attendance-807c5",
+      storageBucket: "time-attendance-807c5.firebasestorage.app",
+      messagingSenderId: "1018740462032",
+      appId: "1:1018740462032:web:6b86ff04a238d550ab29d5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let allLogs = [];
+    let currentLog = null;
+
+    function formatDate(timestamp) {
+      if (!timestamp) return '-';
+      const date = timestamp.toDate();
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const y = date.getFullYear();
+      const h = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      const s = String(date.getSeconds()).padStart(2, '0');
+      return `${d}/${m}/${y} ${h}:${min}:${s}`;
+    }
+
+    async function loadLogs() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      if (!startDate || !endDate) {
+        alert('กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด');
+        return;
+      }
+
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
+      document.getElementById('logList').innerHTML = '<div class="loading"><div class="spinner"></div><p>กำลังโหลด error logs...</p></div>';
+
+      try {
+        const snapshot = await db.collection('error_logs')
+          .where('timestamp', '>=', start)
+          .where('timestamp', '<=', end)
+          .orderBy('timestamp', 'desc')
+          .get();
+
+        allLogs = [];
+        snapshot.forEach(doc => {
+          allLogs.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        updateStats();
+        renderLogs();
+      } catch (error) {
+        console.error('Error loading logs:', error);
+        document.getElementById('logList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><p>โหลดข้อมูลไม่สำเร็จ</p></div>';
+      }
+    }
+
+    function updateStats() {
+      const uniqueUsers = new Set(allLogs.map(log => log.userId)).size;
+      const authenticated = allLogs.filter(log => log.authenticated).length;
+
+      document.getElementById('stats').style.display = 'grid';
+      document.getElementById('totalErrors').textContent = allLogs.length;
+      document.getElementById('uniqueUsers').textContent = uniqueUsers;
+      document.getElementById('authenticated').textContent = authenticated;
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('logList');
+
+      if (allLogs.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>ไม่มี error logs ในช่วงเวลานี้</p></div>';
+        return;
+      }
+
+      container.innerHTML = allLogs.map(log => `
+        <div class="log-item">
+          <div class="log-header">
+            <div style="flex: 1;">
+              <div class="log-title">${log.displayName || 'Unknown User'}</div>
+              <div class="log-function">📌 ${log.function || 'unknown'}</div>
+            </div>
+            <div class="log-actions">
+              <button class="btn-small btn-info" onclick='openAddMemberModal(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
+                ➕ เพิ่ม Member
+              </button>
+            </div>
+          </div>
+
+          <div class="log-details">
+            <div class="log-detail">
+              <div class="log-detail-label">User ID</div>
+              <div class="log-detail-value" style="font-size: 0.75rem; font-family: monospace;">${log.userId || '-'}</div>
+            </div>
+            <div class="log-detail">
+              <div class="log-detail-label">Timestamp</div>
+              <div class="log-detail-value">${formatDate(log.timestamp)}</div>
+            </div>
+            <div class="log-detail">
+              <div class="log-detail-label">Platform</div>
+              <div class="log-detail-value">${log.platform || '-'}</div>
+            </div>
+          </div>
+
+          <div class="log-error">
+            ${log.error || 'No error message'}
+          </div>
+
+          <div class="log-meta">
+            <span class="meta-badge platform">${log.platform || 'Unknown Platform'}</span>
+            ${log.authenticated ? '<span class="meta-badge auth">🔐 Authenticated</span>' : '<span class="meta-badge no-auth">🔓 Not Authenticated</span>'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openAddMemberModal(log) {
+      currentLog = log;
+      document.getElementById('modalUserId').value = log.userId || '';
+      document.getElementById('modalDisplayName').value = log.displayName || '';
+      document.getElementById('modalFirstName').value = '';
+      document.getElementById('modalLastName').value = '';
+      document.getElementById('modalNickname').value = log.displayName || '';
+      document.getElementById('modalPhone').value = '';
+      document.getElementById('modalPosition').value = '';
+      document.getElementById('addMemberModal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('addMemberModal').classList.remove('show');
+      currentLog = null;
+    }
+
+    async function addMemberFromLog() {
+      const userId = document.getElementById('modalUserId').value.trim();
+      const firstName = document.getElementById('modalFirstName').value.trim();
+      const lastName = document.getElementById('modalLastName').value.trim();
+      const nickname = document.getElementById('modalNickname').value.trim();
+      const phone = document.getElementById('modalPhone').value.trim();
+      const position = document.getElementById('modalPosition').value.trim();
+
+      if (!userId || !firstName || !lastName || !phone || !position) {
+        alert('กรุณากรอกข้อมูลที่จำเป็น (*)');
+        return;
+      }
+
+      try {
+        const existingDoc = await db.collection('members').doc(userId).get();
+        if (existingDoc.exists) {
+          alert('User ID นี้มีในระบบแล้ว');
+          return;
+        }
+
+        const memberData = {
+          firstName,
+          lastName,
+          nickname: nickname || firstName,
+          phone,
+          position,
+          teamIds: [],
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await db.collection('members').doc(userId).set(memberData);
+        
+        alert(`เพิ่ม ${nickname || firstName} สำเร็จ!`);
+        closeModal();
+      } catch (error) {
+        console.error('Error adding member:', error);
+        alert('เกิดข้อผิดพลาด: ' + error.message);
+      }
+    }
+
+    function exportToExcel() {
+      if (allLogs.length === 0) {
+        alert('ไม่มีข้อมูลให้ export');
+        return;
+      }
+
+      const data = allLogs.map((log, i) => ({
+        'No.': i + 1,
+        'User ID': log.userId || '-',
+        'Display Name': log.displayName || '-',
+        'Function': log.function || '-',
+        'Error': log.error || '-',
+        'Platform': log.platform || '-',
+        'User Agent': log.userAgent || '-',
+        'Authenticated': log.authenticated ? 'Yes' : 'No',
+        'Timestamp': formatDate(log.timestamp)
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Error Logs");
+      
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      XLSX.writeFile(wb, `ErrorLogs_${startDate}_to_${endDate}.xlsx`);
+    }
+
+    window.onload = () => {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 7);
+      
+      document.getElementById('startDate').value = yesterday.toISOString().split('T')[0];
+      document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    };
+
+    window.openAddMemberModal = openAddMemberModal;
+  </script>
+</body>
+</html>
