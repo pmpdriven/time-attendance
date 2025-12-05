@@ -217,7 +217,7 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>📊 Error Log Viewer</h1>
+      <h1>📊 Error Log Viewer V1.0</h1>
       <p>ติดตาม error และจัดการข้อมูล members จาก log</p>
     </div>
 
@@ -346,30 +346,54 @@
       document.getElementById('logList').innerHTML = '<div class="loading"><div class="spinner"></div><p>กำลังโหลด error logs...</p></div>';
 
       try {
-        const snapshot = await db.collection('error_logs')
-          .where('timestamp', '>=', start)
-          .where('timestamp', '<=', end)
-          .orderBy('timestamp', 'desc')
-          .get();
+        // ดึงข้อมูลทั้งหมดแล้วกรองทีหลัง (เพราะ timestamp อาจเป็น null)
+        const snapshot = await db.collection('error_logs').get();
 
         allLogs = [];
         snapshot.forEach(doc => {
-          allLogs.push({
-            id: doc.id,
-            ...doc.data()
-          });
+          const data = doc.data();
+          const timestamp = data.timestamp ? data.timestamp.toDate() : null;
+          
+          // กรองตามวันที่ถ้ามี timestamp
+          if (timestamp && timestamp >= start && timestamp <= end) {
+            allLogs.push({
+              id: doc.id,
+              ...data
+            });
+          } else if (!timestamp) {
+            // รวม logs ที่ไม่มี timestamp ด้วย
+            allLogs.push({
+              id: doc.id,
+              ...data
+            });
+          }
+        });
+
+        // เรียงตาม timestamp (logs ที่ไม่มี timestamp จะอยู่ท้าย)
+        allLogs.sort((a, b) => {
+          if (!a.timestamp) return 1;
+          if (!b.timestamp) return -1;
+          return b.timestamp.toDate() - a.timestamp.toDate();
         });
 
         updateStats();
         renderLogs();
       } catch (error) {
         console.error('Error loading logs:', error);
-        document.getElementById('logList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><p>โหลดข้อมูลไม่สำเร็จ</p></div>';
+        console.error('Error details:', error.code, error.message);
+        document.getElementById('logList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">❌</div>
+            <p>โหลดข้อมูลไม่สำเร็จ</p>
+            <p style="font-size: 0.75rem; color: var(--danger); margin-top: 8px;">${error.message}</p>
+          </div>`;
       }
     }
 
     function updateStats() {
-      const uniqueUsers = new Set(allLogs.map(log => log.userId)).size;
+      const uniqueUsers = new Set(
+        allLogs.map(log => log.userId || log.attemptedUserId).filter(Boolean)
+      ).size;
       const authenticated = allLogs.filter(log => log.authenticated).length;
 
       document.getElementById('stats').style.display = 'grid';
@@ -386,24 +410,29 @@
         return;
       }
 
-      container.innerHTML = allLogs.map(log => `
+      container.innerHTML = allLogs.map(log => {
+        const userId = log.userId || log.attemptedUserId || 'Unknown';
+        const displayName = log.displayName || 'Unknown User';
+        const isMember = !!log.userId;
+        
+        return `
         <div class="log-item">
           <div class="log-header">
             <div style="flex: 1;">
-              <div class="log-title">${log.displayName || 'Unknown User'}</div>
+              <div class="log-title">${displayName}</div>
               <div class="log-function">📌 ${log.function || 'unknown'}</div>
             </div>
             <div class="log-actions">
-              <button class="btn-small btn-info" onclick='openAddMemberModal(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
+              ${!isMember ? `<button class="btn-small btn-info" onclick='openAddMemberModal(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
                 ➕ เพิ่ม Member
-              </button>
+              </button>` : ''}
             </div>
           </div>
 
           <div class="log-details">
             <div class="log-detail">
-              <div class="log-detail-label">User ID</div>
-              <div class="log-detail-value" style="font-size: 0.75rem; font-family: monospace;">${log.userId || '-'}</div>
+              <div class="log-detail-label">${log.attemptedUserId ? 'Attempted User ID' : 'User ID'}</div>
+              <div class="log-detail-value" style="font-size: 0.75rem; font-family: monospace;">${userId}</div>
             </div>
             <div class="log-detail">
               <div class="log-detail-label">Timestamp</div>
@@ -422,18 +451,23 @@
           <div class="log-meta">
             <span class="meta-badge platform">${log.platform || 'Unknown Platform'}</span>
             ${log.authenticated ? '<span class="meta-badge auth">🔐 Authenticated</span>' : '<span class="meta-badge no-auth">🔓 Not Authenticated</span>'}
+            ${log.attemptedUserId ? '<span class="meta-badge no-auth">❌ Not Registered</span>' : ''}
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function openAddMemberModal(log) {
       currentLog = log;
-      document.getElementById('modalUserId').value = log.userId || '';
-      document.getElementById('modalDisplayName').value = log.displayName || '';
+      const userId = log.attemptedUserId || log.userId || '';
+      const displayName = log.displayName || '';
+      
+      document.getElementById('modalUserId').value = userId;
+      document.getElementById('modalDisplayName').value = displayName;
       document.getElementById('modalFirstName').value = '';
       document.getElementById('modalLastName').value = '';
-      document.getElementById('modalNickname').value = log.displayName || '';
+      document.getElementById('modalNickname').value = displayName;
       document.getElementById('modalPhone').value = '';
       document.getElementById('modalPosition').value = '';
       document.getElementById('addMemberModal').classList.add('show');
