@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Check In/Out Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #a0d911;
+      --primary-light: #b8f416;
+      --primary-dark: #7cb305;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --success: #52c41a;
+      --danger: #ef4444;
+      --warning: #faad14;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh; padding: 16px; color: var(--gray-900);
+    }
+    .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #475569, #64748b);
+      color: white; padding: 20px; text-align: center; }
+    .header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
+    .header p { font-size: 0.875rem; opacity: 0.9; }
+    .controls { padding: 16px; background: var(--gray-100); display: flex; flex-direction: column; gap: 12px; }
+    .top-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .date-input, .search-input { padding: 10px 12px; font-size: 0.875rem; border: 1px solid var(--gray-300);
+      border-radius: 8px; font-family: inherit; flex: 1; min-width: 140px; }
+    .search-input {
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 10px center;
+      padding-left: 36px;
+    }
+    .btn, .export-btn { padding: 10px 16px; font-size: 0.875rem; border: none; border-radius: 8px;
+      cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.2s; }
+    .btn { background: var(--primary-light); color: var(--gray-900); }
+    .btn:hover { background: var(--primary); transform: translateY(-1px); }
+    .export-btn { background: var(--success); color: white; }
+    .export-btn:hover { background: #059669; transform: translateY(-1px); }
+
+    .filter-row {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      padding: 8px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      padding: 8px 14px; font-size: 0.8rem; border: 1px solid var(--gray-300);
+      background: white; color: var(--gray-700); border-radius: 8px; cursor: pointer;
+      white-space: nowrap; display: flex; align-items: center; gap: 4px;
+      transition: all 0.2s; min-width: 90px; flex-shrink: 0;
+    }
+    .filter-btn .count { font-weight: 600; font-size: 0.75rem; }
+    .filter-btn.active { background: var(--primary-light); color: var(--gray-900); border-color: var(--primary); }
+
+    @media (max-width: 639px) {
+      .top-row { flex-direction: column; }
+      .date-input, .search-input, .btn, .export-btn { width: 100%; }
+      .filter-btn { min-width: 90px; font-size: 0.75rem; padding: 6px 10px; }
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; margin: 16px 0; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--gray-200); }
+    th { background: var(--gray-100); color: var(--gray-700); font-weight: 500;
+         font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tr:hover { background: #f9fafb; }
+    .status { padding: 4px 8px; border-radius: 12px; font-size: 0.6875rem;
+              font-weight: 500; text-align: center; min-width: 60px; }
+    .status.checkedIn { background: #d1fae5; color: #065f46; }
+    .status.checkedOut { background: #fee2e2; color: #991b1b; }
+    .status.notCheckedIn { background: #fef3c7; color: #92400e; }
+
+    .loading { text-align: center; padding: 32px; color: var(--gray-500); }
+    .spinner {
+      border: 3px solid var(--gray-200); border-top: 3px solid var(--primary);
+      border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .footer { text-align: center; padding: 16px; color: var(--gray-500); font-size: 0.75rem; }
+    .no-data { text-align: center; padding: 32px; color: var(--gray-500);
+               font-style: italic; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Check-In/Out Report</h1>
+      <p>ข้อมูลอัปเดตทุก 30 วินาที</p>
+    </div>
+    <div class="controls">
+      <div class="top-row">
+        <input type="date" id="datePicker" class="date-input" />
+        <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาชื่อ..." />
+        <button class="btn" onclick="loadReport()">แสดง</button>
+        <button class="export-btn" onclick="exportToExcel()">Export Excel</button>
+      </div>
+      <div class="filter-row" id="filterButtons"></div>
+    </div>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>กำลังโหลดข้อมูล...</p>
+    </div>
+
+    <div id="report" style="display: none;">
+      <table id="reportTable">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Name</th>
+            <th>In</th>
+            <th>Out</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="reportBody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      <p>Pilot Release v0.1 — Powered by DesignOps</p>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
+      authDomain: "time-attendance-807c5.firebaseapp.com",
+      projectId: "time-attendance-807c5",
+      storageBucket: "time-attendance-807c5.firebasestorage.app",
+      messagingSenderId: "1018740462032",
+      appId: "1:1018740462032:web:6b86ff04a238d550ab29d5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let allMembers = [];
+    let currentFilter = 'all';
+    let reportData = null;
+    let autoRefresh = null;
+
+    const filters = [
+      { key: 'all',           label: 'ทั้งหมด' },
+      { key: 'checkedIn',     label: 'Check In' },
+      { key: 'checkedOut',    label: 'Check Out' },
+      { key: 'notCheckedIn',  label: 'ยังไม่ Check In' },
+      { key: 'notCheckedOut', label: 'ยังไม่ Check Out' },
+      { key: 'lateCheckIn',   label: 'มาสาย (หลัง 09:00)' },
+      { key: 'possibleAbsent',label: 'อาจลา/ขาด' }
+    ];
+
+    function toThaiDate(dateStr) {
+      const d = new Date(dateStr);
+      const thaiYear = d.getFullYear() + 543;
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      return `${dd}/${mm}/${thaiYear}`;
+    }
+
+    function createFilterButtons() {
+      const container = document.getElementById('filterButtons');
+      container.innerHTML = '';
+
+      const counts = {
+        all: allMembers.length,
+        checkedIn: allMembers.filter(m => m.status === 'checkedIn').length,
+        checkedOut: allMembers.filter(m => m.status === 'checkedOut').length,
+        notCheckedIn: allMembers.filter(m => m.status === 'notCheckedIn').length,
+        notCheckedOut: allMembers.filter(m => m.status === 'checkedIn').length,
+        lateCheckIn: allMembers.filter(m => m.checkinHour > 9).length,
+        possibleAbsent: allMembers.filter(m => m.status === 'notCheckedIn').length
+      };
+
+      filters.forEach(f => {
+        const count = counts[f.key] || 0;
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        if (f.key === currentFilter) btn.classList.add('active');
+        btn.dataset.filter = f.key;
+        btn.innerHTML = `${f.label} <span class="count">(${count})</span>`;
+        btn.onclick = () => setFilter(f.key);
+        container.appendChild(btn);
+      });
+    }
+
+    async function loadReport() {
+      const dateInput = document.getElementById('datePicker').value;
+      if (!dateInput) return alert('กรุณาเลือกวันที่');
+      const thaiDate = toThaiDate(dateInput);
+
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('report').style.display = 'none';
+
+      try {
+        // ดึงข้อมูล members ทั้งหมด
+        const membersSnap = await db.collection('members').get();
+        const membersMap = {};
+        membersSnap.forEach(doc => {
+          const data = doc.data();
+          membersMap[doc.id] = {
+            userId: doc.id,
+            displayName: data.nickname || data.firstName || 'Unknown',
+            firstName: data.firstName,
+            lastName: data.lastName,
+            nickname: data.nickname,
+            position: data.position
+          };
+        });
+
+        // ดึงข้อมูล attendance ของวันที่เลือก
+        const attendanceSnap = await db.collection('attendance')
+          .where('date', '==', thaiDate)
+          .get();
+
+        const attendanceMap = {};
+        attendanceSnap.forEach(doc => {
+          const data = doc.data();
+          const userId = data.userId;
+          
+          if (!attendanceMap[userId]) {
+            attendanceMap[userId] = {
+              checkin: null,
+              checkout: null
+            };
+          }
+
+          if (data.action === 'checkin') {
+            attendanceMap[userId].checkin = data.dateTime;
+          } else if (data.action === 'checkout') {
+            attendanceMap[userId].checkout = data.dateTime;
+          }
+        });
+
+        // สร้าง report data
+        allMembers = Object.keys(membersMap).map(userId => {
+          const member = membersMap[userId];
+          const attendance = attendanceMap[userId] || {};
+          
+          let status = 'notCheckedIn';
+          let checkinTime = null;
+          let checkoutTime = null;
+          let checkinHour = 0;
+
+          if (attendance.checkin) {
+            const timePart = attendance.checkin.split(' ')[1]; // "09:15"
+            checkinTime = timePart;
+            checkinHour = parseInt(timePart.split(':')[0]);
+            status = 'checkedIn';
+          }
+
+          if (attendance.checkout) {
+            const timePart = attendance.checkout.split(' ')[1];
+            checkoutTime = timePart;
+            status = 'checkedOut';
+          }
+
+          return {
+            userId,
+            displayName: member.displayName,
+            firstName: member.firstName,
+            lastName: member.lastName,
+            nickname: member.nickname,
+            position: member.position,
+            checkinTime,
+            checkoutTime,
+            checkinHour,
+            status
+          };
+        });
+
+        reportData = {
+          date: thaiDate,
+          members: allMembers
+        };
+
+        createFilterButtons();
+        setFilter('all');
+
+        if (autoRefresh) clearInterval(autoRefresh);
+        autoRefresh = setInterval(loadReport, 30000);
+      } catch (err) {
+        console.error('Error loading report:', err);
+        alert('เกิดข้อผิดพลาด: ' + err.message);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll(`[data-filter="${filter}"]`).forEach(b => b.classList.add('active'));
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+      const tbody = document.getElementById('reportBody');
+      tbody.innerHTML = '';
+
+      let filtered = [...allMembers];
+
+      if (currentFilter === 'lateCheckIn') {
+        filtered = filtered.filter(m => m.checkinHour > 9);
+      }
+      else if (currentFilter === 'possibleAbsent') {
+        filtered = filtered.filter(m => m.status === 'notCheckedIn');
+      }
+      else if (currentFilter === 'notCheckedOut') {
+        filtered = filtered.filter(m => m.status === 'checkedIn');
+      }
+      else if (currentFilter !== 'all') {
+        filtered = filtered.filter(m => m.status === currentFilter);
+      }
+
+      if (searchText) {
+        filtered = filtered.filter(m => m.displayName.toLowerCase().includes(searchText));
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="no-data">ไม่พบข้อมูลที่ตรงกัน</td></tr>`;
+      } else {
+        filtered.forEach((m, i) => {
+          let statusText = 'ยังไม่มา';
+          let statusClass = 'notCheckedIn';
+          if (m.status === 'checkedOut') { statusText = 'ออกงานแล้ว'; statusClass = 'checkedOut'; }
+          else if (m.status === 'checkedIn') { statusText = 'เข้างานแล้ว'; statusClass = 'checkedIn'; }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${i + 1}</td>
+            <td><strong>${m.displayName}</strong></td>
+            <td>${m.checkinTime || '-'}</td>
+            <td>${m.checkoutTime || '-'}</td>
+            <td><span class="status ${statusClass}">${statusText}</span></td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      document.getElementById('report').style.display = 'block';
+      createFilterButtons();
+    }
+
+    function exportToExcel() {
+      if (!reportData) return alert('กรุณาโหลดข้อมูลก่อน');
+      const data = allMembers
+        .filter(m => {
+          if (currentFilter === 'all') return true;
+          if (currentFilter === 'lateCheckIn') return m.checkinHour > 9;
+          if (currentFilter === 'possibleAbsent') return m.status === 'notCheckedIn';
+          if (currentFilter === 'notCheckedOut') return m.status === 'checkedIn';
+          return m.status === currentFilter;
+        })
+        .map((m, i) => ({
+          'No.': i + 1,
+          'Name': m.displayName,
+          'Check In': m.checkinTime || '-',
+          'Check Out': m.checkoutTime || '-',
+          'Status': m.status === 'checkedOut' ? 'ออกงานแล้ว' :
+                   m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
+        }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Report");
+      XLSX.writeFile(wb, `รายงาน_CheckInOut_${reportData.date}.xlsx`);
+    }
+
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    document.getElementById('datePicker').addEventListener('change', loadReport);
+
+    window.onload = () => {
+      const today = new Date();
+      document.getElementById('datePicker').value = today.toISOString().split('T')[0];
+      loadReport();
+    };
+  </script>
+</body>
+</html>
