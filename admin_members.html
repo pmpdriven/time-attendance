@@ -108,9 +108,13 @@
     .member-card {
       background: var(--gray-100); padding: 16px; border-radius: 12px;
       display: flex; justify-content: space-between; align-items: start;
-      transition: background 0.2s;
+      transition: background 0.2s; gap: 12px;
     }
     .member-card:hover { background: var(--gray-200); }
+    .member-number {
+      font-size: 1.25rem; font-weight: 700;
+      color: var(--gray-400); min-width: 32px; flex-shrink: 0;
+    }
     .member-info { flex: 1; }
     .member-name {
       font-weight: 600; font-size: 0.9375rem;
@@ -327,8 +331,9 @@
         if (members.length === 0) {
           container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><p>ยังไม่มีสมาชิกในระบบ</p></div>';
         } else {
-          container.innerHTML = members.map(member => `
+          container.innerHTML = members.map((member, index) => `
             <div class="member-card">
+              <div class="member-number">${index + 1}</div>
               <div class="member-info">
                 <div class="member-name">${member.nickname || member.firstName}</div>
                 <div class="member-details">
