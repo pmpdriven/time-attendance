@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #a0d911;
+      --primary-light: #b8f416;
+      --primary-dark: #7cb305;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --success: #52c41a;
+      --danger: #ef4444;
+      --warning: #faad14;
+      --info: #3b82f6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh;
+      color: var(--gray-900);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+      animation: fadeInDown 0.6s ease-out;
+    }
+
+    .logo {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #475569, #64748b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+
+    .header p {
+      font-size: 1.125rem;
+      color: var(--gray-500);
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .menu-card {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .menu-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-light), var(--primary-dark));
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .menu-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .menu-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    }
+
+    .menu-card:nth-child(1) { animation-delay: 0.1s; }
+    .menu-card:nth-child(2) { animation-delay: 0.2s; }
+    .menu-card:nth-child(3) { animation-delay: 0.3s; }
+    .menu-card:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .menu-icon {
+      font-size: 3.5rem;
+      margin-bottom: 20px;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .menu-card:hover .menu-icon {
+      transform: scale(1.1);
+    }
+
+    .menu-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--gray-900);
+    }
+
+    .menu-description {
+      font-size: 0.9375rem;
+      color: var(--gray-600);
+      line-height: 1.6;
+    }
+
+    .menu-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--primary-light);
+      color: var(--gray-900);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .stats-section {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      margin-bottom: 40px;
+      animation: fadeInUp 0.6s ease-out 0.5s both;
+    }
+
+    .stats-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--gray-900);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 20px;
+      background: var(--gray-100);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+      background: var(--gray-200);
+      transform: translateY(-2px);
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      font-weight: 500;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray-500);
+      font-size: 0.875rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-link {
+      color: var(--gray-600);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: var(--primary-dark);
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+      .logo {
+        font-size: 3rem;
+      }
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Loading animation */
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: var(--gray-500);
+    }
+
+    .spinner {
+      border: 3px solid var(--gray-200);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">⚡</div>
+      <h1>Admin Dashboard</h1>
+      <p>ระบบจัดการลงเวลาเข้า-ออกงาน</p>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-section" id="statsSection" style="display: none;">
+      <div class="stats-title">📊 สถิติระบบ</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="totalMembers">-</div>
+          <div class="stat-label">👥 สมาชิกทั้งหมด</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="totalTeams">-</div>
+          <div class="stat-label">🏢 ทีมทั้งหมด</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="todayCheckIns">-</div>
+          <div class="stat-label">✅ Check In วันนี้</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="totalErrors">-</div>
+          <div class="stat-label">⚠️ Errors (7 วัน)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading" id="loadingStats">
+      <div class="spinner"></div>
+      <p>กำลังโหลดสถิติ...</p>
+    </div>
+
+    <!-- Menu Grid -->
+    <div class="menu-grid">
+      <!-- Report System -->
+      <a href="report.html" class="menu-card">
+        <span class="menu-badge">Report</span>
+        <span class="menu-icon">📊</span>
+        <div class="menu-title">Report System</div>
+        <div class="menu-description">
+          ดูรายงานการลงเวลา ค้นหา กรอง และ export ข้อมูลเป็น Excel
+        </div>
+      </a>
+
+      <!-- Member Management -->
+      <a href="admin_members.html" class="menu-card">
+        <span class="menu-badge">Members</span>
+        <span class="menu-icon">👥</span>
+        <div class="menu-title">Member Management</div>
+        <div class="menu-description">
+          จัดการสมาชิก เพิ่ม แก้ไข ลบ และกำหนดทีม
+        </div>
+      </a>
+
+      <!-- Team Management -->
+      <a href="admin_teams.html" class="menu-card">
+        <span class="menu-badge">Teams</span>
+        <span class="menu-icon">🏢</span>
+        <div class="menu-title">Team Management</div>
+        <div class="menu-description">
+          จัดการทีม สร้างทีมใหม่ และจัดการสมาชิกในทีม
+        </div>
+      </a>
+
+      <!-- Log Viewer -->
+      <a href="admin_logs.html" class="menu-card">
+        <span class="menu-badge">Logs</span>
+        <span class="menu-icon">📋</span>
+        <div class="menu-title">Error Log Viewer</div>
+        <div class="menu-description">
+          ตรวจสอบ error logs เพิ่มสมาชิกจาก log และ export รายงาน
+        </div>
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-links">
+        <a href="check_in_out.html" class="footer-link">📱 Check In/Out</a>
+        <a href="report.html" class="footer-link">📊 Reports</a>
+        <a href="https://console.firebase.google.com" target="_blank" class="footer-link">🔥 Firebase Console</a>
+      </div>
+      <p>V1.0.0 - Admin Dashboard • Powered by DesignOps</p>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
+      authDomain: "time-attendance-807c5.firebaseapp.com",
+      projectId: "time-attendance-807c5",
+      storageBucket: "time-attendance-807c5.firebasestorage.app",
+      messagingSenderId: "1018740462032",
+      appId: "1:1018740462032:web:6b86ff04a238d550ab29d5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Get Thai date (today)
+    function getThaiDateOnly() {
+      const thOptions = { timeZone: 'Asia/Bangkok', hour12: false };
+      const thDateOnlyFormatter = new Intl.DateTimeFormat('th-TH', { 
+        ...thOptions, 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+      });
+      return thDateOnlyFormatter.format(new Date());
+    }
+
+    // Load Stats
+    async function loadStats() {
+      try {
+        // Total Members
+        const membersSnapshot = await db.collection('members').get();
+        document.getElementById('totalMembers').textContent = membersSnapshot.size;
+
+        // Total Teams
+        const teamsSnapshot = await db.collection('teams').get();
+        document.getElementById('totalTeams').textContent = teamsSnapshot.size;
+
+        // Today's Check Ins
+        const today = getThaiDateOnly();
+        const attendanceSnapshot = await db.collection('attendance')
+          .where('date', '==', today)
+          .where('action', '==', 'checkin')
+          .get();
+        
+        // Count unique users who checked in today
+        const uniqueCheckIns = new Set();
+        attendanceSnapshot.forEach(doc => {
+          uniqueCheckIns.add(doc.data().userId);
+        });
+        document.getElementById('todayCheckIns').textContent = uniqueCheckIns.size;
+
+        // Total Errors (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const errorSnapshot = await db.collection('error_logs').get();
+        let errorCount = 0;
+        errorSnapshot.forEach(doc => {
+          const timestamp = doc.data().timestamp?.toDate();
+          if (timestamp && timestamp >= sevenDaysAgo) {
+            errorCount++;
+          }
+        });
+        document.getElementById('totalErrors').textContent = errorCount;
+
+        // Show stats section
+        document.getElementById('loadingStats').style.display = 'none';
+        document.getElementById('statsSection').style.display = 'block';
+
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        document.getElementById('loadingStats').innerHTML = `
+          <p style="color: var(--danger);">โหลดสถิติไม่สำเร็จ</p>
+        `;
+      }
+    }
+
+    // Load stats on page load
+    window.onload = () => {
+      loadStats();
+    };
+  </script>
+</body>
+</html>
