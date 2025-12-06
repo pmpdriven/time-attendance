@@ -93,6 +93,13 @@
     .btn-primary:hover {
       background: var(--primary); transform: translateY(-1px);
     }
+    .btn-warning {
+      background: var(--warning); color: white;
+      padding: 6px 12px; font-size: 0.75rem; margin-right: 6px;
+    }
+    .btn-warning:hover {
+      background: #f59e0b; transform: translateY(-1px);
+    }
     .btn-danger {
       background: var(--danger); color: white;
       padding: 6px 12px; font-size: 0.75rem;
@@ -180,11 +187,13 @@
     <div class="grid">
       <!-- Add Member Form -->
       <div class="card">
-        <div class="card-title">➕ เพิ่มสมาชิกใหม่</div>
+        <div class="card-title" id="formTitle">➕ เพิ่มสมาชิกใหม่</div>
         
         <div id="formAlert" class="alert"></div>
 
         <form id="addMemberForm">
+          <input type="hidden" id="editMemberId" value="" />
+          
           <div class="form-group">
             <label class="form-label required">LINE User ID</label>
             <input type="text" id="userId" class="form-input" required />
@@ -228,6 +237,10 @@
           <button type="submit" class="btn btn-primary">
             เพิ่มสมาชิก
           </button>
+          <button type="button" class="btn btn-secondary" id="cancelBtn" 
+                  style="width: 100%; margin-top: 8px; display: none;" onclick="cancelEdit()">
+            ยกเลิก
+          </button>
         </form>
       </div>
 
@@ -262,6 +275,7 @@
     const db = firebase.firestore();
 
     let teamsData = [];
+    let editingMemberId = null;
 
     // Show Alert
     function showAlert(message, type = 'success') {
@@ -347,9 +361,14 @@
                   </div>
                 ` : ''}
               </div>
-              <button class="btn-danger" onclick="deleteMember('${member.id}', '${member.nickname || member.firstName}')">
-                ลบ
-              </button>
+              <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                <button class="btn-warning" onclick="editMember('${member.id}')">
+                  ✏️ แก้ไข
+                </button>
+                <button class="btn-danger" onclick="deleteMember('${member.id}', '${member.nickname || member.firstName}')">
+                  🗑️ ลบ
+                </button>
+              </div>
             </div>
           `).join('');
         }
@@ -364,6 +383,7 @@
     document.getElementById('addMemberForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const editId = document.getElementById('editMemberId').value;
       const userId = document.getElementById('userId').value.trim();
       const firstName = document.getElementById('firstName').value.trim();
       const lastName = document.getElementById('lastName').value.trim();
@@ -377,39 +397,111 @@
       });
 
       try {
-        // Check if user already exists
-        const existingDoc = await db.collection('members').doc(userId).get();
-        if (existingDoc.exists) {
-          showAlert('User ID นี้มีในระบบแล้ว', 'error');
-          return;
+        if (editId) {
+          // Update existing member
+          const memberData = {
+            firstName,
+            lastName,
+            nickname,
+            phone,
+            position,
+            teamIds: selectedTeams,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+
+          await db.collection('members').doc(editId).update(memberData);
+          showAlert(`แก้ไข ${nickname} สำเร็จ!`, 'success');
+          cancelEdit();
+        } else {
+          // Add new member
+          const existingDoc = await db.collection('members').doc(userId).get();
+          if (existingDoc.exists) {
+            showAlert('User ID นี้มีในระบบแล้ว', 'error');
+            return;
+          }
+
+          const memberData = {
+            firstName,
+            lastName,
+            nickname,
+            phone,
+            position,
+            teamIds: selectedTeams,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+
+          await db.collection('members').doc(userId).set(memberData);
+          
+          showAlert(`เพิ่ม ${nickname} สำเร็จ!`, 'success');
+          document.getElementById('addMemberForm').reset();
+          
+          // Uncheck all teams
+          document.querySelectorAll('#teamCheckboxes input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+          });
         }
-
-        const memberData = {
-          firstName,
-          lastName,
-          nickname,
-          phone,
-          position,
-          teamIds: selectedTeams,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        await db.collection('members').doc(userId).set(memberData);
-        
-        showAlert(`เพิ่ม ${nickname} สำเร็จ!`, 'success');
-        document.getElementById('addMemberForm').reset();
-        
-        // Uncheck all teams
-        document.querySelectorAll('#teamCheckboxes input[type="checkbox"]').forEach(cb => {
-          cb.checked = false;
-        });
 
         loadMembers();
       } catch (error) {
-        console.error('Error adding member:', error);
+        console.error('Error saving member:', error);
         showAlert('เกิดข้อผิดพลาด: ' + error.message, 'error');
       }
     });
+
+    // Edit Member
+    async function editMember(memberId) {
+      try {
+        const memberDoc = await db.collection('members').doc(memberId).get();
+        if (!memberDoc.exists) {
+          showAlert('ไม่พบข้อมูลสมาชิก', 'error');
+          return;
+        }
+
+        const member = memberDoc.data();
+        editingMemberId = memberId;
+
+        document.getElementById('editMemberId').value = memberId;
+        document.getElementById('userId').value = memberId;
+        document.getElementById('userId').readOnly = true; // ห้ามแก้ไข User ID
+        document.getElementById('firstName').value = member.firstName || '';
+        document.getElementById('lastName').value = member.lastName || '';
+        document.getElementById('nickname').value = member.nickname || '';
+        document.getElementById('phone').value = member.phone || '';
+        document.getElementById('position').value = member.position || '';
+
+        // Check teams
+        document.querySelectorAll('#teamCheckboxes input[type="checkbox"]').forEach(cb => {
+          cb.checked = (member.teamIds || []).includes(cb.value);
+        });
+
+        document.getElementById('formTitle').textContent = '✏️ แก้ไขข้อมูลสมาชิก';
+        document.querySelector('#addMemberForm button[type="submit"]').textContent = 'บันทึกการแก้ไข';
+        document.getElementById('cancelBtn').style.display = 'block';
+
+        // Scroll to form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (error) {
+        console.error('Error loading member:', error);
+        showAlert('โหลดข้อมูลไม่สำเร็จ', 'error');
+      }
+    }
+
+    // Cancel Edit
+    function cancelEdit() {
+      editingMemberId = null;
+      document.getElementById('editMemberId').value = '';
+      document.getElementById('userId').readOnly = false;
+      document.getElementById('addMemberForm').reset();
+      
+      // Uncheck all teams
+      document.querySelectorAll('#teamCheckboxes input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+      });
+
+      document.getElementById('formTitle').textContent = '➕ เพิ่มสมาชิกใหม่';
+      document.querySelector('#addMemberForm button[type="submit"]').textContent = 'เพิ่มสมาชิก';
+      document.getElementById('cancelBtn').style.display = 'none';
+    }
 
     // Delete Member
     async function deleteMember(userId, name) {
@@ -435,6 +527,8 @@
 
     // Make deleteMember available globally
     window.deleteMember = deleteMember;
+    window.editMember = editMember;
+    window.cancelEdit = cancelEdit;
   </script>
 </body>
 </html>
