@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Team Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #a0d911;
+      --primary-light: #b8f416;
+      --primary-dark: #7cb305;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --success: #52c41a;
+      --danger: #ef4444;
+      --warning: #faad14;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh; padding: 20px; color: var(--gray-900);
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header {
+      background: linear-gradient(135deg, #475569, #64748b);
+      color: white; padding: 24px; border-radius: 16px; margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    .header h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 8px; }
+    .header p { font-size: 0.875rem; opacity: 0.9; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: white; border-radius: 16px; padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-size: 1.25rem; font-weight: 600; margin-bottom: 20px;
+      color: var(--gray-900); display: flex; align-items: center; gap: 8px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block; font-size: 0.875rem; font-weight: 500;
+      color: var(--gray-700); margin-bottom: 6px;
+    }
+    .form-label.required::after { content: ' *'; color: var(--danger); }
+    .form-input, .form-textarea {
+      width: 100%; padding: 10px 12px; font-size: 0.875rem;
+      border: 1px solid var(--gray-300); border-radius: 8px;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    .form-textarea {
+      min-height: 80px; resize: vertical;
+    }
+    .form-input:focus, .form-textarea:focus {
+      outline: none; border-color: var(--primary);
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--gray-400); }
+
+    .member-select {
+      padding: 12px; background: var(--gray-100);
+      border-radius: 8px; max-height: 300px; overflow-y: auto;
+    }
+    .checkbox-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px; background: white; border-radius: 6px;
+      cursor: pointer; transition: background 0.2s; margin-bottom: 6px;
+    }
+    .checkbox-item:hover { background: #f9fafb; }
+    .checkbox-item input[type="checkbox"] {
+      width: 18px; height: 18px; cursor: pointer;
+    }
+    .checkbox-item label {
+      cursor: pointer; font-size: 0.875rem; flex: 1;
+    }
+    .member-info {
+      font-size: 0.75rem; color: var(--gray-500);
+    }
+
+    .btn {
+      padding: 12px 24px; font-size: 0.875rem; border: none;
+      border-radius: 8px; cursor: pointer; font-family: inherit;
+      font-weight: 600; transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--primary-light); color: var(--gray-900);
+      width: 100%;
+    }
+    .btn-primary:hover {
+      background: var(--primary); transform: translateY(-1px);
+    }
+    .btn-danger {
+      background: var(--danger); color: white;
+      padding: 6px 12px; font-size: 0.75rem;
+    }
+    .btn-danger:hover {
+      background: #dc2626; transform: translateY(-1px);
+    }
+    .btn-warning {
+      background: var(--warning); color: white;
+      padding: 6px 12px; font-size: 0.75rem; margin-right: 6px;
+    }
+    .btn-warning:hover {
+      background: #f59e0b; transform: translateY(-1px);
+    }
+
+    .team-list {
+      display: flex; flex-direction: column; gap: 12px;
+      max-height: 600px; overflow-y: auto;
+    }
+    .team-card {
+      background: var(--gray-100); padding: 16px; border-radius: 12px;
+      transition: background 0.2s;
+    }
+    .team-card:hover { background: var(--gray-200); }
+    .team-header {
+      display: flex; justify-content: space-between; align-items: start;
+      margin-bottom: 8px;
+    }
+    .team-name {
+      font-weight: 600; font-size: 0.9375rem;
+      color: var(--gray-900);
+    }
+    .team-actions {
+      display: flex; gap: 6px; flex-shrink: 0;
+    }
+    .team-description {
+      font-size: 0.8125rem; color: var(--gray-600);
+      margin-bottom: 8px;
+    }
+    .team-members {
+      display: flex; flex-wrap: wrap; gap: 4px;
+    }
+    .member-badge {
+      background: var(--primary-light); color: var(--gray-900);
+      padding: 2px 8px; border-radius: 12px; font-size: 0.6875rem;
+      font-weight: 500;
+    }
+    .team-stats {
+      font-size: 0.75rem; color: var(--gray-500);
+      margin-top: 8px;
+    }
+
+    .loading {
+      text-align: center; padding: 40px; color: var(--gray-500);
+    }
+    .spinner {
+      border: 3px solid var(--gray-200);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%; width: 32px; height: 32px;
+      animation: spin 1s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert {
+      padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;
+      font-size: 0.875rem; display: none;
+    }
+    .alert.success {
+      background: #d1fae5; color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+    .alert.error {
+      background: #fee2e2; color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    .alert.show { display: block; animation: slideDown 0.3s ease-out; }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--gray-500);
+    }
+    .empty-state-icon {
+      font-size: 3rem; margin-bottom: 16px; opacity: 0.5;
+    }
+
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 1000; align-items: center;
+      justify-content: center; padding: 20px;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: white; border-radius: 16px; padding: 24px;
+      max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      font-size: 1.25rem; font-weight: 600; margin-bottom: 20px;
+    }
+    .modal-body {
+      margin-bottom: 20px;
+    }
+    .modal-footer {
+      display: flex; gap: 12px; justify-content: flex-end;
+    }
+    .btn-secondary {
+      background: var(--gray-300); color: var(--gray-900);
+    }
+    .btn-secondary:hover {
+      background: var(--gray-400);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🏢 Team Management</h1>
+      <p>จัดการทีมและสมาชิกในระบบ</p>
+    </div>
+
+    <div class="grid">
+      <!-- Add/Edit Team Form -->
+      <div class="card">
+        <div class="card-title" id="formTitle">➕ เพิ่มทีมใหม่</div>
+        
+        <div id="formAlert" class="alert"></div>
+
+        <form id="teamForm">
+          <input type="hidden" id="editTeamId" value="" />
+          
+          <div class="form-group">
+            <label class="form-label required">ชื่อทีม (Team Name)</label>
+            <input type="text" id="teamName" class="form-input" 
+                   placeholder="Digital Creative" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">รายละเอียด (Description)</label>
+            <textarea id="teamDescription" class="form-textarea" 
+                      placeholder="ทีมออกแบบและพัฒนาผลิตภัณฑ์ดิจิทัล"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">สมาชิกในทีม (Members)</label>
+            <div id="memberCheckboxes" class="member-select">
+              <div class="loading">
+                <div class="spinner"></div>
+                <p>กำลังโหลดสมาชิก...</p>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            เพิ่มทีม
+          </button>
+          <button type="button" class="btn btn-secondary" id="cancelBtn" 
+                  style="width: 100%; margin-top: 8px; display: none;" onclick="cancelEdit()">
+            ยกเลิก
+          </button>
+        </form>
+      </div>
+
+      <!-- Team List -->
+      <div class="card">
+        <div class="card-title">📋 รายชื่อทีม</div>
+        
+        <div id="teamList" class="team-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>กำลังโหลดทีม...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
+      authDomain: "time-attendance-807c5.firebaseapp.com",
+      projectId: "time-attendance-807c5",
+      storageBucket: "time-attendance-807c5.firebasestorage.app",
+      messagingSenderId: "1018740462032",
+      appId: "1:1018740462032:web:6b86ff04a238d550ab29d5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let membersData = [];
+    let teamsData = [];
+    let editingTeamId = null;
+
+    // Show Alert
+    function showAlert(message, type = 'success') {
+      const alert = document.getElementById('formAlert');
+      alert.textContent = message;
+      alert.className = `alert ${type} show`;
+      setTimeout(() => {
+        alert.classList.remove('show');
+      }, 5000);
+    }
+
+    // Load Members
+    async function loadMembers() {
+      try {
+        const snapshot = await db.collection('members').get();
+        membersData = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          membersData.push({
+            id: doc.id,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            nickname: data.nickname,
+            position: data.position
+          });
+        });
+
+        renderMemberCheckboxes();
+      } catch (error) {
+        console.error('Error loading members:', error);
+        document.getElementById('memberCheckboxes').innerHTML = 
+          '<div class="empty-state"><p style="color: var(--danger);">โหลดสมาชิกไม่สำเร็จ</p></div>';
+      }
+    }
+
+    function renderMemberCheckboxes(selectedIds = []) {
+      const container = document.getElementById('memberCheckboxes');
+      
+      if (membersData.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><p>ไม่มีสมาชิกในระบบ</p></div>';
+      } else {
+        container.innerHTML = membersData.map(member => {
+          const displayName = member.nickname || member.firstName;
+          const isChecked = selectedIds.includes(member.id) ? 'checked' : '';
+          return `
+            <div class="checkbox-item">
+              <input type="checkbox" id="member_${member.id}" value="${member.id}" ${isChecked}>
+              <label for="member_${member.id}">
+                <div>${displayName} ${member.lastName}</div>
+                <div class="member-info">${member.position}</div>
+              </label>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Load Teams
+    async function loadTeams() {
+      try {
+        const teamsSnapshot = await db.collection('teams').get();
+        const membersSnapshot = await db.collection('members').get();
+        
+        const membersMap = {};
+        membersSnapshot.forEach(doc => {
+          const data = doc.data();
+          membersMap[doc.id] = {
+            displayName: data.nickname || data.firstName,
+            teamIds: data.teamIds || []
+          };
+        });
+
+        teamsData = [];
+        teamsSnapshot.forEach(doc => {
+          const data = doc.data();
+          
+          // นับจำนวนสมาชิกที่มี teamId นี้
+          const memberCount = Object.values(membersMap).filter(m => 
+            m.teamIds.includes(doc.id)
+          ).length;
+
+          teamsData.push({
+            id: doc.id,
+            name: data.name,
+            description: data.description || '',
+            memberIds: data.memberIds || [],
+            memberCount: memberCount
+          });
+        });
+
+        renderTeams(membersMap);
+      } catch (error) {
+        console.error('Error loading teams:', error);
+        document.getElementById('teamList').innerHTML = 
+          '<div class="empty-state"><p style="color: var(--danger);">โหลดทีมไม่สำเร็จ</p></div>';
+      }
+    }
+
+    function renderTeams(membersMap) {
+      const container = document.getElementById('teamList');
+      
+      if (teamsData.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏢</div><p>ยังไม่มีทีมในระบบ</p></div>';
+      } else {
+        container.innerHTML = teamsData.map(team => {
+          // หาสมาชิกที่อยู่ในทีมนี้จริงๆ (จาก members collection)
+          const teamMembers = Object.entries(membersMap)
+            .filter(([id, data]) => data.teamIds.includes(team.id))
+            .map(([id, data]) => data.displayName);
+
+          return `
+            <div class="team-card">
+              <div class="team-header">
+                <div class="team-name">${team.name}</div>
+                <div class="team-actions">
+                  <button class="btn-warning" onclick="editTeam('${team.id}')">
+                    ✏️ แก้ไข
+                  </button>
+                  <button class="btn-danger" onclick="deleteTeam('${team.id}', '${team.name}')">
+                    🗑️ ลบ
+                  </button>
+                </div>
+              </div>
+              
+              ${team.description ? `<div class="team-description">${team.description}</div>` : ''}
+              
+              ${teamMembers.length > 0 ? `
+                <div class="team-members">
+                  ${teamMembers.map(name => `<span class="member-badge">${name}</span>`).join('')}
+                </div>
+              ` : '<div style="font-size: 0.8125rem; color: var(--gray-500); font-style: italic;">ไม่มีสมาชิกในทีม</div>'}
+              
+              <div class="team-stats">
+                👥 สมาชิก: ${teamMembers.length} คน
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Add/Update Team
+    document.getElementById('teamForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const teamId = document.getElementById('editTeamId').value;
+      const teamName = document.getElementById('teamName').value.trim();
+      const teamDescription = document.getElementById('teamDescription').value.trim();
+
+      const selectedMembers = [];
+      document.querySelectorAll('#memberCheckboxes input[type="checkbox"]:checked').forEach(cb => {
+        selectedMembers.push(cb.value);
+      });
+
+      try {
+        const teamData = {
+          name: teamName,
+          description: teamDescription,
+          memberIds: selectedMembers,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        if (teamId) {
+          // Update existing team
+          await db.collection('teams').doc(teamId).update(teamData);
+          
+          // Update members' teamIds
+          await updateMembersTeamIds(teamId, selectedMembers);
+          
+          showAlert(`แก้ไขทีม ${teamName} สำเร็จ!`, 'success');
+          cancelEdit();
+        } else {
+          // Create new team
+          const docRef = await db.collection('teams').add(teamData);
+          
+          // Update members' teamIds
+          await updateMembersTeamIds(docRef.id, selectedMembers);
+          
+          showAlert(`เพิ่มทีม ${teamName} สำเร็จ!`, 'success');
+          document.getElementById('teamForm').reset();
+          renderMemberCheckboxes();
+        }
+
+        loadTeams();
+      } catch (error) {
+        console.error('Error saving team:', error);
+        showAlert('เกิดข้อผิดพลาด: ' + error.message, 'error');
+      }
+    });
+
+    // Update Members' teamIds
+    async function updateMembersTeamIds(teamId, selectedMemberIds) {
+      // Get all members
+      const membersSnapshot = await db.collection('members').get();
+      
+      const batch = db.batch();
+      
+      membersSnapshot.forEach(doc => {
+        const memberId = doc.id;
+        const currentTeamIds = doc.data().teamIds || [];
+        let newTeamIds = [...currentTeamIds];
+
+        if (selectedMemberIds.includes(memberId)) {
+          // Add teamId if not exists
+          if (!newTeamIds.includes(teamId)) {
+            newTeamIds.push(teamId);
+          }
+        } else {
+          // Remove teamId if exists
+          newTeamIds = newTeamIds.filter(id => id !== teamId);
+        }
+
+        // Update only if changed
+        if (JSON.stringify(currentTeamIds.sort()) !== JSON.stringify(newTeamIds.sort())) {
+          batch.update(doc.ref, { teamIds: newTeamIds });
+        }
+      });
+
+      await batch.commit();
+    }
+
+    // Edit Team
+    async function editTeam(teamId) {
+      const team = teamsData.find(t => t.id === teamId);
+      if (!team) return;
+
+      editingTeamId = teamId;
+      document.getElementById('editTeamId').value = teamId;
+      document.getElementById('teamName').value = team.name;
+      document.getElementById('teamDescription').value = team.description;
+
+      // Get actual members from members collection
+      const membersSnapshot = await db.collection('members').get();
+      const actualMemberIds = [];
+      membersSnapshot.forEach(doc => {
+        const teamIds = doc.data().teamIds || [];
+        if (teamIds.includes(teamId)) {
+          actualMemberIds.push(doc.id);
+        }
+      });
+
+      renderMemberCheckboxes(actualMemberIds);
+
+      document.getElementById('formTitle').textContent = '✏️ แก้ไขทีม';
+      document.getElementById('submitBtn').textContent = 'บันทึกการแก้ไข';
+      document.getElementById('cancelBtn').style.display = 'block';
+
+      // Scroll to form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Cancel Edit
+    function cancelEdit() {
+      editingTeamId = null;
+      document.getElementById('editTeamId').value = '';
+      document.getElementById('teamForm').reset();
+      renderMemberCheckboxes();
+      
+      document.getElementById('formTitle').textContent = '➕ เพิ่มทีมใหม่';
+      document.getElementById('submitBtn').textContent = 'เพิ่มทีม';
+      document.getElementById('cancelBtn').style.display = 'none';
+    }
+
+    // Delete Team
+    async function deleteTeam(teamId, teamName) {
+      if (!confirm(`ต้องการลบทีม "${teamName}" หรือไม่?\n\nการลบจะไม่สามารถกู้คืนได้`)) {
+        return;
+      }
+
+      try {
+        // Delete team
+        await db.collection('teams').doc(teamId).delete();
+
+        // Remove teamId from all members
+        const membersSnapshot = await db.collection('members').get();
+        const batch = db.batch();
+        
+        membersSnapshot.forEach(doc => {
+          const teamIds = doc.data().teamIds || [];
+          if (teamIds.includes(teamId)) {
+            const newTeamIds = teamIds.filter(id => id !== teamId);
+            batch.update(doc.ref, { teamIds: newTeamIds });
+          }
+        });
+
+        await batch.commit();
+
+        showAlert(`ลบทีม ${teamName} สำเร็จ`, 'success');
+        
+        if (editingTeamId === teamId) {
+          cancelEdit();
+        }
+        
+        loadTeams();
+      } catch (error) {
+        console.error('Error deleting team:', error);
+        showAlert('ลบไม่สำเร็จ: ' + error.message, 'error');
+      }
+    }
+
+    // Initialize
+    window.onload = () => {
+      loadMembers();
+      loadTeams();
+    };
+
+    // Make functions available globally
+    window.editTeam = editTeam;
+    window.deleteTeam = deleteTeam;
+    window.cancelEdit = cancelEdit;
+  </script>
+</body>
+</html>
