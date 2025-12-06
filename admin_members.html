@@ -183,38 +183,32 @@
         <form id="addMemberForm">
           <div class="form-group">
             <label class="form-label required">LINE User ID</label>
-            <input type="text" id="userId" class="form-input" 
-                   placeholder="U17814d04672b1adfcd8fe146d8bcb343" required />
+            <input type="text" id="userId" class="form-input" required />
           </div>
 
           <div class="form-group">
             <label class="form-label required">ชื่อ (First Name)</label>
-            <input type="text" id="firstName" class="form-input" 
-                   placeholder="บัน" required />
+            <input type="text" id="firstName" class="form-input" required />
           </div>
 
           <div class="form-group">
             <label class="form-label required">นามสกุล (Last Name)</label>
-            <input type="text" id="lastName" class="form-input" 
-                   placeholder="ซวน" required />
+            <input type="text" id="lastName" class="form-input" required />
           </div>
 
           <div class="form-group">
             <label class="form-label required">ชื่อเล่น (Nickname)</label>
-            <input type="text" id="nickname" class="form-input" 
-                   placeholder="Aod" required />
+            <input type="text" id="nickname" class="form-input" required />
           </div>
 
           <div class="form-group">
             <label class="form-label required">เบอร์โทร (Phone)</label>
-            <input type="tel" id="phone" class="form-input" 
-                   placeholder="0951234567" required />
+            <input type="tel" id="phone" class="form-input" required />
           </div>
 
           <div class="form-group">
             <label class="form-label required">ตำแหน่ง (Position)</label>
-            <input type="text" id="position" class="form-input" 
-                   placeholder="UX/UI Designer" required />
+            <input type="text" id="position" class="form-input" required />
           </div>
 
           <div class="form-group">
@@ -235,7 +229,7 @@
 
       <!-- Member List -->
       <div class="card">
-        <div class="card-title">📋 รายชื่อสมาชิก</div>
+        <div class="card-title">📋 รายชื่อสมาชิก (<span id="memberCount">0</span> คน)</div>
         
         <div id="memberList" class="member-list">
           <div class="loading">
@@ -326,6 +320,9 @@
           });
         });
 
+        // Update member count
+        document.getElementById('memberCount').textContent = members.length;
+
         const container = document.getElementById('memberList');
         if (members.length === 0) {
           container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><p>ยังไม่มีสมาชิกในระบบ</p></div>';
@@ -333,7 +330,7 @@
           container.innerHTML = members.map(member => `
             <div class="member-card">
               <div class="member-info">
-                <div class="member-name">${member.nickname || member.firstName} ${member.lastName}</div>
+                <div class="member-name">${member.nickname || member.firstName}</div>
                 <div class="member-details">
                   <span>📱 ${member.phone}</span>
                   <span>💼 ${member.position}</span>
