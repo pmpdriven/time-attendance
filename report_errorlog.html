@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin - Error Log Viewer</title>
+  <title>Admin - Error Log Viewer V1.1</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -217,7 +217,7 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>📊 Error Log Viewer V1.0</h1>
+      <h1>📊 Error Log Viewer V1.1</h1>
       <p>ติดตาม error และจัดการข้อมูล members จาก log</p>
     </div>
 
@@ -413,7 +413,7 @@
       container.innerHTML = allLogs.map(log => {
         const userId = log.userId || log.attemptedUserId || 'Unknown';
         const displayName = log.displayName || 'Unknown User';
-        const isMember = !!log.userId;
+        const hasAttemptedUserId = !!log.attemptedUserId;
         
         return `
         <div class="log-item">
@@ -423,9 +423,9 @@
               <div class="log-function">📌 ${log.function || 'unknown'}</div>
             </div>
             <div class="log-actions">
-              ${!isMember ? `<button class="btn-small btn-info" onclick='openAddMemberModal(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
+              <button class="btn-small btn-info" onclick='openAddMemberModal(${JSON.stringify(log).replace(/'/g, "&#39;")})'>
                 ➕ เพิ่ม Member
-              </button>` : ''}
+              </button>
             </div>
           </div>
 
