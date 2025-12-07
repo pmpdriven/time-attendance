@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Check In/Out - Firebase Auth</title>
+  <title>Check In/Out</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -159,7 +159,7 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">V1.0.1 - Firebase Auth Fixed</div>
+    <div class="version">V1.0.1</div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -618,13 +618,12 @@
         const timeEmoji = state.currentAction === 'checkin' ? '🕣' : '🕠';
         const timeOnly = getFormattedTime();
         const displayName = state.memberData.nickname || state.memberData.firstName || state.lineDisplayName;
-        const position = state.memberData.position ? ` (${state.memberData.position})` : '';
         const authStatus = state.isAuthenticated ? '\n🔐 Secured with Firebase Auth' : '';
 
         if (liff.isInClient()) {
           await liff.sendMessages([{ 
             type: 'text', 
-            text: `${emoji} ${displayName}${position} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}${authStatus}`
+            text: `${emoji} ${displayName} – ${actionText} Successful\n${timeEmoji} ${getFormattedDate()} • ${timeOnly}${authStatus}`
           }]);
         }
 
