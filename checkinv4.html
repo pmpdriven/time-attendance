@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Check In/Out - Firebase Auth</title>
+  <title>Check In/Out</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -150,7 +150,7 @@
     <div class="user-details" id="userDetails"></div>
     <div class="auth-badge" id="authBadge" style="display: none;">
       <span class="indicator"></span>
-      <span>🔐 Authenticated with Firebase</span>
+      <span>Authenticated with Firebase</span>
     </div>
     <div id="statusCard" class="status-card loading">
       <div class="spinner"></div>
@@ -159,7 +159,7 @@
     <div class="button-container hidden" id="buttonContainer">
       <button id="actionBtn">Check In</button>
     </div>
-    <div class="version">V1.0.1 - Firebase Auth Fixed</div>
+    <div class="version">Pilot Release v1.0 — Powered by DesignOps</div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -418,11 +418,11 @@
       
       let detailsHTML = '';
       if (position) {
-        detailsHTML += `<span class="badge">👤 ${position}</span>`;
+        detailsHTML += `<span class="badge">✎ ${position}</span>`;
       }
       if (state.teamData && state.teamData.length > 0) {
         state.teamData.forEach(team => {
-          detailsHTML += `<span class="badge">👥 ${team.name}</span>`;
+          detailsHTML += `<span class="badge">🖥 ${team.name}</span>`;
         });
       }
       
@@ -569,13 +569,13 @@
     async function performAction() {
       if (state.isProcessing) return;
       if (!state.hasAccess) {
-        updateStatus('🚫 Access Denied', 'You do not have permission to use this system', 'error');
+        updateStatus('Access Denied', 'You do not have permission to use this system', 'error');
         return;
       }
 
       state.isProcessing = true;
       elements.actionBtn.disabled = true;
-      updateStatus('💾 Saving...', 'Please wait', 'loading');
+      updateStatus('Saving...', 'Please wait', 'loading');
 
       try {
         const duplicateCheck = await checkDuplicateAction(state.currentAction);
