@@ -30,9 +30,57 @@
     .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; }
     .header { background: linear-gradient(135deg, #475569, #64748b);
-      color: white; padding: 20px; text-align: center; }
+      color: white; padding: 20px; text-align: center; position: relative; }
     .header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
     .header p { font-size: 0.875rem; opacity: 0.9; }
+    
+    /* Real-time indicator */
+    .real-time-indicator {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    
+    /* Update notification */
+    .update-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--success);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .update-toast.show { display: flex; }
+    
     .controls { padding: 16px; background: var(--gray-100); display: flex; flex-direction: column; gap: 12px; }
     .top-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .date-input, .search-input { padding: 10px 12px; font-size: 0.875rem; border: 1px solid var(--gray-300);
@@ -45,9 +93,9 @@
       cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.2s; }
     .btn { background: var(--primary-light); color: var(--gray-900); }
     .btn:hover { background: var(--primary); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .export-btn { background: var(--success); color: white; }
     .export-btn:hover { background: #059669; transform: translateY(-1px); }
-
     .filter-row {
       display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
       padding: 8px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
@@ -61,24 +109,39 @@
     }
     .filter-btn .count { font-weight: 600; font-size: 0.75rem; }
     .filter-btn.active { background: var(--primary-light); color: var(--gray-900); border-color: var(--primary); }
-
+    
+    .last-update {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      padding: 8px;
+      background: var(--gray-100);
+    }
+    
     @media (max-width: 639px) {
       .top-row { flex-direction: column; }
       .date-input, .search-input, .btn, .export-btn { width: 100%; }
       .filter-btn { min-width: 90px; font-size: 0.75rem; padding: 6px 10px; }
+      .real-time-indicator { position: static; margin-top: 8px; justify-content: center; }
     }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
     th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--gray-200); }
     th { background: var(--gray-100); color: var(--gray-700); font-weight: 500;
          font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
     tr:hover { background: #f9fafb; }
+    
+    /* Row animation for new/updated records */
+    @keyframes highlightRow {
+      0% { background: #d1fae5; }
+      100% { background: transparent; }
+    }
+    tr.updated { animation: highlightRow 1s ease-out; }
+    
     .status { padding: 4px 8px; border-radius: 12px; font-size: 0.6875rem;
-              font-weight: 500; text-align: center; min-width: 60px; }
+              font-weight: 500; text-align: center; min-width: 60px; display: inline-block; }
     .status.checkedIn { background: #d1fae5; color: #065f46; }
     .status.checkedOut { background: #fee2e2; color: #991b1b; }
     .status.notCheckedIn { background: #fef3c7; color: #92400e; }
-
     .loading { text-align: center; padding: 32px; color: var(--gray-500); }
     .spinner {
       border: 3px solid var(--gray-200); border-top: 3px solid var(--primary);
@@ -94,24 +157,35 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>Check-In/Out Report</h1>
-      <p>ข้อมูลอัปเดตทุก 30 วินาที</p>
+      <h1>📊 Check-In/Out Report</h1>
+      <p>อัปเดตแบบ Real-time</p>
+      <div class="real-time-indicator">
+        <div class="pulse-dot"></div>
+        <span>Live</span>
+      </div>
     </div>
+    
+    <!-- Update Toast Notification -->
+    <div class="update-toast" id="updateToast">
+      <span>✨</span>
+      <span>ข้อมูลอัปเดตแล้ว</span>
+    </div>
+    
     <div class="controls">
       <div class="top-row">
         <input type="date" id="datePicker" class="date-input" />
         <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาชื่อ..." />
-        <button class="btn" onclick="loadReport()">แสดง</button>
+        <button class="btn" id="loadBtn" onclick="startListening()">แสดง</button>
         <button class="export-btn" onclick="exportToExcel()">Export Excel</button>
       </div>
       <div class="filter-row" id="filterButtons"></div>
     </div>
-
+    
     <div id="loading" class="loading">
       <div class="spinner"></div>
       <p>กำลังโหลดข้อมูล...</p>
     </div>
-
+    
     <div id="report" style="display: none;">
       <table id="reportTable">
         <thead>
@@ -125,16 +199,18 @@
         </thead>
         <tbody id="reportBody"></tbody>
       </table>
+      <div class="last-update" id="lastUpdate">
+        อัปเดตล่าสุด: -
+      </div>
     </div>
-
+    
     <div class="footer">
-      <p>Pilot Release v1.0 — Powered by DesignOps</p>
+      <p>Pilot Release v1 — DesignOps</p>
     </div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
   <script>
     // Firebase Configuration
     const firebaseConfig = {
@@ -145,14 +221,23 @@
       messagingSenderId: "1018740462032",
       appId: "1:1018740462032:web:6b86ff04a238d550ab29d5"
     };
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
+    
+    // Enable offline persistence for better performance
+    db.enablePersistence()
+      .catch(err => console.warn('Persistence error:', err));
+    
+    // Global variables
     let allMembers = [];
+    let membersCache = {}; // Cache members data
     let currentFilter = 'all';
     let reportData = null;
-    let autoRefresh = null;
-
+    let attendanceUnsubscribe = null; // Store unsubscribe function
+    let isFirstLoad = true;
+    let updatedRecords = new Set(); // Track updated records
+    
     const filters = [
       { key: 'all',           label: 'ทั้งหมด' },
       { key: 'checkedIn',     label: 'Check In' },
@@ -162,7 +247,7 @@
       { key: 'lateCheckIn',   label: 'มาสาย (หลัง 09:00)' },
       { key: 'possibleAbsent',label: 'อาจลา/ขาด' }
     ];
-
+    
     function toThaiDate(dateStr) {
       const d = new Date(dateStr);
       const thaiYear = d.getFullYear() + 543;
@@ -170,11 +255,205 @@
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       return `${dd}/${mm}/${thaiYear}`;
     }
-
+    
+    function showUpdateNotification() {
+      const toast = document.getElementById('updateToast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+    
+    function updateLastUpdateTime() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('th-TH', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      document.getElementById('lastUpdate').textContent = `อัปเดตล่าสุด: ${timeStr}`;
+    }
+    
+    // Load members data once and cache it
+    async function loadMembersOnce() {
+      if (Object.keys(membersCache).length > 0) {
+        console.log('✅ Using cached members data');
+        return membersCache;
+      }
+      
+      console.log('📥 Loading members data...');
+      const membersSnap = await db.collection('members').get();
+      
+      membersSnap.forEach(doc => {
+        const data = doc.data();
+        membersCache[doc.id] = {
+          userId: doc.id,
+          displayName: data.nickname || data.firstName || 'Unknown',
+          firstName: data.firstName,
+          lastName: data.lastName,
+          nickname: data.nickname,
+          position: data.position
+        };
+      });
+      
+      console.log(`✅ Cached ${Object.keys(membersCache).length} members`);
+      return membersCache;
+    }
+    
+    // Start real-time listening
+    async function startListening() {
+      const dateInput = document.getElementById('datePicker').value;
+      if (!dateInput) {
+        alert('กรุณาเลือกวันที่');
+        return;
+      }
+      
+      // Stop previous listener if exists
+      stopListening();
+      
+      const thaiDate = toThaiDate(dateInput);
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('report').style.display = 'none';
+      document.getElementById('loadBtn').disabled = true;
+      isFirstLoad = true;
+      
+      try {
+        // Load members data (cached after first time)
+        await loadMembersOnce();
+        
+        console.log(`🎧 Starting real-time listener for ${thaiDate}...`);
+        
+        // Setup real-time listener for attendance
+        attendanceUnsubscribe = db.collection('attendance')
+          .where('date', '==', thaiDate)
+          .onSnapshot(
+            (snapshot) => {
+              if (isFirstLoad) {
+                console.log(`📊 Initial load: ${snapshot.size} records`);
+                processAttendanceSnapshot(snapshot, thaiDate);
+                isFirstLoad = false;
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('report').style.display = 'block';
+                document.getElementById('loadBtn').disabled = false;
+              } else {
+                console.log('🔄 Real-time update received');
+                
+                // Track changes
+                updatedRecords.clear();
+                snapshot.docChanges().forEach(change => {
+                  const data = change.doc.data();
+                  if (change.type === 'added') {
+                    console.log('➕ New record:', data.userId, data.action);
+                    updatedRecords.add(data.userId);
+                  }
+                  if (change.type === 'modified') {
+                    console.log('✏️  Updated:', data.userId, data.action);
+                    updatedRecords.add(data.userId);
+                  }
+                });
+                
+                processAttendanceSnapshot(snapshot, thaiDate);
+                showUpdateNotification();
+              }
+              
+              updateLastUpdateTime();
+            },
+            (error) => {
+              console.error('❌ Listener error:', error);
+              alert('เกิดข้อผิดพลาด: ' + error.message);
+              document.getElementById('loading').style.display = 'none';
+              document.getElementById('loadBtn').disabled = false;
+            }
+          );
+          
+      } catch (err) {
+        console.error('Error starting listener:', err);
+        alert('เกิดข้อผิดพลาด: ' + err.message);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('loadBtn').disabled = false;
+      }
+    }
+    
+    // Process attendance snapshot
+    function processAttendanceSnapshot(snapshot, thaiDate) {
+      const attendanceMap = {};
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const userId = data.userId;
+        
+        if (!attendanceMap[userId]) {
+          attendanceMap[userId] = {
+            checkin: null,
+            checkout: null
+          };
+        }
+        
+        if (data.action === 'checkin') {
+          attendanceMap[userId].checkin = data.dateTime;
+        } else if (data.action === 'checkout') {
+          attendanceMap[userId].checkout = data.dateTime;
+        }
+      });
+      
+      // Create report data from cached members
+      allMembers = Object.keys(membersCache).map(userId => {
+        const member = membersCache[userId];
+        const attendance = attendanceMap[userId] || {};
+        
+        let status = 'notCheckedIn';
+        let checkinTime = null;
+        let checkoutTime = null;
+        let checkinHour = 0;
+        
+        if (attendance.checkin) {
+          const timePart = attendance.checkin.split(' ')[1]; // "09:15"
+          checkinTime = timePart;
+          checkinHour = parseInt(timePart.split(':')[0]);
+          status = 'checkedIn';
+        }
+        
+        if (attendance.checkout) {
+          const timePart = attendance.checkout.split(' ')[1];
+          checkoutTime = timePart;
+          status = 'checkedOut';
+        }
+        
+        return {
+          userId,
+          displayName: member.displayName,
+          firstName: member.firstName,
+          lastName: member.lastName,
+          nickname: member.nickname,
+          position: member.position,
+          checkinTime,
+          checkoutTime,
+          checkinHour,
+          status,
+          isUpdated: updatedRecords.has(userId)
+        };
+      });
+      
+      reportData = {
+        date: thaiDate,
+        members: allMembers
+      };
+      
+      createFilterButtons();
+      applyFilters();
+    }
+    
+    // Stop listening
+    function stopListening() {
+      if (attendanceUnsubscribe) {
+        console.log('🛑 Stopping previous listener...');
+        attendanceUnsubscribe();
+        attendanceUnsubscribe = null;
+      }
+    }
+    
     function createFilterButtons() {
       const container = document.getElementById('filterButtons');
       container.innerHTML = '';
-
+      
       const counts = {
         all: allMembers.length,
         checkedIn: allMembers.filter(m => m.status === 'checkedIn').length,
@@ -184,7 +463,7 @@
         lateCheckIn: allMembers.filter(m => m.checkinHour > 9).length,
         possibleAbsent: allMembers.filter(m => m.status === 'notCheckedIn').length
       };
-
+      
       filters.forEach(f => {
         const count = counts[f.key] || 0;
         const btn = document.createElement('button');
@@ -196,124 +475,23 @@
         container.appendChild(btn);
       });
     }
-
-    async function loadReport() {
-      const dateInput = document.getElementById('datePicker').value;
-      if (!dateInput) return alert('กรุณาเลือกวันที่');
-      const thaiDate = toThaiDate(dateInput);
-
-      document.getElementById('loading').style.display = 'block';
-      document.getElementById('report').style.display = 'none';
-
-      try {
-        // ดึงข้อมูล members ทั้งหมด
-        const membersSnap = await db.collection('members').get();
-        const membersMap = {};
-        membersSnap.forEach(doc => {
-          const data = doc.data();
-          membersMap[doc.id] = {
-            userId: doc.id,
-            displayName: data.nickname || data.firstName || 'Unknown',
-            firstName: data.firstName,
-            lastName: data.lastName,
-            nickname: data.nickname,
-            position: data.position
-          };
-        });
-
-        // ดึงข้อมูล attendance ของวันที่เลือก
-        const attendanceSnap = await db.collection('attendance')
-          .where('date', '==', thaiDate)
-          .get();
-
-        const attendanceMap = {};
-        attendanceSnap.forEach(doc => {
-          const data = doc.data();
-          const userId = data.userId;
-          
-          if (!attendanceMap[userId]) {
-            attendanceMap[userId] = {
-              checkin: null,
-              checkout: null
-            };
-          }
-
-          if (data.action === 'checkin') {
-            attendanceMap[userId].checkin = data.dateTime;
-          } else if (data.action === 'checkout') {
-            attendanceMap[userId].checkout = data.dateTime;
-          }
-        });
-
-        // สร้าง report data
-        allMembers = Object.keys(membersMap).map(userId => {
-          const member = membersMap[userId];
-          const attendance = attendanceMap[userId] || {};
-          
-          let status = 'notCheckedIn';
-          let checkinTime = null;
-          let checkoutTime = null;
-          let checkinHour = 0;
-
-          if (attendance.checkin) {
-            const timePart = attendance.checkin.split(' ')[1]; // "09:15"
-            checkinTime = timePart;
-            checkinHour = parseInt(timePart.split(':')[0]);
-            status = 'checkedIn';
-          }
-
-          if (attendance.checkout) {
-            const timePart = attendance.checkout.split(' ')[1];
-            checkoutTime = timePart;
-            status = 'checkedOut';
-          }
-
-          return {
-            userId,
-            displayName: member.displayName,
-            firstName: member.firstName,
-            lastName: member.lastName,
-            nickname: member.nickname,
-            position: member.position,
-            checkinTime,
-            checkoutTime,
-            checkinHour,
-            status
-          };
-        });
-
-        reportData = {
-          date: thaiDate,
-          members: allMembers
-        };
-
-        createFilterButtons();
-        setFilter('all');
-
-        if (autoRefresh) clearInterval(autoRefresh);
-        autoRefresh = setInterval(loadReport, 30000);
-      } catch (err) {
-        console.error('Error loading report:', err);
-        alert('เกิดข้อผิดพลาด: ' + err.message);
-      } finally {
-        document.getElementById('loading').style.display = 'none';
-      }
-    }
-
+    
     function setFilter(filter) {
       currentFilter = filter;
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll(`[data-filter="${filter}"]`).forEach(b => b.classList.add('active'));
+      const targetBtn = document.querySelector(`[data-filter="${filter}"]`);
+      if (targetBtn) targetBtn.classList.add('active');
       applyFilters();
     }
-
+    
     function applyFilters() {
       const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
       const tbody = document.getElementById('reportBody');
       tbody.innerHTML = '';
-
+      
       let filtered = [...allMembers];
-
+      
+      // Apply status filter
       if (currentFilter === 'lateCheckIn') {
         filtered = filtered.filter(m => m.checkinHour > 9);
       }
@@ -326,21 +504,35 @@
       else if (currentFilter !== 'all') {
         filtered = filtered.filter(m => m.status === currentFilter);
       }
-
+      
+      // Apply search filter
       if (searchText) {
-        filtered = filtered.filter(m => m.displayName.toLowerCase().includes(searchText));
+        filtered = filtered.filter(m => 
+          m.displayName.toLowerCase().includes(searchText)
+        );
       }
-
+      
+      // Render table
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="no-data">ไม่พบข้อมูลที่ตรงกัน</td></tr>`;
       } else {
         filtered.forEach((m, i) => {
           let statusText = 'ยังไม่มา';
           let statusClass = 'notCheckedIn';
-          if (m.status === 'checkedOut') { statusText = 'ออกงานแล้ว'; statusClass = 'checkedOut'; }
-          else if (m.status === 'checkedIn') { statusText = 'เข้างานแล้ว'; statusClass = 'checkedIn'; }
-
+          if (m.status === 'checkedOut') { 
+            statusText = 'ออกงานแล้ว'; 
+            statusClass = 'checkedOut'; 
+          }
+          else if (m.status === 'checkedIn') { 
+            statusText = 'เข้างานแล้ว'; 
+            statusClass = 'checkedIn'; 
+          }
+          
           const row = document.createElement('tr');
+          if (m.isUpdated) {
+            row.classList.add('updated');
+          }
+          
           row.innerHTML = `
             <td>${i + 1}</td>
             <td><strong>${m.displayName}</strong></td>
@@ -351,20 +543,35 @@
           tbody.appendChild(row);
         });
       }
-
+      
       document.getElementById('report').style.display = 'block';
-      createFilterButtons();
     }
-
+    
     function exportToExcel() {
-      if (!reportData) return alert('กรุณาโหลดข้อมูลก่อน');
+      if (!reportData) {
+        alert('กรุณาโหลดข้อมูลก่อน');
+        return;
+      }
+      
+      const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+      
       const data = allMembers
         .filter(m => {
-          if (currentFilter === 'all') return true;
-          if (currentFilter === 'lateCheckIn') return m.checkinHour > 9;
-          if (currentFilter === 'possibleAbsent') return m.status === 'notCheckedIn';
-          if (currentFilter === 'notCheckedOut') return m.status === 'checkedIn';
-          return m.status === currentFilter;
+          // Apply filter
+          let passFilter = true;
+          if (currentFilter === 'lateCheckIn') passFilter = m.checkinHour > 9;
+          else if (currentFilter === 'possibleAbsent') passFilter = m.status === 'notCheckedIn';
+          else if (currentFilter === 'notCheckedOut') passFilter = m.status === 'checkedIn';
+          else if (currentFilter !== 'all') passFilter = m.status === currentFilter;
+          
+          if (!passFilter) return false;
+          
+          // Apply search
+          if (searchText && !m.displayName.toLowerCase().includes(searchText)) {
+            return false;
+          }
+          
+          return true;
         })
         .map((m, i) => ({
           'No.': i + 1,
@@ -374,20 +581,32 @@
           'Status': m.status === 'checkedOut' ? 'ออกงานแล้ว' :
                    m.status === 'checkedIn' ? 'เข้างานแล้ว' : 'ยังไม่มา'
         }));
-
+      
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Report");
       XLSX.writeFile(wb, `รายงาน_CheckInOut_${reportData.date}.xlsx`);
     }
-
+    
+    // Event listeners
     document.getElementById('searchInput').addEventListener('input', applyFilters);
-    document.getElementById('datePicker').addEventListener('change', loadReport);
-
+    
+    document.getElementById('datePicker').addEventListener('change', () => {
+      if (document.getElementById('datePicker').value) {
+        startListening();
+      }
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      stopListening();
+    });
+    
+    // Initialize on load
     window.onload = () => {
       const today = new Date();
       document.getElementById('datePicker').value = today.toISOString().split('T')[0];
-      loadReport();
+      startListening();
     };
   </script>
 </body>
