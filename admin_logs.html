@@ -156,6 +156,32 @@
       background: var(--gray-400);
     }
     
+    /* View Toggle */
+    .view-toggle {
+      display: flex;
+      gap: 0;
+      background: var(--gray-200);
+      border-radius: 8px;
+      padding: 4px;
+    }
+    .view-toggle-btn {
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      border: none;
+      background: transparent;
+      color: var(--gray-700);
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .view-toggle-btn.active {
+      background: white;
+      color: var(--gray-900);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
     /* Filter Pills */
     .filter-section {
       border-top: 1px solid var(--gray-200);
@@ -239,6 +265,8 @@
       .date-range { flex-direction: column; }
       .real-time-indicator { position: static; margin-top: 12px; justify-content: center; }
       .form-select { width: 100%; }
+      .view-toggle { width: 100%; }
+      .view-toggle-btn { flex: 1; }
     }
     
     .stats {
@@ -268,6 +296,8 @@
     .log-list {
       max-height: 700px; overflow-y: auto;
     }
+    
+    /* Individual Log Item */
     .log-item {
       padding: 16px 20px; border-bottom: 1px solid var(--gray-200);
       transition: background 0.2s;
@@ -342,6 +372,121 @@
     }
     .meta-badge.no-auth {
       background: #fee2e2; color: #991b1b;
+    }
+    
+    /* Grouped User Item */
+    .user-group-item {
+      padding: 20px; border-bottom: 1px solid var(--gray-200);
+      transition: background 0.2s;
+    }
+    .user-group-item:hover { background: var(--gray-100); }
+    
+    .user-group-header {
+      display: flex; justify-content: space-between; align-items: start;
+      margin-bottom: 16px; gap: 12px;
+    }
+    .user-info {
+      flex: 1;
+    }
+    .user-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 4px;
+    }
+    .user-id {
+      font-size: 0.8125rem;
+      color: var(--gray-600);
+      font-family: 'Courier New', monospace;
+    }
+    .user-stats {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .user-stat-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      background: var(--danger);
+      color: white;
+    }
+    
+    .error-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .error-summary-item {
+      background: var(--gray-100);
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .error-summary-label {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-bottom: 4px;
+    }
+    .error-summary-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+    
+    .error-list {
+      margin-top: 12px;
+    }
+    .error-list-toggle {
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      background: var(--gray-200);
+      color: var(--gray-700);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .error-list-toggle:hover {
+      background: var(--gray-300);
+    }
+    .error-list-content {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--gray-50);
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .error-list-content.show {
+      display: block;
+    }
+    .error-item-compact {
+      padding: 8px;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 0.8125rem;
+    }
+    .error-item-compact:last-child {
+      border-bottom: none;
+    }
+    .error-item-time {
+      color: var(--gray-500);
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+    }
+    .error-item-function {
+      color: var(--info);
+      font-family: 'Courier New', monospace;
+      margin-bottom: 4px;
+    }
+    .error-item-message {
+      color: var(--danger);
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
     }
     
     .checkbox-item {
@@ -439,6 +584,12 @@
           <input type="date" id="endDate" class="form-input" />
         </div>
         <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาชื่อ, User ID..." />
+        <div class="view-toggle">
+          <button class="view-toggle-btn active" onclick="setViewMode('list')">📋 All Logs</button>
+          <button class="view-toggle-btn" onclick="setViewMode('grouped')">👥 By User</button>
+        </div>
+      </div>
+      <div class="controls-row">
         <button class="btn btn-primary" id="loadBtn" onclick="startListening()">เริ่มติดตาม</button>
         <button class="btn btn-danger" id="stopBtn" onclick="stopListening()" style="display: none;">หยุดติดตาม</button>
         <button class="btn btn-success" onclick="exportToExcel()">📥 Export Excel</button>
@@ -580,6 +731,7 @@
     let logsUnsubscribe = null;
     let isFirstLoad = true;
     let newLogIds = new Set();
+    let viewMode = 'list'; // 'list' or 'grouped'
     
     // Filter state
     let activeFilters = {
@@ -589,7 +741,7 @@
       search: ''
     };
     
-    // Available platforms and functions (will be populated from data)
+    // Available platforms and functions
     let availablePlatforms = new Set();
     let availableFunctions = new Set();
     
@@ -603,6 +755,15 @@
       const min = String(date.getMinutes()).padStart(2, '0');
       const s = String(date.getSeconds()).padStart(2, '0');
       return `${d}/${m}/${y} ${h}:${min}:${s}`;
+    }
+    
+    function formatDateShort(timestamp) {
+      if (!timestamp) return '-';
+      const date = timestamp.toDate();
+      const h = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      const s = String(date.getSeconds()).padStart(2, '0');
+      return `${h}:${min}:${s}`;
     }
     
     function showUpdateNotification(message = 'มี error log ใหม่') {
@@ -637,6 +798,20 @@
         indicator.classList.add('inactive');
         status.textContent = 'Offline';
       }
+    }
+    
+    // Set view mode
+    function setViewMode(mode) {
+      viewMode = mode;
+      
+      // Update toggle buttons
+      document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Re-render
+      renderLogs();
     }
     
     // Load teams once and cache
@@ -936,6 +1111,20 @@
       document.getElementById('showingCount').textContent = filteredLogs.length;
     }
     
+    // Toggle error list
+    function toggleErrorList(userId) {
+      const element = document.getElementById(`errorList_${userId}`);
+      const button = document.getElementById(`errorListBtn_${userId}`);
+      
+      if (element.classList.contains('show')) {
+        element.classList.remove('show');
+        button.textContent = '📋 แสดงรายละเอียด';
+      } else {
+        element.classList.add('show');
+        button.textContent = '📋 ซ่อนรายละเอียด';
+      }
+    }
+    
     function renderLogs() {
       const container = document.getElementById('logList');
       
@@ -944,6 +1133,20 @@
         return;
       }
       
+      if (viewMode === 'grouped') {
+        renderGroupedView(container);
+      } else {
+        renderListView(container);
+      }
+      
+      // Clear new log markers after render
+      setTimeout(() => {
+        newLogIds.clear();
+      }, 2000);
+    }
+    
+    // Render list view (original)
+    function renderListView(container) {
       container.innerHTML = filteredLogs.map(log => {
         const userId = log.userId || log.attemptedUserId || 'Unknown';
         const displayName = log.displayName || 'Unknown User';
@@ -988,11 +1191,101 @@
         </div>
       `;
       }).join('');
+    }
+    
+    // Render grouped view
+    function renderGroupedView(container) {
+      // Group logs by user
+      const userGroups = {};
       
-      // Clear new log markers after render
-      setTimeout(() => {
-        newLogIds.clear();
-      }, 2000);
+      filteredLogs.forEach(log => {
+        const userId = log.userId || log.attemptedUserId || 'Unknown';
+        
+        if (!userGroups[userId]) {
+          userGroups[userId] = {
+            userId: userId,
+            displayName: log.displayName || 'Unknown User',
+            isNotRegistered: !!log.attemptedUserId,
+            authenticated: log.authenticated,
+            logs: []
+          };
+        }
+        
+        userGroups[userId].logs.push(log);
+      });
+      
+      // Sort by error count (descending)
+      const sortedGroups = Object.values(userGroups).sort((a, b) => b.logs.length - a.logs.length);
+      
+      container.innerHTML = sortedGroups.map(group => {
+        const errorCount = group.logs.length;
+        const platforms = [...new Set(group.logs.map(l => l.platform).filter(Boolean))];
+        const functions = [...new Set(group.logs.map(l => l.function).filter(Boolean))];
+        const firstError = group.logs[0].timestamp;
+        const lastError = group.logs[group.logs.length - 1].timestamp;
+        
+        return `
+        <div class="user-group-item">
+          <div class="user-group-header">
+            <div class="user-info">
+              <div class="user-name">
+                ${group.displayName}
+                ${group.isNotRegistered ? ' ❌' : ''}
+              </div>
+              <div class="user-id">${group.userId}</div>
+            </div>
+            <div class="user-stats">
+              <div class="user-stat-badge">${errorCount} errors</div>
+              ${group.isNotRegistered ? `
+                <button class="btn-small btn-info" onclick='openAddMemberModalFromGroup(${JSON.stringify(group).replace(/'/g, "&#39;")})'>
+                  ➕ เพิ่ม Member
+                </button>
+              ` : ''}
+            </div>
+          </div>
+          
+          <div class="error-summary">
+            <div class="error-summary-item">
+              <div class="error-summary-label">Platforms</div>
+              <div class="error-summary-value">${platforms.join(', ') || '-'}</div>
+            </div>
+            <div class="error-summary-item">
+              <div class="error-summary-label">Functions</div>
+              <div class="error-summary-value">${functions.length} types</div>
+            </div>
+            <div class="error-summary-item">
+              <div class="error-summary-label">First Error</div>
+              <div class="error-summary-value">${formatDateShort(firstError)}</div>
+            </div>
+            <div class="error-summary-item">
+              <div class="error-summary-label">Last Error</div>
+              <div class="error-summary-value">${formatDateShort(lastError)}</div>
+            </div>
+          </div>
+          
+          <div class="log-meta">
+            ${platforms.map(p => `<span class="meta-badge platform">${p}</span>`).join('')}
+            ${group.authenticated ? '<span class="meta-badge auth">🔐 Authenticated</span>' : '<span class="meta-badge no-auth">🔓 Not Authenticated</span>'}
+            ${group.isNotRegistered ? '<span class="meta-badge no-auth">❌ Not Registered</span>' : ''}
+          </div>
+          
+          <div class="error-list">
+            <button class="error-list-toggle" id="errorListBtn_${group.userId}" onclick="toggleErrorList('${group.userId}')">
+              📋 แสดงรายละเอียด (${errorCount} errors)
+            </button>
+            <div class="error-list-content" id="errorList_${group.userId}">
+              ${group.logs.map(log => `
+                <div class="error-item-compact">
+                  <div class="error-item-time">${formatDate(log.timestamp)}</div>
+                  <div class="error-item-function">📌 ${log.function || 'unknown'}</div>
+                  <div class="error-item-message">${log.error || 'No error message'}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
     }
     
     async function openAddMemberModal(log) {
@@ -1011,6 +1304,12 @@
       await loadTeamsForModal();
       
       document.getElementById('addMemberModal').classList.add('show');
+    }
+    
+    async function openAddMemberModalFromGroup(group) {
+      // Use first log from the group
+      const firstLog = group.logs[0];
+      await openAddMemberModal(firstLog);
     }
     
     async function loadTeamsForModal() {
@@ -1096,27 +1395,69 @@
         return;
       }
       
-      const data = filteredLogs.map((log, i) => ({
-        'No.': i + 1,
-        'User ID': log.userId || log.attemptedUserId || '-',
-        'Display Name': log.displayName || '-',
-        'Function': log.function || '-',
-        'Error': log.error || '-',
-        'Platform': log.platform || '-',
-        'User Agent': log.userAgent || '-',
-        'Authenticated': log.authenticated ? 'Yes' : 'No',
-        'Is Registered': log.attemptedUserId ? 'No' : 'Yes',
-        'Timestamp': formatDate(log.timestamp)
-      }));
+      let data;
+      
+      if (viewMode === 'grouped') {
+        // Export grouped data
+        const userGroups = {};
+        
+        filteredLogs.forEach(log => {
+          const userId = log.userId || log.attemptedUserId || 'Unknown';
+          
+          if (!userGroups[userId]) {
+            userGroups[userId] = {
+              userId: userId,
+              displayName: log.displayName || 'Unknown User',
+              isNotRegistered: !!log.attemptedUserId,
+              authenticated: log.authenticated,
+              logs: []
+            };
+          }
+          
+          userGroups[userId].logs.push(log);
+        });
+        
+        data = Object.values(userGroups).map((group, i) => {
+          const platforms = [...new Set(group.logs.map(l => l.platform).filter(Boolean))];
+          const functions = [...new Set(group.logs.map(l => l.function).filter(Boolean))];
+          
+          return {
+            'No.': i + 1,
+            'User ID': group.userId,
+            'Display Name': group.displayName,
+            'Error Count': group.logs.length,
+            'Platforms': platforms.join(', '),
+            'Functions': functions.join(', '),
+            'Authenticated': group.authenticated ? 'Yes' : 'No',
+            'Is Registered': group.isNotRegistered ? 'No' : 'Yes',
+            'First Error': formatDate(group.logs[0].timestamp),
+            'Last Error': formatDate(group.logs[group.logs.length - 1].timestamp)
+          };
+        });
+      } else {
+        // Export individual logs
+        data = filteredLogs.map((log, i) => ({
+          'No.': i + 1,
+          'User ID': log.userId || log.attemptedUserId || '-',
+          'Display Name': log.displayName || '-',
+          'Function': log.function || '-',
+          'Error': log.error || '-',
+          'Platform': log.platform || '-',
+          'User Agent': log.userAgent || '-',
+          'Authenticated': log.authenticated ? 'Yes' : 'No',
+          'Is Registered': log.attemptedUserId ? 'No' : 'Yes',
+          'Timestamp': formatDate(log.timestamp)
+        }));
+      }
       
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Error Logs");
+      XLSX.utils.book_append_sheet(wb, ws, viewMode === 'grouped' ? "Grouped By User" : "Error Logs");
       
       const startDate = document.getElementById('startDate').value;
       const endDate = document.getElementById('endDate').value;
       
-      let filename = `ErrorLogs_${startDate}_to_${endDate}`;
+      let filename = `ErrorLogs_${viewMode === 'grouped' ? 'Grouped' : 'List'}_${startDate}_to_${endDate}`;
       if (activeFilters.platform !== 'all') filename += `_${activeFilters.platform}`;
       if (activeFilters.function !== 'all') filename += `_${activeFilters.function}`;
       
@@ -1140,8 +1481,11 @@
     
     // Make functions available globally
     window.openAddMemberModal = openAddMemberModal;
+    window.openAddMemberModalFromGroup = openAddMemberModalFromGroup;
     window.toggleFilter = toggleFilter;
     window.clearAllFilters = clearAllFilters;
+    window.setViewMode = setViewMode;
+    window.toggleErrorList = toggleErrorList;
   </script>
 </body>
 </html>
