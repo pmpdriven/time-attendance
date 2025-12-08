@@ -81,7 +81,31 @@
       margin: 2px;
       font-size: 0.75rem;
     }
-
+    
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .step-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+    
     .form-group {
       margin-bottom: 20px;
     }
@@ -113,38 +137,93 @@
       min-height: 80px;
       resize: vertical;
     }
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    
+    .status-card {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-left: 4px solid var(--info);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
     }
-
-    .status-info {
-      background: var(--gray-100);
-      border-left: 3px solid var(--info);
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+    .status-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 16px;
     }
-    .status-info-title {
+    .status-card-icon {
+      font-size: 1.25rem;
+    }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .status-row:last-child {
+      border-bottom: none;
+    }
+    .status-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-700);
+    }
+    .status-value {
       font-size: 0.875rem;
       font-weight: 600;
-      color: var(--gray-700);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-value.completed {
+      color: var(--success);
+    }
+    .status-value.pending {
+      color: var(--gray-500);
+    }
+    
+    .complete-message {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border-left: 4px solid var(--success);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 24px;
+      display: none;
+    }
+    .complete-message.show {
+      display: block;
+      animation: slideDown 0.3s ease-out;
+    }
+    .complete-message-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+    .complete-message-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--success);
       margin-bottom: 8px;
     }
-    .status-info-content {
-      font-size: 0.8125rem;
+    .complete-message-text {
+      font-size: 0.875rem;
       color: var(--gray-600);
-      line-height: 1.5;
+      line-height: 1.6;
     }
-
-    .button-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    
+    .button-wrapper {
       margin-top: 24px;
+      display: none;
+    }
+    .button-wrapper.show {
+      display: block;
     }
     .btn {
+      width: 100%;
       padding: 14px 24px;
       font-size: 0.9375rem;
       border: none;
@@ -153,6 +232,10 @@
       font-family: inherit;
       font-weight: 600;
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
     .btn-checkin {
       background: var(--success);
@@ -161,6 +244,7 @@
     .btn-checkin:hover:not(:disabled) {
       background: #059669;
       transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
     }
     .btn-checkout {
       background: var(--warning);
@@ -169,12 +253,13 @@
     .btn-checkout:hover:not(:disabled) {
       background: #f59e0b;
       transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
+    
     .alert {
       padding: 12px 16px;
       border-radius: 8px;
@@ -205,7 +290,7 @@
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
+    
     .modal {
       display: none;
       position: fixed;
@@ -287,7 +372,7 @@
     .btn-primary:hover {
       background: var(--primary);
     }
-
+    
     .loading {
       display: none;
       text-align: center;
@@ -304,18 +389,16 @@
       margin: 0 auto 12px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
+    
     .version {
       text-align: center;
       color: var(--gray-500);
       font-size: 0.75rem;
       margin-top: 24px;
     }
-
+    
     @media (max-width: 480px) {
       .container { padding: 30px 20px; }
-      .form-row { grid-template-columns: 1fr; }
-      .button-group { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -325,30 +408,58 @@
       <div class="header-title">Manual Check In/Out</div>
       <div class="header-subtitle">บันทึกเวลาเข้า-ออกงานด้วยตนเอง</div>
     </div>
-
+    
     <div class="user-info" id="userInfo">Loading...</div>
     <div class="user-details" id="userDetails"></div>
-
+    
     <div id="alert" class="alert"></div>
-
+    
     <form id="manualForm">
+      <!-- STEP 1: เลือกวันที่ -->
       <div class="form-group">
+        <div class="step-indicator">
+          <span class="step-number">1</span>
+          <span class="step-title">เลือกวันที่</span>
+        </div>
         <label class="form-label required">วันที่ (Date)</label>
         <input type="date" id="dateInput" class="form-input" required />
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label required">เวลา Check In</label>
-          <input type="time" id="checkinTime" class="form-input" />
+      <!-- STEP 2: สถานะการบันทึก -->
+      <div class="status-card" id="statusCard">
+        <div class="status-card-header">
+          <span class="status-card-icon">📊</span>
+          <span>สถานะการบันทึกเวลา</span>
         </div>
-        <div class="form-group">
-          <label class="form-label required">เวลา Check Out</label>
-          <input type="time" id="checkoutTime" class="form-input" />
+        <div class="status-row">
+          <span class="status-label">Check In</span>
+          <span class="status-value" id="statusCheckin">
+            <span>⏳</span> รอบันทึก
+          </span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Check Out</span>
+          <span class="status-value" id="statusCheckout">
+            <span>⏳</span> รอบันทึก
+          </span>
         </div>
       </div>
 
-      <div class="form-group">
+      <!-- Complete Message -->
+      <div class="complete-message" id="completeMessage">
+        <div class="complete-message-icon">✅</div>
+        <div class="complete-message-title">บันทึกเวลาเข้า-ออกงานครบถ้วนแล้ว</div>
+        <div class="complete-message-text">
+          หากต้องการแก้ไขข้อมูล กรุณาติดต่อผู้ดูแลระบบ
+        </div>
+      </div>
+
+      <!-- STEP 3: เลือกเหตุผล -->
+      <div class="form-group" id="reasonGroup">
+        <div class="step-indicator">
+          <span class="step-number">3</span>
+          <span class="step-title">เลือกเหตุผล</span>
+        </div>
         <label class="form-label required">เหตุผล (Reason)</label>
         <select id="reasonSelect" class="form-select" required>
           <option value="">-- เลือกเหตุผล --</option>
@@ -364,14 +475,32 @@
         </select>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">รายละเอียดเพิ่มเติม (Details)</label>
-        <textarea id="reasonDetail" class="form-textarea" placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+      <!-- STEP 4: เลือกเวลา -->
+      <div id="timeSection">
+        <div class="step-indicator">
+          <span class="step-number">4</span>
+          <span class="step-title">เลือกเวลา</span>
+        </div>
+        
+        <div class="form-group" id="checkinTimeGroup">
+          <label class="form-label required">เวลา Check In</label>
+          <input type="time" id="checkinTime" class="form-input" />
+        </div>
+        
+        <div class="form-group" id="checkoutTimeGroup">
+          <label class="form-label required">เวลา Check Out</label>
+          <input type="time" id="checkoutTime" class="form-input" />
+        </div>
       </div>
 
-      <div class="status-info" id="statusInfo" style="display: none;">
-        <div class="status-info-title">สถานะวันที่เลือก</div>
-        <div class="status-info-content" id="statusContent">-</div>
+      <!-- STEP 5: รายละเอียดเพิ่มเติม -->
+      <div class="form-group" id="detailsGroup">
+        <div class="step-indicator">
+          <span class="step-number">5</span>
+          <span class="step-title">รายละเอียดเพิ่มเติม (ถ้ามี)</span>
+        </div>
+        <label class="form-label">รายละเอียดเพิ่มเติม (Details)</label>
+        <textarea id="reasonDetail" class="form-textarea" placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
       </div>
 
       <div class="loading" id="loading">
@@ -379,17 +508,18 @@
         <p>กำลังบันทึกข้อมูล...</p>
       </div>
 
-      <div class="button-group">
-        <button type="button" class="btn btn-checkin" id="btnCheckin">
-          Check In
+      <!-- STEP 6: ปุ่มบันทึก -->
+      <div class="button-wrapper" id="buttonWrapper">
+        <button type="button" class="btn btn-checkin" id="btnCheckin" style="display: none;">
+          <span>📥</span> บันทึก Check In
         </button>
-        <button type="button" class="btn btn-checkout" id="btnCheckout">
-          Check Out
+        <button type="button" class="btn btn-checkout" id="btnCheckout" style="display: none;">
+          <span>📤</span> บันทึก Check Out
         </button>
       </div>
     </form>
-
-    <div class="version">Manual Entry v1.0 - DesignOps</div>
+    
+    <div class="version">Manual Entry v2.0 - Step-by-Step</div>
   </div>
 
   <!-- Confirmation Modal -->
@@ -408,7 +538,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
+  
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
@@ -506,7 +636,6 @@
           showAlert('คุณยังไม่ได้ลงทะเบียนในระบบ', 'error');
           return false;
         }
-
         state.memberData = memberDoc.data();
 
         // Load teams
@@ -569,29 +698,101 @@
       return { checkedIn, checkedOut, checkinTime, checkoutTime };
     }
 
-    // Update status display
+    // Update status display and form visibility
     async function updateStatusDisplay() {
       const dateInput = document.getElementById('dateInput').value;
       if (!dateInput) return;
 
       const status = await checkExistingAttendance(dateInput);
-      const statusInfo = document.getElementById('statusInfo');
-      const statusContent = document.getElementById('statusContent');
-
-      if (status.checkedIn || status.checkedOut) {
-        statusInfo.style.display = 'block';
-        statusContent.innerHTML = `
-          Check In: ${status.checkinTime || '-'}<br>
-          Check Out: ${status.checkoutTime || '-'}
-        `;
+      
+      // Update Step 2: Status Display
+      const statusCheckin = document.getElementById('statusCheckin');
+      const statusCheckout = document.getElementById('statusCheckout');
+      
+      if (status.checkedIn) {
+        statusCheckin.innerHTML = `<span>✅</span> ${status.checkinTime}`;
+        statusCheckin.className = 'status-value completed';
       } else {
-        statusInfo.style.display = 'block';
-        statusContent.textContent = 'ยังไม่มีการบันทึกในวันนี้';
+        statusCheckin.innerHTML = `<span>⏳</span> รอบันทึก`;
+        statusCheckin.className = 'status-value pending';
+      }
+      
+      if (status.checkedOut) {
+        statusCheckout.innerHTML = `<span>✅</span> ${status.checkoutTime}`;
+        statusCheckout.className = 'status-value completed';
+      } else {
+        statusCheckout.innerHTML = `<span>⏳</span> รอบันทึก`;
+        statusCheckout.className = 'status-value pending';
       }
 
-      // Update button states
-      document.getElementById('btnCheckin').disabled = status.checkedIn;
-      document.getElementById('btnCheckout').disabled = status.checkedOut || !status.checkedIn;
+      // Check if complete
+      const isComplete = status.checkedIn && status.checkedOut;
+      
+      if (isComplete) {
+        // Hide all form fields (Step 3, 4, 5, 6)
+        document.getElementById('reasonGroup').style.display = 'none';
+        document.getElementById('timeSection').style.display = 'none';
+        document.getElementById('detailsGroup').style.display = 'none';
+        document.getElementById('buttonWrapper').classList.remove('show');
+        
+        // Show complete message
+        document.getElementById('completeMessage').classList.add('show');
+      } else {
+        // Show form fields
+        document.getElementById('reasonGroup').style.display = 'block';
+        document.getElementById('timeSection').style.display = 'block';
+        document.getElementById('detailsGroup').style.display = 'block';
+        document.getElementById('buttonWrapper').classList.add('show');
+        
+        // Hide complete message
+        document.getElementById('completeMessage').classList.remove('show');
+        
+        // Update time inputs visibility (Step 4)
+        updateTimeInputs(status);
+        
+        // Update button display (Step 6)
+        updateButtonDisplay(status);
+      }
+    }
+
+    // Update time inputs based on status
+    function updateTimeInputs(status) {
+      const checkinGroup = document.getElementById('checkinTimeGroup');
+      const checkoutGroup = document.getElementById('checkoutTimeGroup');
+      
+      if (!status.checkedIn) {
+        // Show only Check In time
+        checkinGroup.style.display = 'block';
+        checkoutGroup.style.display = 'none';
+        document.getElementById('checkinTime').required = true;
+        document.getElementById('checkoutTime').required = false;
+      } else if (!status.checkedOut) {
+        // Show only Check Out time
+        checkinGroup.style.display = 'none';
+        checkoutGroup.style.display = 'block';
+        document.getElementById('checkinTime').required = false;
+        document.getElementById('checkoutTime').required = true;
+      }
+    }
+
+    // Update button display based on status
+    function updateButtonDisplay(status) {
+      const btnCheckin = document.getElementById('btnCheckin');
+      const btnCheckout = document.getElementById('btnCheckout');
+      
+      if (!status.checkedIn) {
+        // Show Check In button only
+        btnCheckin.style.display = 'flex';
+        btnCheckout.style.display = 'none';
+      } else if (!status.checkedOut) {
+        // Show Check Out button only
+        btnCheckin.style.display = 'none';
+        btnCheckout.style.display = 'flex';
+      } else {
+        // Hide both buttons
+        btnCheckin.style.display = 'none';
+        btnCheckout.style.display = 'none';
+      }
     }
 
     // Validate inputs
@@ -606,12 +807,10 @@
         showAlert('กรุณาเลือกวันที่', 'error');
         return false;
       }
-
       if (!time) {
         showAlert('กรุณาเลือกเวลา', 'error');
         return false;
       }
-
       if (!reason) {
         showAlert('กรุณาเลือกเหตุผล', 'error');
         return false;
@@ -621,7 +820,6 @@
       const selectedDate = new Date(date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
       if (selectedDate > today) {
         showAlert('ไม่สามารถเลือกวันที่ในอนาคตได้', 'error');
         return false;
@@ -632,7 +830,6 @@
         const [hours, minutes] = time.split(':');
         const selectedTime = new Date();
         selectedTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
         if (selectedTime > new Date()) {
           showAlert('ไม่สามารถเลือกเวลาในอนาคตได้', 'error');
           return false;
@@ -741,9 +938,9 @@
         };
 
         await db.collection(CONFIG.COLLECTION_ATTENDANCE).add(attendanceData);
-
-        showAlert('บันทึกข้อมูลสำเร็จ!', 'success');
         
+        showAlert('บันทึกข้อมูลสำเร็จ!', 'success');
+
         // Reset form
         document.getElementById('reasonSelect').value = '';
         document.getElementById('reasonDetail').value = '';
