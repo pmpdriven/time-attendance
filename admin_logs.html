@@ -97,14 +97,29 @@
     }
     .controls-row {
       display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 16px;
+    }
+    .controls-row:last-child {
+      margin-bottom: 0;
     }
     .date-range {
       display: flex; gap: 8px; align-items: center;
     }
-    .form-input {
+    .form-input, .form-select {
       padding: 10px 12px; font-size: 0.875rem;
       border: 1px solid var(--gray-300); border-radius: 8px;
-      font-family: inherit;
+      font-family: inherit; background: white;
+    }
+    .form-select {
+      cursor: pointer;
+      min-width: 160px;
+    }
+    .search-input {
+      padding: 10px 12px; font-size: 0.875rem;
+      border: 1px solid var(--gray-300); border-radius: 8px;
+      font-family: inherit; flex: 1; min-width: 200px;
+      background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 10px center;
+      padding-left: 36px;
     }
     .btn {
       padding: 10px 20px; font-size: 0.875rem; border: none;
@@ -134,12 +149,96 @@
     .btn-danger:hover:not(:disabled) {
       background: #dc2626; transform: translateY(-1px);
     }
+    .btn-secondary {
+      background: var(--gray-300); color: var(--gray-900);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--gray-400);
+    }
+    
+    /* Filter Pills */
+    .filter-section {
+      border-top: 1px solid var(--gray-200);
+      padding-top: 16px;
+    }
+    .filter-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 8px;
+    }
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .filter-pills::-webkit-scrollbar {
+      height: 4px;
+    }
+    .filter-pills::-webkit-scrollbar-thumb {
+      background: var(--gray-300);
+      border-radius: 2px;
+    }
+    .filter-pill {
+      padding: 6px 14px;
+      font-size: 0.8125rem;
+      border: 1px solid var(--gray-300);
+      background: white;
+      color: var(--gray-700);
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .filter-pill:hover {
+      background: var(--gray-100);
+      border-color: var(--gray-400);
+    }
+    .filter-pill.active {
+      background: var(--primary-light);
+      color: var(--gray-900);
+      border-color: var(--primary);
+    }
+    .filter-pill .count {
+      background: rgba(0,0,0,0.1);
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .filter-pill.active .count {
+      background: rgba(0,0,0,0.15);
+    }
+    .clear-filters {
+      padding: 6px 14px;
+      font-size: 0.8125rem;
+      background: var(--gray-200);
+      color: var(--gray-700);
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .clear-filters:hover {
+      background: var(--gray-300);
+    }
     
     @media (max-width: 768px) {
       .controls-row { flex-direction: column; }
       .controls-row > * { width: 100%; }
       .date-range { flex-direction: column; }
       .real-time-indicator { position: static; margin-top: 12px; justify-content: center; }
+      .form-select { width: 100%; }
     }
     
     .stats {
@@ -160,6 +259,7 @@
     .stat-card.error .stat-value { color: var(--danger); }
     .stat-card.warning .stat-value { color: var(--warning); }
     .stat-card.success .stat-value { color: var(--success); }
+    .stat-card.info .stat-value { color: var(--info); }
     
     .log-container {
       background: white; border-radius: 16px;
@@ -303,12 +403,6 @@
     .modal-footer {
       display: flex; gap: 12px; justify-content: flex-end;
     }
-    .btn-secondary {
-      background: var(--gray-300); color: var(--gray-900);
-    }
-    .btn-secondary:hover {
-      background: var(--gray-400);
-    }
     .form-group {
       margin-bottom: 12px;
     }
@@ -344,9 +438,39 @@
           <span>ถึง</span>
           <input type="date" id="endDate" class="form-input" />
         </div>
+        <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาชื่อ, User ID..." />
         <button class="btn btn-primary" id="loadBtn" onclick="startListening()">เริ่มติดตาม</button>
         <button class="btn btn-danger" id="stopBtn" onclick="stopListening()" style="display: none;">หยุดติดตาม</button>
         <button class="btn btn-success" onclick="exportToExcel()">📥 Export Excel</button>
+      </div>
+      
+      <!-- Filter Section -->
+      <div class="filter-section" id="filterSection" style="display: none;">
+        <div class="filter-label">🔍 Platform</div>
+        <div class="filter-pills" id="platformFilters"></div>
+        
+        <div class="filter-label" style="margin-top: 12px;">⚙️ Function</div>
+        <div class="filter-pills" id="functionFilters"></div>
+        
+        <div class="filter-label" style="margin-top: 12px;">🔐 Authentication</div>
+        <div class="filter-pills" id="authFilters">
+          <button class="filter-pill" data-type="auth" data-value="all" onclick="toggleFilter('auth', 'all')">
+            ทั้งหมด <span class="count" id="authCount_all">0</span>
+          </button>
+          <button class="filter-pill" data-type="auth" data-value="authenticated" onclick="toggleFilter('auth', 'authenticated')">
+            🔐 Authenticated <span class="count" id="authCount_authenticated">0</span>
+          </button>
+          <button class="filter-pill" data-type="auth" data-value="not-authenticated" onclick="toggleFilter('auth', 'not-authenticated')">
+            🔓 Not Authenticated <span class="count" id="authCount_not-authenticated">0</span>
+          </button>
+          <button class="filter-pill" data-type="auth" data-value="not-registered" onclick="toggleFilter('auth', 'not-registered')">
+            ❌ Not Registered <span class="count" id="authCount_not-registered">0</span>
+          </button>
+        </div>
+        
+        <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+          <button class="clear-filters" onclick="clearAllFilters()">🔄 ล้างตัวกรอง</button>
+        </div>
       </div>
     </div>
     
@@ -363,9 +487,9 @@
         <div class="stat-label">Authenticated</div>
         <div class="stat-value" id="authenticated">0</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Not Registered</div>
-        <div class="stat-value" id="notRegistered">0</div>
+      <div class="stat-card info">
+        <div class="stat-label">Showing</div>
+        <div class="stat-value" id="showingCount">0</div>
       </div>
     </div>
     
@@ -450,11 +574,24 @@
     
     // Global variables
     let allLogs = [];
+    let filteredLogs = [];
     let currentLog = null;
-    let teamsCache = []; // Cache teams data
+    let teamsCache = [];
     let logsUnsubscribe = null;
     let isFirstLoad = true;
     let newLogIds = new Set();
+    
+    // Filter state
+    let activeFilters = {
+      platform: 'all',
+      function: 'all',
+      auth: 'all',
+      search: ''
+    };
+    
+    // Available platforms and functions (will be populated from data)
+    let availablePlatforms = new Set();
+    let availableFunctions = new Set();
     
     function formatDate(timestamp) {
       if (!timestamp) return '-';
@@ -524,6 +661,157 @@
       return teamsCache;
     }
     
+    // Build filter options from data
+    function buildFilterOptions() {
+      availablePlatforms.clear();
+      availableFunctions.clear();
+      
+      allLogs.forEach(log => {
+        if (log.platform) availablePlatforms.add(log.platform);
+        if (log.function) availableFunctions.add(log.function);
+      });
+      
+      renderFilterPills();
+    }
+    
+    // Render filter pills
+    function renderFilterPills() {
+      // Platform filters
+      const platformContainer = document.getElementById('platformFilters');
+      const platforms = ['all', ...Array.from(availablePlatforms).sort()];
+      
+      platformContainer.innerHTML = platforms.map(platform => {
+        const count = platform === 'all' 
+          ? allLogs.length 
+          : allLogs.filter(log => log.platform === platform).length;
+        const label = platform === 'all' ? 'ทั้งหมด' : platform;
+        const isActive = activeFilters.platform === platform;
+        
+        return `
+          <button class="filter-pill${isActive ? ' active' : ''}" 
+                  data-type="platform" 
+                  data-value="${platform}"
+                  onclick="toggleFilter('platform', '${platform}')">
+            ${label} <span class="count">${count}</span>
+          </button>
+        `;
+      }).join('');
+      
+      // Function filters
+      const functionContainer = document.getElementById('functionFilters');
+      const functions = ['all', ...Array.from(availableFunctions).sort()];
+      
+      functionContainer.innerHTML = functions.map(func => {
+        const count = func === 'all' 
+          ? allLogs.length 
+          : allLogs.filter(log => log.function === func).length;
+        const label = func === 'all' ? 'ทั้งหมด' : func;
+        const isActive = activeFilters.function === func;
+        
+        return `
+          <button class="filter-pill${isActive ? ' active' : ''}" 
+                  data-type="function" 
+                  data-value="${func}"
+                  onclick="toggleFilter('function', '${func}')">
+            ${label} <span class="count">${count}</span>
+          </button>
+        `;
+      }).join('');
+      
+      // Update auth filter counts
+      document.getElementById('authCount_all').textContent = allLogs.length;
+      document.getElementById('authCount_authenticated').textContent = 
+        allLogs.filter(log => log.authenticated).length;
+      document.getElementById('authCount_not-authenticated').textContent = 
+        allLogs.filter(log => !log.authenticated && !log.attemptedUserId).length;
+      document.getElementById('authCount_not-registered').textContent = 
+        allLogs.filter(log => log.attemptedUserId).length;
+      
+      // Update active state for auth filters
+      document.querySelectorAll('[data-type="auth"]').forEach(btn => {
+        if (btn.dataset.value === activeFilters.auth) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      
+      // Show filter section
+      document.getElementById('filterSection').style.display = 'block';
+    }
+    
+    // Toggle filter
+    function toggleFilter(type, value) {
+      activeFilters[type] = value;
+      applyFilters();
+    }
+    
+    // Clear all filters
+    function clearAllFilters() {
+      activeFilters = {
+        platform: 'all',
+        function: 'all',
+        auth: 'all',
+        search: ''
+      };
+      document.getElementById('searchInput').value = '';
+      applyFilters();
+    }
+    
+    // Apply filters
+    function applyFilters() {
+      filteredLogs = allLogs.filter(log => {
+        // Platform filter
+        if (activeFilters.platform !== 'all' && log.platform !== activeFilters.platform) {
+          return false;
+        }
+        
+        // Function filter
+        if (activeFilters.function !== 'all' && log.function !== activeFilters.function) {
+          return false;
+        }
+        
+        // Auth filter
+        if (activeFilters.auth !== 'all') {
+          if (activeFilters.auth === 'authenticated' && !log.authenticated) {
+            return false;
+          }
+          if (activeFilters.auth === 'not-authenticated' && (log.authenticated || log.attemptedUserId)) {
+            return false;
+          }
+          if (activeFilters.auth === 'not-registered' && !log.attemptedUserId) {
+            return false;
+          }
+        }
+        
+        // Search filter
+        if (activeFilters.search) {
+          const searchLower = activeFilters.search.toLowerCase();
+          const userId = (log.userId || log.attemptedUserId || '').toLowerCase();
+          const displayName = (log.displayName || '').toLowerCase();
+          const error = (log.error || '').toLowerCase();
+          
+          if (!userId.includes(searchLower) && 
+              !displayName.includes(searchLower) && 
+              !error.includes(searchLower)) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      renderFilterPills();
+      updateStats();
+      renderLogs();
+    }
+    
+    // Search input handler
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      activeFilters.search = e.target.value.trim();
+      applyFilters();
+    });
+    
     // Start real-time listening
     async function startListening() {
       const startDate = document.getElementById('startDate').value;
@@ -546,6 +834,7 @@
       document.getElementById('loadBtn').style.display = 'none';
       document.getElementById('stopBtn').style.display = 'inline-block';
       document.getElementById('stats').style.display = 'none';
+      document.getElementById('filterSection').style.display = 'none';
       isFirstLoad = true;
       
       console.log(`🎧 Starting real-time listener for ${startDate} to ${endDate}...`);
@@ -629,34 +918,33 @@
         });
       });
       
-      updateStats();
-      renderLogs();
+      buildFilterOptions();
+      applyFilters();
     }
     
     function updateStats() {
       const uniqueUsers = new Set(
-        allLogs.map(log => log.userId || log.attemptedUserId).filter(Boolean)
+        filteredLogs.map(log => log.userId || log.attemptedUserId).filter(Boolean)
       ).size;
       
-      const authenticated = allLogs.filter(log => log.authenticated).length;
-      const notRegistered = allLogs.filter(log => log.attemptedUserId).length;
+      const authenticated = filteredLogs.filter(log => log.authenticated).length;
       
       document.getElementById('stats').style.display = 'grid';
       document.getElementById('totalErrors').textContent = allLogs.length;
       document.getElementById('uniqueUsers').textContent = uniqueUsers;
       document.getElementById('authenticated').textContent = authenticated;
-      document.getElementById('notRegistered').textContent = notRegistered;
+      document.getElementById('showingCount').textContent = filteredLogs.length;
     }
     
     function renderLogs() {
       const container = document.getElementById('logList');
       
-      if (allLogs.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>ไม่มี error logs ในช่วงเวลานี้</p></div>';
+      if (filteredLogs.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>ไม่พบข้อมูลที่ตรงกับเงื่อนไข</p></div>';
         return;
       }
       
-      container.innerHTML = allLogs.map(log => {
+      container.innerHTML = filteredLogs.map(log => {
         const userId = log.userId || log.attemptedUserId || 'Unknown';
         const displayName = log.displayName || 'Unknown User';
         const isNotRegistered = !!log.attemptedUserId;
@@ -803,12 +1091,12 @@
     }
     
     function exportToExcel() {
-      if (allLogs.length === 0) {
+      if (filteredLogs.length === 0) {
         alert('ไม่มีข้อมูลให้ export');
         return;
       }
       
-      const data = allLogs.map((log, i) => ({
+      const data = filteredLogs.map((log, i) => ({
         'No.': i + 1,
         'User ID': log.userId || log.attemptedUserId || '-',
         'Display Name': log.displayName || '-',
@@ -827,7 +1115,12 @@
       
       const startDate = document.getElementById('startDate').value;
       const endDate = document.getElementById('endDate').value;
-      XLSX.writeFile(wb, `ErrorLogs_${startDate}_to_${endDate}.xlsx`);
+      
+      let filename = `ErrorLogs_${startDate}_to_${endDate}`;
+      if (activeFilters.platform !== 'all') filename += `_${activeFilters.platform}`;
+      if (activeFilters.function !== 'all') filename += `_${activeFilters.function}`;
+      
+      XLSX.writeFile(wb, `${filename}.xlsx`);
     }
     
     // Cleanup on page unload
@@ -845,8 +1138,10 @@
       document.getElementById('endDate').value = today.toISOString().split('T')[0];
     };
     
-    // Make function available globally
+    // Make functions available globally
     window.openAddMemberModal = openAddMemberModal;
+    window.toggleFilter = toggleFilter;
+    window.clearAllFilters = clearAllFilters;
   </script>
 </body>
 </html>
