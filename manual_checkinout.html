@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual Check In/Out</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #a0d911;
+      --primary-light: #b8f416;
+      --primary-dark: #7cb305;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --success: #52c41a;
+      --danger: #ef4444;
+      --warning: #faad14;
+      --info: #3b82f6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      animation: slideUp 0.5s ease-out;
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--gray-200);
+    }
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+    .header-subtitle {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+    }
+    
+    .user-info { 
+      text-align: center; 
+      color: var(--gray-700); 
+      margin-bottom: 8px; 
+      font-size: 1.125rem; 
+      font-weight: 500; 
+    }
+    .user-details {
+      text-align: center;
+      color: var(--gray-500);
+      font-size: 0.875rem;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .user-details .badge {
+      display: inline-block;
+      background: var(--gray-100);
+      padding: 4px 12px;
+      border-radius: 12px;
+      margin: 2px;
+      font-size: 0.75rem;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-700);
+      margin-bottom: 8px;
+    }
+    .form-label.required::after {
+      content: ' *';
+      color: var(--danger);
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 12px;
+      font-size: 0.875rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .form-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .status-info {
+      background: var(--gray-100);
+      border-left: 3px solid var(--info);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .status-info-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 8px;
+    }
+    .status-info-content {
+      font-size: 0.8125rem;
+      color: var(--gray-600);
+      line-height: 1.5;
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .btn {
+      padding: 14px 24px;
+      font-size: 0.9375rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-checkin {
+      background: var(--success);
+      color: white;
+    }
+    .btn-checkin:hover:not(:disabled) {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+    .btn-checkout {
+      background: var(--warning);
+      color: white;
+    }
+    .btn-checkout:hover:not(:disabled) {
+      background: #f59e0b;
+      transform: translateY(-1px);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 0.875rem;
+      display: none;
+    }
+    .alert.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+    .alert.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    .alert.warning {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+    .alert.show {
+      display: block;
+      animation: slideDown 0.3s ease-out;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+    }
+    .modal-header {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--gray-900);
+    }
+    .modal-body {
+      margin-bottom: 20px;
+    }
+    .modal-detail {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 0.875rem;
+    }
+    .modal-detail:last-child {
+      border-bottom: none;
+    }
+    .modal-detail-label {
+      color: var(--gray-600);
+      font-weight: 500;
+    }
+    .modal-detail-value {
+      color: var(--gray-900);
+      font-weight: 600;
+    }
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .btn-secondary {
+      background: var(--gray-300);
+      color: var(--gray-900);
+      padding: 10px 20px;
+      font-size: 0.875rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: var(--gray-400);
+    }
+    .btn-primary {
+      background: var(--primary-light);
+      color: var(--gray-900);
+      padding: 10px 20px;
+      font-size: 0.875rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover {
+      background: var(--primary);
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    .loading.show { display: block; }
+    .spinner {
+      border: 3px solid var(--gray-200);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .version {
+      text-align: center;
+      color: var(--gray-500);
+      font-size: 0.75rem;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 30px 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .button-group { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-title">Manual Check In/Out</div>
+      <div class="header-subtitle">บันทึกเวลาเข้า-ออกงานด้วยตนเอง</div>
+    </div>
+
+    <div class="user-info" id="userInfo">Loading...</div>
+    <div class="user-details" id="userDetails"></div>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="manualForm">
+      <div class="form-group">
+        <label class="form-label required">วันที่ (Date)</label>
+        <input type="date" id="dateInput" class="form-input" required />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">เวลา Check In</label>
+          <input type="time" id="checkinTime" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label required">เวลา Check Out</label>
+          <input type="time" id="checkoutTime" class="form-input" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">เหตุผล (Reason)</label>
+        <select id="reasonSelect" class="form-select" required>
+          <option value="">-- เลือกเหตุผล --</option>
+          <option value="ตึก 1 (Building 1)">ตึก 1 (Building 1)</option>
+          <option value="ตึก 2 (Building 2)">ตึก 2 (Building 2)</option>
+          <option value="สาขาอื่น (Other Branch)">สาขาอื่น (Other Branch)</option>
+          <option value="ลืม Check In (Forgot Check In)">ลืม Check In (Forgot Check In)</option>
+          <option value="ลืม Check Out (Forgot Check Out)">ลืม Check Out (Forgot Check Out)</option>
+          <option value="Work From Home">Work From Home</option>
+          <option value="ประชุมนอกสถานที่ (External Meeting)">ประชุมนอกสถานที่ (External Meeting)</option>
+          <option value="ไปติดต่อลูกค้า (Client Visit)">ไปติดต่อลูกค้า (Client Visit)</option>
+          <option value="อื่นๆ (Other)">อื่นๆ (Other - please specify)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">รายละเอียดเพิ่มเติม (Details)</label>
+        <textarea id="reasonDetail" class="form-textarea" placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+      </div>
+
+      <div class="status-info" id="statusInfo" style="display: none;">
+        <div class="status-info-title">สถานะวันที่เลือก</div>
+        <div class="status-info-content" id="statusContent">-</div>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>กำลังบันทึกข้อมูล...</p>
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn btn-checkin" id="btnCheckin">
+          Check In
+        </button>
+        <button type="button" class="btn btn-checkout" id="btnCheckout">
+          Check Out
+        </button>
+      </div>
+    </form>
+
+    <div class="version">Manual Entry v1.0 - DesignOps</div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">ยืนยันการบันทึก</div>
+      <div class="modal-body" id="confirmDetails"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn-primary" onclick="confirmSave()">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPomwjnPeEIL7OkB8p-4fA2qNUOpOPu3w",
+      authDomain: "time-attendance-807c5.firebaseapp.com",
+      projectId: "time-attendance-807c5",
+      storageBucket: "time-attendance-807c5.firebasestorage.app",
+      messagingSenderId: "1018740462032",
+      appId: "1:1018740462032:web:6b86ff04a238d550ab29d5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const CONFIG = {
+      LIFF_ID: "2008403464-kaXOK95X",
+      COLLECTION_ATTENDANCE: "attendance",
+      COLLECTION_MEMBERS: "members",
+      COLLECTION_TEAMS: "teams"
+    };
+
+    const state = {
+      lineUserId: null,
+      lineDisplayName: "User",
+      memberData: null,
+      teamData: null,
+      currentAction: null,
+      pendingData: null,
+      currentLocation: null
+    };
+
+    // Thai date formatter
+    function toThaiDate(dateStr) {
+      const d = new Date(dateStr);
+      const thaiYear = d.getFullYear() + 543;
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      return `${dd}/${mm}/${thaiYear}`;
+    }
+
+    function showAlert(message, type = 'success') {
+      const alert = document.getElementById('alert');
+      alert.textContent = message;
+      alert.className = `alert ${type} show`;
+      setTimeout(() => alert.classList.remove('show'), 5000);
+    }
+
+    // Get current location (no validation)
+    async function getCurrentLocation() {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve({ lat: null, lon: null, accuracy: null });
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            resolve({
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude,
+              accuracy: pos.coords.accuracy
+            });
+          },
+          () => {
+            resolve({ lat: null, lon: null, accuracy: null });
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        );
+      });
+    }
+
+    // LIFF Init
+    async function initLiff() {
+      try {
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return false;
+        }
+        const profile = await liff.getProfile();
+        state.lineUserId = profile.userId;
+        state.lineDisplayName = profile.displayName || "User";
+        return true;
+      } catch (e) {
+        console.warn("LIFF init failed, using test mode");
+        state.lineUserId = "U17814d04672b1adfcd8fe146d8bcb343";
+        state.lineDisplayName = "Test User";
+        return true;
+      }
+    }
+
+    // Load member data
+    async function loadMemberData() {
+      try {
+        const memberDoc = await db.collection(CONFIG.COLLECTION_MEMBERS).doc(state.lineUserId).get();
+        if (!memberDoc.exists) {
+          showAlert('คุณยังไม่ได้ลงทะเบียนในระบบ', 'error');
+          return false;
+        }
+
+        state.memberData = memberDoc.data();
+
+        // Load teams
+        if (state.memberData.teamIds && state.memberData.teamIds.length > 0) {
+          const teamPromises = state.memberData.teamIds.map(teamId =>
+            db.collection(CONFIG.COLLECTION_TEAMS).doc(teamId).get()
+          );
+          const teamDocs = await Promise.all(teamPromises);
+          state.teamData = teamDocs
+            .filter(doc => doc.exists)
+            .map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        displayMemberInfo();
+        return true;
+      } catch (error) {
+        console.error('Error loading member:', error);
+        showAlert('โหลดข้อมูลไม่สำเร็จ', 'error');
+        return false;
+      }
+    }
+
+    function displayMemberInfo() {
+      const displayName = state.memberData.nickname || state.memberData.firstName || state.lineDisplayName;
+      document.getElementById('userInfo').textContent = `สวัสดี, ${displayName}`;
+
+      let detailsHTML = '';
+      if (state.memberData.position) {
+        detailsHTML += `<span class="badge">✎ ${state.memberData.position}</span>`;
+      }
+      if (state.teamData && state.teamData.length > 0) {
+        state.teamData.forEach(team => {
+          detailsHTML += `<span class="badge">🖥 ${team.name}</span>`;
+        });
+      }
+      document.getElementById('userDetails').innerHTML = detailsHTML;
+    }
+
+    // Check existing attendance for selected date
+    async function checkExistingAttendance(date) {
+      const thaiDate = toThaiDate(date);
+      const snap = await db.collection(CONFIG.COLLECTION_ATTENDANCE)
+        .where('userId', '==', state.lineUserId)
+        .where('date', '==', thaiDate)
+        .get();
+
+      let checkedIn = false, checkedOut = false, checkinTime = '', checkoutTime = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (d.action === 'checkin') {
+          checkedIn = true;
+          checkinTime = d.dateTime.split(' ')[1];
+        }
+        if (d.action === 'checkout') {
+          checkedOut = true;
+          checkoutTime = d.dateTime.split(' ')[1];
+        }
+      });
+
+      return { checkedIn, checkedOut, checkinTime, checkoutTime };
+    }
+
+    // Update status display
+    async function updateStatusDisplay() {
+      const dateInput = document.getElementById('dateInput').value;
+      if (!dateInput) return;
+
+      const status = await checkExistingAttendance(dateInput);
+      const statusInfo = document.getElementById('statusInfo');
+      const statusContent = document.getElementById('statusContent');
+
+      if (status.checkedIn || status.checkedOut) {
+        statusInfo.style.display = 'block';
+        statusContent.innerHTML = `
+          Check In: ${status.checkinTime || '-'}<br>
+          Check Out: ${status.checkoutTime || '-'}
+        `;
+      } else {
+        statusInfo.style.display = 'block';
+        statusContent.textContent = 'ยังไม่มีการบันทึกในวันนี้';
+      }
+
+      // Update button states
+      document.getElementById('btnCheckin').disabled = status.checkedIn;
+      document.getElementById('btnCheckout').disabled = status.checkedOut || !status.checkedIn;
+    }
+
+    // Validate inputs
+    function validateInputs(action) {
+      const date = document.getElementById('dateInput').value;
+      const time = action === 'checkin' ?
+        document.getElementById('checkinTime').value :
+        document.getElementById('checkoutTime').value;
+      const reason = document.getElementById('reasonSelect').value;
+
+      if (!date) {
+        showAlert('กรุณาเลือกวันที่', 'error');
+        return false;
+      }
+
+      if (!time) {
+        showAlert('กรุณาเลือกเวลา', 'error');
+        return false;
+      }
+
+      if (!reason) {
+        showAlert('กรุณาเลือกเหตุผล', 'error');
+        return false;
+      }
+
+      // Check if date is in future
+      const selectedDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDate > today) {
+        showAlert('ไม่สามารถเลือกวันที่ในอนาคตได้', 'error');
+        return false;
+      }
+
+      // Check if time is in future (for today)
+      if (selectedDate.toDateString() === today.toDateString()) {
+        const [hours, minutes] = time.split(':');
+        const selectedTime = new Date();
+        selectedTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+        if (selectedTime > new Date()) {
+          showAlert('ไม่สามารถเลือกเวลาในอนาคตได้', 'error');
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // Show confirmation modal
+    async function showConfirmation(action) {
+      if (!validateInputs(action)) return;
+
+      const date = document.getElementById('dateInput').value;
+      const time = action === 'checkin' ?
+        document.getElementById('checkinTime').value :
+        document.getElementById('checkoutTime').value;
+      const reason = document.getElementById('reasonSelect').value;
+      const reasonDetail = document.getElementById('reasonDetail').value.trim();
+
+      state.currentAction = action;
+      state.currentLocation = await getCurrentLocation();
+
+      const thaiDate = toThaiDate(date);
+      const actionText = action === 'checkin' ? 'Check In' : 'Check Out';
+
+      state.pendingData = {
+        action,
+        date: thaiDate,
+        time,
+        reason,
+        reasonDetail
+      };
+
+      const confirmDetails = document.getElementById('confirmDetails');
+      confirmDetails.innerHTML = `
+        <div class="modal-detail">
+          <span class="modal-detail-label">การดำเนินการ:</span>
+          <span class="modal-detail-value">${actionText}</span>
+        </div>
+        <div class="modal-detail">
+          <span class="modal-detail-label">วันที่:</span>
+          <span class="modal-detail-value">${thaiDate}</span>
+        </div>
+        <div class="modal-detail">
+          <span class="modal-detail-label">เวลา:</span>
+          <span class="modal-detail-value">${time}</span>
+        </div>
+        <div class="modal-detail">
+          <span class="modal-detail-label">เหตุผล:</span>
+          <span class="modal-detail-value">${reason}</span>
+        </div>
+        ${reasonDetail ? `
+        <div class="modal-detail">
+          <span class="modal-detail-label">รายละเอียด:</span>
+          <span class="modal-detail-value">${reasonDetail}</span>
+        </div>
+        ` : ''}
+        <div class="modal-detail">
+          <span class="modal-detail-label">Location:</span>
+          <span class="modal-detail-value">${state.currentLocation.lat ? 'Recorded' : 'Not Available'}</span>
+        </div>
+      `;
+
+      document.getElementById('confirmModal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('confirmModal').classList.remove('show');
+      state.pendingData = null;
+      state.currentAction = null;
+    }
+
+    // Confirm and save
+    async function confirmSave() {
+      if (!state.pendingData) return;
+
+      closeModal();
+      document.getElementById('loading').classList.add('show');
+
+      try {
+        const currentUser = auth.currentUser;
+        const dateTime = `${state.pendingData.date} ${state.pendingData.time}`;
+
+        const attendanceData = {
+          userId: state.lineUserId,
+          displayName: state.memberData.nickname || state.memberData.firstName || state.lineDisplayName,
+          action: state.pendingData.action,
+          date: state.pendingData.date,
+          dateTime: dateTime,
+          latitude: state.currentLocation.lat,
+          longitude: state.currentLocation.lon,
+          accuracy: state.currentLocation.accuracy,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          firebaseUid: currentUser ? currentUser.uid : null,
+          authenticated: !!currentUser,
+          isManual: true,
+          reason: state.pendingData.reason,
+          reasonDetail: state.pendingData.reasonDetail || null,
+          manualEntryTime: firebase.firestore.FieldValue.serverTimestamp(),
+          device: {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language
+          }
+        };
+
+        await db.collection(CONFIG.COLLECTION_ATTENDANCE).add(attendanceData);
+
+        showAlert('บันทึกข้อมูลสำเร็จ!', 'success');
+        
+        // Reset form
+        document.getElementById('reasonSelect').value = '';
+        document.getElementById('reasonDetail').value = '';
+        document.getElementById('checkinTime').value = '';
+        document.getElementById('checkoutTime').value = '';
+
+        // Update status
+        await updateStatusDisplay();
+
+      } catch (error) {
+        console.error('Error saving:', error);
+        showAlert('บันทึกข้อมูลไม่สำเร็จ: ' + error.message, 'error');
+      } finally {
+        document.getElementById('loading').classList.remove('show');
+      }
+    }
+
+    // Event listeners
+    document.getElementById('dateInput').addEventListener('change', updateStatusDisplay);
+    document.getElementById('btnCheckin').addEventListener('click', () => showConfirmation('checkin'));
+    document.getElementById('btnCheckout').addEventListener('click', () => showConfirmation('checkout'));
+
+    // Make functions global
+    window.closeModal = closeModal;
+    window.confirmSave = confirmSave;
+
+    // Initialize
+    async function init() {
+      const liffOk = await initLiff();
+      if (!liffOk) return;
+
+      try {
+        await auth.signInAnonymously();
+      } catch (e) {
+        console.warn('Auth failed:', e);
+      }
+
+      const memberOk = await loadMemberData();
+      if (!memberOk) return;
+
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('dateInput').value = today;
+      document.getElementById('dateInput').max = today; // Prevent future dates
+
+      await updateStatusDisplay();
+    }
+
+    init();
+  </script>
+</body>
+</html>
